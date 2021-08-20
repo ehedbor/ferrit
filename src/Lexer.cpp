@@ -17,6 +17,11 @@ LexError::LexError(std::string msg, SourceLocation location) :
     msg(std::move(msg)), location(location) {
 }
 
+std::ostream &operator<<(std::ostream &out, const LexError &err) {
+    out << err.location << ": Syntax Error: " << err.msg;
+    return out;
+}
+
 Lexer::Lexer(const std::string &code) : m_code(code) {
 }
 
@@ -70,7 +75,7 @@ LexResult Lexer::lex() noexcept {
     case '<': return makeToken(expect('<') ? TokenType::LessEqual : TokenType::Less);
     default: {
         std::stringstream msg;
-        msg << "unexpected character " << *ch;
+        msg << "unexpected character '" << *ch << "'";
         return cpp::fail(makeError(msg.str()));
     }
     }
@@ -160,8 +165,11 @@ LexResult Lexer::lexString() noexcept {
     }
 
     // consume closing quote
-    advance();
-    return makeToken(TokenType::StringLiteral);
+    if (expect('"')) {
+        return makeToken(TokenType::StringLiteral);
+    } else {
+        return cpp::fail(makeError("unterminated string literal"));
+    }
 }
 
 LexResult Lexer::lexChar() noexcept {
@@ -176,8 +184,10 @@ LexResult Lexer::lexChar() noexcept {
 
     if (expect('\'')) {
         return makeToken(TokenType::CharLiteral);
-    } else {
+    } else if (!peek()) {
         return cpp::fail(makeError("unterminated char literal"));
+    } else {
+        return cpp::fail(makeError("too many chars in char literal"));
     }
 }
 
@@ -248,7 +258,8 @@ LexResult Lexer::lexIdentifier() noexcept {
         }
     }
 
-    std::string lexeme = m_code.substr(m_start, m_current);
+    std::size_t count = m_current - m_start;
+    std::string lexeme = m_code.substr(m_start, count);
     TokenType type = getTokenTypeForIdent(lexeme);
     return makeToken(type);
 }
@@ -263,18 +274,16 @@ TokenType Lexer::getTokenTypeForIdent(const std::string &lexeme) noexcept {
 }
 
 Token Lexer::makeToken(TokenType type) const noexcept {
-    std::string lexeme = m_code.substr(m_start, m_current);
-    return {type, lexeme, getStartLocation()};
+    std::size_t count = m_current - m_start;
+    std::size_t startColumn = m_location.column - count;
+    std::string lexeme = m_code.substr(m_start, count);
+    return {type, lexeme, {m_location.line, startColumn}};
 }
 
 LexError Lexer::makeError(const std::string &msg) const noexcept {
-    return {msg, getStartLocation()};
-}
-
-SourceLocation Lexer::getStartLocation() const noexcept {
-    int diff = static_cast<int>(m_current) - static_cast<int>(m_start);
-    int actualColumn = m_location.column - diff;
-    return {m_location.line, actualColumn};
+    std::size_t count = m_current - m_start;
+    std::size_t startColumn = m_location.column - count;
+    return {msg, {m_location.line, startColumn}};
 }
 
 std::optional<char> Lexer::peek() const noexcept {

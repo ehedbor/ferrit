@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include <string>
 
 enum class TokenType {
@@ -104,20 +105,26 @@ enum class TokenType {
     EndOfFile,
 };
 
+std::ostream &operator<<(std::ostream &out, TokenType type);
+
 struct SourceLocation {
 public:
     SourceLocation() = default;
-    SourceLocation(int line, int column);
+    SourceLocation(std::size_t line, std::size_t column);
+
+    friend std::ostream &operator<<(std::ostream &out, const SourceLocation &loc);
 
 public:
-    int line{0};
-    int column{0};
+    std::size_t line{0};
+    std::size_t column{0};
 };
 
 struct Token {
 public:
     Token() = default;
     Token(TokenType type, std::string lexeme, SourceLocation location);
+
+    friend std::ostream &operator<<(std::ostream &out, const Token &token);
 
 public:
     TokenType type{};

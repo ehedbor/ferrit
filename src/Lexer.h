@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include <optional>
 #include <string>
 #include <vector>
@@ -13,6 +14,8 @@ struct LexError {
 public:
     LexError() = default;
     LexError(std::string msg, SourceLocation location);
+
+    friend std::ostream &operator<<(std::ostream &out, const LexError &err);
 
 public:
     std::string msg{};
@@ -42,7 +45,6 @@ private:
 
     [[nodiscard]] Token makeToken(TokenType type) const noexcept;
     [[nodiscard]] LexError makeError(const std::string &msg) const noexcept;
-    [[nodiscard]] SourceLocation getStartLocation() const noexcept;
 
     [[nodiscard]] std::optional<char> peek() const noexcept;
     [[nodiscard]] std::optional<char> peekNext() const noexcept;

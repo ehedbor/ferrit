@@ -17,10 +17,10 @@ enum class TokenType {
     Period,             ///< '.'
     //SafeAccess,         ///< '?.'
     //RangeTo,            ///< '..'
-    //Arrow,              ///< '<-'
-    //Colon,              ///< ':'
+    Arrow,              ///< '->'
+    Colon,              ///< ':'
     Semicolon,          ///< ';'
-    Newline,            ///< '\\n'. Defines a possible statement terminator.
+    Newline,            ///< '\\n'. Defines a possible parseStatement terminator.
 
     Plus,               ///< '+'
     Minus,              ///< '-'
@@ -86,12 +86,12 @@ enum class TokenType {
     //Byte,
     //Short,
     //UShort,
-    //Int,
+    Int,
     //UInt,
     //Long,
     //ULong,
     //Float,
-    //Double,
+    Double,
     //Char,
     //String,
     //Bool,

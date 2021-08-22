@@ -16,6 +16,8 @@ std::ostream &operator<<(std::ostream &out, TokenType type) {
     TOKEN_CASE(RightBracket);
     TOKEN_CASE(Comma);
     TOKEN_CASE(Period);
+    TOKEN_CASE(Arrow);
+    TOKEN_CASE(Colon);
     TOKEN_CASE(Semicolon);
     TOKEN_CASE(Newline);
     TOKEN_CASE(Plus);
@@ -43,6 +45,8 @@ std::ostream &operator<<(std::ostream &out, TokenType type) {
     TOKEN_CASE(Return);
     TOKEN_CASE(True);
     TOKEN_CASE(False);
+    TOKEN_CASE(Int);
+    TOKEN_CASE(Double);
     TOKEN_CASE(Identifier);
     TOKEN_CASE(StringLiteral);
     TOKEN_CASE(CharLiteral);
@@ -69,7 +73,7 @@ Token::Token(TokenType type, std::string lexeme, SourceLocation location) :
 }
 
 std::ostream &operator<<(std::ostream &out, const Token &token) {
-    out << token.location << ": " << token.type << " (\"" << token.lexeme << "\")";
+    out << "Token{" << token.type << " \"" << token.lexeme << "\" at " << token.location << "}";
     return out;
 }
 

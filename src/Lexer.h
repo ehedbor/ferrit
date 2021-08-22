@@ -4,24 +4,11 @@
 #include <optional>
 #include <string>
 #include <vector>
-
 #include <result.hpp>
-
 #include "Token.h"
 
 
-struct LexError {
-public:
-    LexError() = default;
-    LexError(std::string msg, SourceLocation location);
-
-    friend std::ostream &operator<<(std::ostream &out, const LexError &err);
-
-public:
-    std::string msg{};
-    SourceLocation location{};
-};
-
+struct LexError;
 using LexResult = cpp::result<Token, LexError>;
 
 class Lexer {
@@ -65,4 +52,14 @@ private:
     SourceLocation m_location{1, 1};
 };
 
+struct LexError {
+public:
+    LexError() = default;
+    LexError(std::string msg, SourceLocation location);
 
+    friend std::ostream &operator<<(std::ostream &out, const LexError &err);
+
+public:
+    std::string msg{};
+    SourceLocation location{};
+};

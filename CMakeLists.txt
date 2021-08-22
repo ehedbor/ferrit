@@ -29,7 +29,14 @@ add_subdirectory("extern/result")
 find_package(LLVM 12 REQUIRED CONFIG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION} in \"${LLVM_DIR}\"")
 
-add_executable(es src/main.cpp src/Lexer.cpp src/Lexer.h src/Token.cpp src/Token.h)
+# Add extra warnings
+if (MSVC)
+    add_compile_options(/W4 /WX)
+else()
+    add_compile_options(-Wall -Wextra -Werror)
+endif()
+
+add_executable(es src/main.cpp src/Lexer.cpp src/Lexer.h src/Token.cpp src/Token.h src/Expression.cpp src/Expression.h src/Statement.cpp src/Statement.h src/Parser.cpp src/Parser.h src/AstElements.cpp src/AstElements.h src/ResultTry.h src/AstPrinter.cpp src/AstPrinter.h)
 target_include_directories(es SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
 target_compile_definitions(es PRIVATE ${LLVM_DEFINITIONS})
 target_link_libraries(es PRIVATE Result::Result)

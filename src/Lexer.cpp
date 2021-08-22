@@ -2,37 +2,16 @@
 
 #include <sstream>
 #include <unordered_map>
+#include "ResultTry.h"
 
-
-static const std::unordered_map<std::string, TokenType> IDENTIFIER_TYPES = { // NOLINT(cert-err58-cpp)
-    {"native", TokenType::Native},
-    {"var", TokenType::Var},
-    {"fun", TokenType::Fun},
-    {"return", TokenType::Return},
-    {"true", TokenType::True},
-    {"false", TokenType::False}
-};
-
-LexError::LexError(std::string msg, SourceLocation location) :
-    msg(std::move(msg)), location(location) {
-}
-
-std::ostream &operator<<(std::ostream &out, const LexError &err) {
-    out << err.location << ": Syntax Error: " << err.msg;
-    return out;
-}
 
 Lexer::Lexer(const std::string &code) : m_code(code) {
 }
 
 LexResult Lexer::lex() noexcept {
-    auto maybeWhitespaceToken = skipWhitespace();
-    if (maybeWhitespaceToken) {
-        if (auto optToken = *maybeWhitespaceToken) {
-            return *optToken;
-        }
-    } else {
-        return cpp::fail(maybeWhitespaceToken.error());
+    TRY(optWhitespaceToken, skipWhitespace());
+    if (optWhitespaceToken) {
+        return *optWhitespaceToken;
     }
 
     m_start = m_current;
@@ -59,9 +38,10 @@ LexResult Lexer::lex() noexcept {
     case ']': return makeToken(TokenType::RightBracket);
     case ',': return makeToken(TokenType::Comma);
     case '.': return makeToken(TokenType::Period);
+    case ':': return makeToken(TokenType::Colon);
     case ';': return makeToken(TokenType::Semicolon);
     case '+': return makeToken(TokenType::Plus);
-    case '-': return makeToken(TokenType::Minus);
+    case '-': return makeToken(expect('>') ? TokenType::Arrow : TokenType::Minus);
     case '*': return makeToken(TokenType::Times);
     case '/': return makeToken(TokenType::Divide);
     case '%': return makeToken(TokenType::Modulo);
@@ -111,10 +91,7 @@ cpp::result<std::optional<Token>, LexError> Lexer::skipWhitespace() noexcept {
             if (*nextChar == '/') {
                 ignoreLineComment();
             } else if (*nextChar == '*') {
-                auto maybeError = ignoreBlockComment();
-                if (maybeError.has_error()) {
-                    return cpp::fail(maybeError.error());
-                }
+                EXPECT(ignoreBlockComment());
             } else {
                 return {};
             }
@@ -144,7 +121,7 @@ cpp::result<void, LexError> Lexer::ignoreBlockComment() noexcept {
     while (true) {
         auto next = advance();
         if (!next) {
-            return cpp::fail(makeError("unterminated block comment"));
+            return cpp::fail(makeError("unterminated parseBlock comment"));
         } else if (*next == '*' && expect('/')) {
             return {};
         } else if (*next == '\n') {
@@ -158,10 +135,7 @@ cpp::result<void, LexError> Lexer::ignoreBlockComment() noexcept {
 
 LexResult Lexer::lexString() noexcept {
     while (peek() && *peek() != '"') {
-        auto maybeError = advanceStringChar("string literal");
-        if (maybeError.has_error()) {
-            return cpp::fail(maybeError.error());
-        }
+        EXPECT(advanceStringChar("string literal"));
     }
 
     // consume closing quote
@@ -177,10 +151,7 @@ LexResult Lexer::lexChar() noexcept {
         return cpp::fail(makeError("empty char literal"));
     }
 
-    auto maybeError = advanceStringChar("char literal");
-    if (maybeError.has_error()) {
-        return cpp::fail(maybeError.error());
-    }
+    EXPECT(advanceStringChar("char literal"));
 
     if (expect('\'')) {
         return makeToken(TokenType::CharLiteral);
@@ -265,6 +236,17 @@ LexResult Lexer::lexIdentifier() noexcept {
 }
 
 TokenType Lexer::getTokenTypeForIdent(const std::string &lexeme) noexcept {
+    static const std::unordered_map<std::string, TokenType> IDENTIFIER_TYPES = {
+        {"native",      TokenType::Native},
+        {"var",         TokenType::Var},
+        {"fun",         TokenType::Fun},
+        {"return",      TokenType::Return},
+        {"true",        TokenType::True},
+        {"false",       TokenType::False},
+        {"int",         TokenType::Int},
+        {"double",      TokenType::Double},
+    };
+
     auto iter = IDENTIFIER_TYPES.find(lexeme);
     if (iter != IDENTIFIER_TYPES.cend()) {
         return iter->second;
@@ -336,4 +318,13 @@ bool Lexer::isIdentifier(char ch) noexcept {
 
 bool Lexer::isIdentifierStart(char ch) noexcept {
     return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+}
+
+LexError::LexError(std::string msg, SourceLocation location) :
+    msg(std::move(msg)), location(location) {
+}
+
+std::ostream &operator<<(std::ostream &out, const LexError &err) {
+    out << err.location << ": Syntax Error: " << err.msg;
+    return out;
 }

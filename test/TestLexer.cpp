@@ -5,10 +5,7 @@
 namespace es::tests {
     void requireTokenEquals(const cpp::result<Token, LexError> &actual, const es::Token &expected) {
         REQUIRE(actual.has_value());
-        REQUIRE(actual.value().type == expected.type);
-        REQUIRE(actual.value().lexeme == expected.lexeme);
-        REQUIRE(actual.value().location.line == expected.location.line);
-        REQUIRE(actual.value().location.column == expected.location.column);
+        REQUIRE(actual.value() == expected);
     }
 
     SCENARIO("numbers can be lexed", "[lexer]") {

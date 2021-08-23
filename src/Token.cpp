@@ -64,6 +64,14 @@ namespace es {
         line(line), column(column) {
     }
 
+    bool SourceLocation::operator==(const SourceLocation &other) const noexcept {
+        return line == other.line && column == other.column;
+    }
+
+    bool SourceLocation::operator!=(const SourceLocation &other) const noexcept {
+        return line != other.line && column != other.column;
+    }
+
     std::ostream &operator<<(std::ostream &out, const SourceLocation &loc) {
         out << loc.line << ":" << loc.column;
         return out;
@@ -71,6 +79,14 @@ namespace es {
 
     Token::Token(TokenType type, std::string lexeme, SourceLocation location) noexcept :
         type(type), lexeme(std::move(lexeme)), location(location) {
+    }
+
+    bool Token::operator==(const Token &other) const noexcept {
+        return type == other.type && lexeme == other.lexeme && location == other.location;
+    }
+
+    bool Token::operator!=(const Token &other) const noexcept {
+        return type != other.type && lexeme != other.lexeme && location != other.location;
     }
 
     std::ostream &operator<<(std::ostream &out, const Token &token) {

@@ -114,6 +114,9 @@ namespace es {
         SourceLocation() noexcept = default;
         SourceLocation(std::size_t line, std::size_t column) noexcept;
 
+        bool operator==(const SourceLocation &other) const noexcept;
+        bool operator!=(const SourceLocation &other) const noexcept;
+
         friend std::ostream &operator<<(std::ostream &out, const SourceLocation &loc);
 
     public:
@@ -125,6 +128,9 @@ namespace es {
     public:
         Token() noexcept = default;
         Token(TokenType type, std::string lexeme, SourceLocation location) noexcept;
+
+        bool operator==(const Token &other) const noexcept;
+        bool operator!=(const Token &other) const noexcept;
 
         friend std::ostream &operator<<(std::ostream &out, const Token &token);
 

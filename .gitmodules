@@ -1,3 +1,7 @@
 [submodule "extern/result"]
 	path = extern/result
 	url = https://github.com/bitwizeshift/result.git
+[submodule "extern/Catch2"]
+	path = extern/Catch2
+	url = https://github.com/catchorg/Catch2.git
+	branch = v2.x

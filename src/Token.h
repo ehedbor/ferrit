@@ -3,132 +3,134 @@
 #include <ostream>
 #include <string>
 
-enum class TokenType {
-    LeftParen,          ///< '('
-    RightParen,         ///< ')'
-    LeftBrace,          ///< '{'
-    RightBrace,         ///< '}'
-    LeftBracket,        ///< '['
-    RightBracket,       ///< ']'
 
-    //Nullable,           ///< '?'
-    //NullOrElse,         ///< '?:'
-    Comma,              ///< ','
-    Period,             ///< '.'
-    //SafeAccess,         ///< '?.'
-    //RangeTo,            ///< '..'
-    Arrow,              ///< '->'
-    Colon,              ///< ':'
-    Semicolon,          ///< ';'
-    Newline,            ///< '\\n'. Defines a possible parseStatement terminator.
+namespace es {
+    enum class TokenType {
+        LeftParen,          ///< '('
+        RightParen,         ///< ')'
+        LeftBrace,          ///< '{'
+        RightBrace,         ///< '}'
+        LeftBracket,        ///< '['
+        RightBracket,       ///< ']'
 
-    Plus,               ///< '+'
-    Minus,              ///< '-'
-    Times,              ///< '*'
-    Divide,             ///< '/'
-    Modulo,             ///< '%'
+        //Nullable,           ///< '?'
+        //NullOrElse,         ///< '?:'
+        Comma,              ///< ','
+        Period,             ///< '.'
+        //SafeAccess,         ///< '?.'
+        //RangeTo,            ///< '..'
+        Arrow,              ///< '->'
+        Colon,              ///< ':'
+        Semicolon,          ///< ';'
+        Newline,            ///< '\\n'. Defines a possible parseStatement terminator.
 
-    LogicalAnd,         ///< '&&'
-    LogicalOr,          ///< '||'
-    LogicalNot,         ///< '!'
+        Plus,               ///< '+'
+        Minus,              ///< '-'
+        Times,              ///< '*'
+        Divide,             ///< '/'
+        Modulo,             ///< '%'
 
-    BitwiseAnd,         ///< '&'
-    BitwiseOr,          ///< '|'
-    BitwiseXor,         ///< '^'
-    BitwiseNot,         ///< '~'
+        LogicalAnd,         ///< '&&'
+        LogicalOr,          ///< '||'
+        LogicalNot,         ///< '!'
 
-    Assign,             ///< '='
-    //PlusAssign,         ///< '+='
-    //MinusAssign,        ///< '-='
-    //TimesAssign,        ///< '*='
-    //DivideAssign,       ///< '/='
-    //ModuloAssign,       ///< '%='
-    //LogicalAndAssign,   ///< '&&='
-    //LogicalOrAssign,    ///< '||='
-    //BitwiseAndAssign,   ///< '&='
-    //BitwiseOrAssign,    ///< '|='
-    //BitwiseXorAssign,   ///< '^='
+        BitwiseAnd,         ///< '&'
+        BitwiseOr,          ///< '|'
+        BitwiseXor,         ///< '^'
+        BitwiseNot,         ///< '~'
 
-    Equal,              ///< '=='
-    NotEqual,           ///< '!='
-    Greater,            ///< '>'
-    GreaterEqual,       ///< '>='
-    Less,               ///< '<'
-    LessEqual,          ///< '<='
+        Assign,             ///< '='
+        //PlusAssign,         ///< '+='
+        //MinusAssign,        ///< '-='
+        //TimesAssign,        ///< '*='
+        //DivideAssign,       ///< '/='
+        //ModuloAssign,       ///< '%='
+        //LogicalAndAssign,   ///< '&&='
+        //LogicalOrAssign,    ///< '||='
+        //BitwiseAndAssign,   ///< '&='
+        //BitwiseOrAssign,    ///< '|='
+        //BitwiseXorAssign,   ///< '^='
 
-    //As,
-    //Is,
-    //In,
-    //Module,
-    //Using,
-    Native,
-    Var,
-    //Val,
-    //Class,
-    Fun,
-    //Init,
-    //This,
-    //Super,
-    //If,
-    //Else,
-    //For,
-    //While,
-    //Do,
-    Return,
-    //Continue,
-    //Break,
-    True,
-    False,
-    //Null,
-    //DebugPrint,
+        Equal,              ///< '=='
+        NotEqual,           ///< '!='
+        Greater,            ///< '>'
+        GreaterEqual,       ///< '>='
+        Less,               ///< '<'
+        LessEqual,          ///< '<='
 
-    //SByte,
-    //Byte,
-    //Short,
-    //UShort,
-    Int,
-    //UInt,
-    //Long,
-    //ULong,
-    //Float,
-    Double,
-    //Char,
-    //String,
-    //Bool,
+        //As,
+        //Is,
+        //In,
+        //Module,
+        //Using,
+        Native,
+        Var,
+        //Val,
+        //Class,
+        Fun,
+        //Init,
+        //This,
+        //Super,
+        //If,
+        //Else,
+        //For,
+        //While,
+        //Do,
+        Return,
+        //Continue,
+        //Break,
+        True,
+        False,
+        //Null,
+        //DebugPrint,
 
-    Identifier,
-    StringLiteral,
-    CharLiteral,
-    IntegerLiteral,
-    FloatLiteral,
+        //SByte,
+        //Byte,
+        //Short,
+        //UShort,
+        Int,
+        //UInt,
+        //Long,
+        //ULong,
+        //Float,
+        Double,
+        //Char,
+        //String,
+        //Bool,
 
-    EndOfFile,
-};
+        Identifier,
+        StringLiteral,
+        CharLiteral,
+        IntegerLiteral,
+        FloatLiteral,
 
-std::ostream &operator<<(std::ostream &out, TokenType type);
+        EndOfFile,
+        };
 
-struct SourceLocation {
-public:
-    SourceLocation() = default;
-    SourceLocation(std::size_t line, std::size_t column);
+    std::ostream &operator<<(std::ostream &out, TokenType type);
 
-    friend std::ostream &operator<<(std::ostream &out, const SourceLocation &loc);
+    struct SourceLocation {
+    public:
+        SourceLocation() noexcept = default;
+        SourceLocation(std::size_t line, std::size_t column) noexcept;
 
-public:
-    std::size_t line{0};
-    std::size_t column{0};
-};
+        friend std::ostream &operator<<(std::ostream &out, const SourceLocation &loc);
 
-struct Token {
-public:
-    Token() = default;
-    Token(TokenType type, std::string lexeme, SourceLocation location);
+    public:
+        std::size_t line{0};
+        std::size_t column{0};
+    };
 
-    friend std::ostream &operator<<(std::ostream &out, const Token &token);
+    struct Token {
+    public:
+        Token() noexcept = default;
+        Token(TokenType type, std::string lexeme, SourceLocation location) noexcept;
 
-public:
-    TokenType type{};
-    std::string lexeme{};
-    SourceLocation location{};
-};
+        friend std::ostream &operator<<(std::ostream &out, const Token &token);
 
+    public:
+        TokenType type{};
+        std::string lexeme{};
+        SourceLocation location{};
+    };
+}

@@ -19,11 +19,16 @@ if (GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     endif()
 endif()
 
-# Verify that result was installed
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/result/CMakeLists.txt")
-    message(FATAL_ERROR "Submodule 'result' not downloaded! Please update submodules and try again.")
-endif()
-add_subdirectory("extern/result")
+# Verify that the submodules were installed
+function(install_submodule submodule_name submodule_path)
+    if (NOT EXISTS "${PROJECT_SOURCE_DIR}/${submodule_path}/CMakeLists.txt")
+        message(FATAL_ERROR "Submodule '${submodule_name}' not downloaded! Please update submodules and try again.")
+    endif()
+    add_subdirectory(${submodule_path})
+endfunction()
+
+install_submodule(result extern/result)
+install_submodule(Catch2 extern/Catch2)
 
 
 find_package(LLVM 12 REQUIRED CONFIG)
@@ -36,8 +41,6 @@ else()
     add_compile_options(-Wall -Wextra -Werror)
 endif()
 
-add_executable(es src/main.cpp src/Lexer.cpp src/Lexer.h src/Token.cpp src/Token.h src/Expression.cpp src/Expression.h src/Statement.cpp src/Statement.h src/Parser.cpp src/Parser.h src/AstElements.cpp src/AstElements.h src/ResultTry.h src/AstPrinter.cpp src/AstPrinter.h)
-target_include_directories(es SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
-target_compile_definitions(es PRIVATE ${LLVM_DEFINITIONS})
-target_link_libraries(es PRIVATE Result::Result)
-llvm_config(es core orcjit native)
+add_subdirectory(src)
+enable_testing()
+add_subdirectory(test)

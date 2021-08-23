@@ -4,25 +4,26 @@
 #include "Statement.h"
 #include "Expression.h"
 
-class AstPrinter : private StatementVisitor, private ExpressionVisitor {
-public:
-    explicit AstPrinter(std::ostream &out, std::vector<StatementPtr> &ast);
 
-    void print();
+namespace es {
+    class AstPrinter : private StatementVisitor, private ExpressionVisitor {
+    public:
+        explicit AstPrinter(std::ostream &out, std::vector<StatementPtr> &ast) noexcept;
 
-private:
-    void visitNumber(const NumberExpression &expr) override;
-    void visitVariable(const VariableExpression &expr) override;
-    void visitExpr(const ExpressionStatement &stmt) override;
-    void visitBlock(const BlockStatement &stmt) override;
-    void visitFunction(const FunctionStatement &stmt) override;
+        void print() noexcept;
 
-    void printIndent();
+    private:
+        void visitNumber(const NumberExpression &expr) noexcept override;
+        void visitVariable(const VariableExpression &expr) noexcept override;
+        void visitExpr(const ExpressionStatement &stmt) noexcept override;
+        void visitBlock(const BlockStatement &stmt) noexcept override;
+        void visitFunction(const FunctionStatement &stmt) noexcept override;
 
-private:
-    std::ostream &m_out;
-    std::vector<StatementPtr> &m_ast;
-    unsigned int m_depth{0};
-};
+        void printIndent() noexcept;
 
-
+    private:
+        std::ostream &m_out;
+        std::vector<StatementPtr> &m_ast;
+        unsigned int m_depth{0};
+    };
+}

@@ -8,63 +8,65 @@
 #include "Statement.h"
 
 
-struct ParseError;
+namespace es {
+    struct ParseError;
 
-using ParseResult = cpp::result<std::vector<StatementPtr>, std::vector<ParseError>>;
-using StmtResult = cpp::result<StatementPtr, ParseError>;
-using ExprResult = cpp::result<ExpressionPtr, ParseError>;
-using TokenResult = cpp::result<const Token &, ParseError>;
+    using ParseResult = cpp::result<std::vector<StatementPtr>, std::vector<ParseError>>;
+    using StmtResult = cpp::result<StatementPtr, ParseError>;
+    using ExprResult = cpp::result<ExpressionPtr, ParseError>;
+    using TokenResult = cpp::result<const Token &, ParseError>;
 
-class Parser {
-public:
-    explicit Parser(std::vector<Token> tokens);
+    class Parser {
+    public:
+        explicit Parser(std::vector<Token> tokens) noexcept;
 
-    [[nodiscard]] ParseResult parse();
+        [[nodiscard]] ParseResult parse() noexcept;
 
-private:
-    [[nodiscard]] StmtResult parseDeclaration() noexcept;
-    [[nodiscard]] StmtResult parseFunctionDeclaration(const std::vector<Token>& modifiers) noexcept;
-    [[nodiscard]] std::vector<Token> parseModifiers() noexcept;
-    [[nodiscard]] cpp::result<std::vector<Parameter>, ParseError> parseParameters() noexcept;
-    [[nodiscard]] cpp::result<Parameter, ParseError> parseParameter() noexcept;
-    [[nodiscard]] cpp::result<Type, ParseError> parseType() noexcept;
+    private:
+        [[nodiscard]] StmtResult parseDeclaration() noexcept;
+        [[nodiscard]] StmtResult parseFunctionDeclaration(const std::vector<Token>& modifiers) noexcept;
+        [[nodiscard]] std::vector<Token> parseModifiers() noexcept;
+        [[nodiscard]] cpp::result<std::vector<Parameter>, ParseError> parseParameters() noexcept;
+        [[nodiscard]] cpp::result<Parameter, ParseError> parseParameter() noexcept;
+        [[nodiscard]] cpp::result<Type, ParseError> parseType() noexcept;
 
-    [[nodiscard]] StmtResult parseStatement() noexcept;
-    [[nodiscard]] StmtResult parseBlock() noexcept;
+        [[nodiscard]] StmtResult parseStatement() noexcept;
+        [[nodiscard]] StmtResult parseBlock() noexcept;
 
-    [[nodiscard]] ExprResult parseExpression() noexcept;
+        [[nodiscard]] ExprResult parseExpression() noexcept;
 
-    [[nodiscard]] ExprResult parsePrimary() noexcept;
-    [[nodiscard]] ExprResult parseVariable() noexcept;
-    [[nodiscard]] ExprResult parseNumber() noexcept;
+        [[nodiscard]] ExprResult parsePrimary() noexcept;
+        [[nodiscard]] ExprResult parseVariable() noexcept;
+        [[nodiscard]] ExprResult parseNumber() noexcept;
 
-    void synchronize() noexcept;
+        void synchronize() noexcept;
 
-    bool skipTerminators(bool softEndingsOnly) noexcept;
+        bool skipTerminators(bool softEndingsOnly) noexcept;
 
-    [[nodiscard]] TokenResult consume(TokenType expected, const std::string &errMsg) noexcept;
-    [[nodiscard]] bool match(TokenType expected) noexcept;
-    [[nodiscard]] bool check(TokenType expected) noexcept;
+        [[nodiscard]] TokenResult consume(TokenType expected, const std::string &errMsg) noexcept;
+        [[nodiscard]] bool match(TokenType expected) noexcept;
+        [[nodiscard]] bool check(TokenType expected) noexcept;
 
-    const Token &advance() noexcept;
-    [[nodiscard]] const Token &current() const noexcept;
-    [[nodiscard]] const Token &previous() const noexcept;
-    [[nodiscard]] bool isAtEnd() const noexcept;
+        const Token &advance() noexcept;
+        [[nodiscard]] const Token &current() const noexcept;
+        [[nodiscard]] const Token &previous() const noexcept;
+        [[nodiscard]] bool isAtEnd() const noexcept;
 
 
-private:
-    std::vector<Token> m_tokens;
-    std::size_t m_current{0};
-};
+    private:
+        std::vector<Token> m_tokens;
+        std::size_t m_current{0};
+    };
 
-struct ParseError {
-public:
-    ParseError() = default;
-    ParseError(Token cause, std::string msg);
+    struct ParseError {
+    public:
+        ParseError() noexcept = default;
+        ParseError(Token cause, std::string msg) noexcept;
 
-    friend std::ostream &operator<<(std::ostream &out, const ParseError& error);
+        friend std::ostream &operator<<(std::ostream &out, const ParseError& error);
 
-public:
-    Token cause{};
-    std::string msg{};
-};
+    public:
+        Token cause{};
+        std::string msg{};
+    };
+}

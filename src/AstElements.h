@@ -3,24 +3,26 @@
 #include "Token.h"
 
 
-class Type {
-public:
-    explicit Type(Token typeName);
+namespace es {
+    class Type {
+    public:
+        explicit Type(Token typeName) noexcept;
 
-    [[nodiscard]] const Token &name() const;
+        [[nodiscard]] const Token &name() const noexcept;
 
-private:
-    Token m_name;
-};
+    private:
+        Token m_name;
+    };
 
-class Parameter {
-public:
-    Parameter(Token name, Type type);
+    class Parameter {
+    public:
+        Parameter(Token name, Type type) noexcept;
 
-    [[nodiscard]] const Token &name() const;
-    [[nodiscard]] const Type &type() const;
+        [[nodiscard]] const Token &name() const noexcept;
+        [[nodiscard]] const Type &type() const noexcept;
 
-private:
-    Token m_name;
-    Type m_type;
-};
+    private:
+        Token m_name;
+        Type m_type;
+    };
+}

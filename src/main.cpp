@@ -4,16 +4,16 @@
 #include "Parser.h"
 #include "AstPrinter.h"
 
-std::optional<std::vector<Token>> lexLine(const std::string &line) {
-    std::vector<Token> result;
+std::optional<std::vector<es::Token>> lexLine(const std::string &line) {
+    std::vector<es::Token> result;
     bool hadError = false;
-    Lexer lexer{line};
+    es::Lexer lexer{line};
 
     while (true) {
         auto maybeToken = lexer.lex();
         if (maybeToken) {
             std::cout << *maybeToken << std::endl;
-            bool shouldBreak = (maybeToken->type == TokenType::EndOfFile);
+            bool shouldBreak = (maybeToken->type == es::TokenType::EndOfFile);
             if (!hadError) result.push_back(std::move(*maybeToken));
             if (shouldBreak) break;
         } else {
@@ -25,8 +25,8 @@ std::optional<std::vector<Token>> lexLine(const std::string &line) {
     return hadError ? std::nullopt : std::optional(result);
 }
 
-void parseLine(std::vector<Token> tokens) {
-    Parser parser{std::move(tokens)};
+void parseLine(std::vector<es::Token> tokens) {
+    es::Parser parser{std::move(tokens)};
 
     auto result = parser.parse();
     if (!result) {
@@ -37,7 +37,7 @@ void parseLine(std::vector<Token> tokens) {
         return;
     }
 
-    AstPrinter printer{std::cout, *result};
+    es::AstPrinter printer{std::cout, *result};
     printer.print();
 }
 

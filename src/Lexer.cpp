@@ -52,8 +52,8 @@ namespace es {
         case '~': return makeToken(TokenType::BitwiseNot);
         case '!': return makeToken(expect('=') ? TokenType::NotEqual : TokenType::LogicalNot);
         case '=': return makeToken(expect('=') ? TokenType::Equal : TokenType::Assign);
-        case '>': return makeToken(expect('>') ? TokenType::GreaterEqual : TokenType::Greater);
-        case '<': return makeToken(expect('<') ? TokenType::LessEqual : TokenType::Less);
+        case '>': return makeToken(expect('=') ? TokenType::GreaterEqual : TokenType::Greater);
+        case '<': return makeToken(expect('=') ? TokenType::LessEqual : TokenType::Less);
         default: {
             std::stringstream msg;
             msg << "unexpected character '" << *ch << "'";
@@ -69,12 +69,12 @@ namespace es {
             auto currentChar = peek();
             if (!currentChar) return {};
 
-            bool isWindowsNewline = (*currentChar == '\r' && peekNext() && *peekNext() == '\n');
-            if (isWindowsNewline || *currentChar == '\n') {
+            int newlineType = getCurrentNewlineType();
+            if (newlineType > 0) {
                 m_start = m_current;
                 // consume the newline characters
                 advance();
-                if (isWindowsNewline) {
+                if (newlineType == 2) {
                     advance();
                 }
                 auto newlineToken = makeToken(TokenType::Newline);
@@ -108,7 +108,8 @@ namespace es {
         advance();
 
         // parse comment until end of line
-        while (peek() && *peek() != '\n') {
+
+        while (getCurrentNewlineType() <= 0) {
             advance();
         }
     }
@@ -186,8 +187,9 @@ namespace es {
                 msg << "unterminated " << literalType;
                 return cpp::fail(makeError(msg.str()));
             } else if (*escapeSeq == '0' || *escapeSeq == 't' || *escapeSeq == 'n' || *escapeSeq == 'r' ||
-            *escapeSeq == '\'' || *escapeSeq == '"' || *escapeSeq == '\\') {
+                *escapeSeq == '\'' || *escapeSeq == '"' || *escapeSeq == '\\') {
                 advance();
+                return {};
             } else {
                 std::stringstream msg;
                 msg << "illegal escape sequence '\\" << *escapeSeq << "' in " << literalType;
@@ -215,6 +217,11 @@ namespace es {
             while (peek() && isDigit(*peek())) {
                 advance();
             }
+        }
+
+        // prevent numbers from being immediately followed by an identifier
+        if (peek() && isIdentifierStart(*peek())) {
+            return cpp::fail(makeError("number literals followed by identifiers must be separated by whitespace"));
         }
 
         return makeToken(numberType);
@@ -246,7 +253,7 @@ namespace es {
             {"false",       TokenType::False},
             {"int",         TokenType::Int},
             {"double",      TokenType::Double},
-            };
+        };
 
         auto iter = IDENTIFIER_TYPES.find(lexeme);
         if (iter != IDENTIFIER_TYPES.cend()) {
@@ -309,6 +316,15 @@ namespace es {
         return m_current >= m_code.length();
     }
 
+    int Lexer::getCurrentNewlineType() const noexcept {
+        if (peek() && *peek() == '\n') {
+            return 1;
+        } else if (peek() && *peek() == '\r' && peekNext() && *peekNext() == '\n') {
+            return 2;
+        }
+        return 0;
+    }
+
     bool Lexer::isDigit(char ch) noexcept {
         return ch >= '0' && ch <= '9';
     }
@@ -323,6 +339,14 @@ namespace es {
 
     LexError::LexError(std::string msg, SourceLocation location) noexcept :
         msg(std::move(msg)), location(location) {
+    }
+
+    bool LexError::operator==(const LexError &other) const {
+        return msg == other.msg && location == other.location;
+    }
+
+    bool LexError::operator!=(const LexError &other) const {
+        return msg != other.msg && location != other.location;
     }
 
     std::ostream &operator<<(std::ostream &out, const LexError &err) {

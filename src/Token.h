@@ -105,7 +105,7 @@ namespace es {
         FloatLiteral,
 
         EndOfFile,
-        };
+    };
 
     std::ostream &operator<<(std::ostream &out, TokenType type);
 

@@ -42,6 +42,7 @@ namespace es {
 
         [[nodiscard]] bool isAtEnd() const noexcept;
 
+        [[nodiscard]] int getCurrentNewlineType() const noexcept;
         [[nodiscard]] static bool isDigit(char ch) noexcept;
         [[nodiscard]] static bool isIdentifier(char ch) noexcept;
         [[nodiscard]] static bool isIdentifierStart(char ch) noexcept;
@@ -57,6 +58,9 @@ namespace es {
     public:
         LexError() noexcept = default;
         LexError(std::string msg, SourceLocation location) noexcept;
+
+        bool operator==(const LexError &other) const;
+        bool operator!=(const LexError &other) const;
 
         friend std::ostream &operator<<(std::ostream &out, const LexError &err);
 

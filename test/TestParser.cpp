@@ -14,28 +14,33 @@ namespace es::tests {
         }
 
     public:
-        void visitNumber(const NumberExpression &expr) noexcept override {
+        VisitResult visitNumber(const NumberExpression &expr) noexcept override {
             m_tokens.push_back(expr.value());
+            return {};
         }
 
-        void visitVariable(const VariableExpression &expr) noexcept override {
+        VisitResult visitVariable(const VariableExpression &expr) noexcept override {
             m_tokens.push_back(expr.name());
-        }
+            return {};
+       }
 
-        void visitExpr(const ExpressionStatement &stmt) noexcept override {
+        VisitResult visitExpr(const ExpressionStatement &stmt) noexcept override {
             stmt.expr().accept(*this);
+            return {};
         }
 
-        void visitBlock(const BlockStatement &stmt) noexcept override {
+        VisitResult visitBlock(const BlockStatement &stmt) noexcept override {
             m_tokens.emplace_back(TokenType::LeftBrace, "{", SourceLocation());
             for (const auto &statement : stmt.body()) {
                 statement->accept(*this);
                 m_tokens.emplace_back(TokenType::Semicolon, ";", SourceLocation());
             }
             m_tokens.emplace_back(TokenType::RightBrace, "}", SourceLocation());
+
+            return {};
         }
 
-        void visitFunction(const FunctionStatement &stmt) noexcept override {
+        VisitResult visitFunction(const FunctionStatement &stmt) noexcept override {
             for (const auto &modifier : stmt.modifiers()) {
                 m_tokens.push_back(modifier);
             }
@@ -59,6 +64,8 @@ namespace es::tests {
                 m_tokens.emplace_back(TokenType::Assign, "=", SourceLocation());
             }
             stmt.body().accept(*this);
+
+            return {};
         }
 
     private:

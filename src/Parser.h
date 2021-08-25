@@ -2,14 +2,16 @@
 
 #include <optional>
 #include <vector>
+
 #include <result.hpp>
-#include "Token.h"
+
+#include "Error.h"
 #include "Expression.h"
 #include "Statement.h"
-
+#include "Token.h"
 
 namespace es {
-    struct ParseError;
+    class ParseError;
 
     using ParseResult = cpp::result<std::vector<StatementPtr>, std::vector<ParseError>>;
     using StmtResult = cpp::result<StatementPtr, ParseError>;
@@ -58,15 +60,17 @@ namespace es {
         std::size_t m_current{0};
     };
 
-    struct ParseError {
+    class ParseError : public Error {
     public:
         ParseError() noexcept = default;
         ParseError(Token cause, std::string msg) noexcept;
 
-        friend std::ostream &operator<<(std::ostream &out, const ParseError& error);
+        [[nodiscard]] const Token &cause() const noexcept;
 
-    public:
-        Token cause{};
-        std::string msg{};
+    protected:
+        void printTo(std::ostream &out) const override;
+
+    private:
+        Token m_cause{};
     };
 }

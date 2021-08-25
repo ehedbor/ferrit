@@ -11,8 +11,8 @@ namespace es {
         m_expr(std::move(expr)) {
     }
 
-    void ExpressionStatement::accept(StatementVisitor &visitor) const {
-        visitor.visitExpr(*this);
+    VisitResult ExpressionStatement::accept(StatementVisitor &visitor) const {
+        return visitor.visitExprStmt(*this);
     }
 
     const Expression &ExpressionStatement::expr() const noexcept {
@@ -36,8 +36,8 @@ namespace es {
         m_body(std::move(body)) {
     }
 
-    void BlockStatement::accept(StatementVisitor &visitor) const {
-        visitor.visitBlock(*this);
+    VisitResult BlockStatement::accept(StatementVisitor &visitor) const {
+        return visitor.visitBlock(*this);
     }
 
     const std::vector<StatementPtr> &BlockStatement::body() const noexcept {
@@ -64,8 +64,8 @@ namespace es {
         m_params(std::move(params)), m_returnType(std::move(returnType)), m_body(std::move(body)) {
     }
 
-    void FunctionStatement::accept(StatementVisitor &visitor) const {
-        visitor.visitFunction(*this);
+    VisitResult FunctionStatement::accept(StatementVisitor &visitor) const {
+        return visitor.visitFunction(*this);
     }
 
     const std::vector<Token> &FunctionStatement::modifiers() const noexcept {

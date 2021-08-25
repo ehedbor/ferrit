@@ -2,10 +2,11 @@
 
 #include <memory>
 #include <vector>
-#include "Token.h"
-#include "Expression.h"
-#include "AstElements.h"
 
+#include "AstElements.h"
+#include "Expression.h"
+#include "Token.h"
+#include "Visitor.h"
 
 namespace es {
     class StatementVisitor;
@@ -16,7 +17,7 @@ namespace es {
     public:
         virtual ~Statement() noexcept = 0;
 
-        virtual void accept(StatementVisitor &visitor) const = 0;
+        virtual VisitResult accept(StatementVisitor &visitor) const = 0;
 
         virtual bool operator==(const Statement &other) const noexcept = 0;
         virtual bool operator!=(const Statement &other) const noexcept = 0;
@@ -26,7 +27,7 @@ namespace es {
     public:
         explicit ExpressionStatement(ExpressionPtr expr) noexcept;
 
-        void accept(StatementVisitor &visitor) const override;
+        VisitResult accept(StatementVisitor &visitor) const override;
 
         [[nodiscard]] const Expression &expr() const noexcept;
 
@@ -41,7 +42,7 @@ namespace es {
     public:
         explicit BlockStatement(std::vector<StatementPtr> body) noexcept;
 
-        void accept(StatementVisitor &visitor) const override;
+        VisitResult accept(StatementVisitor &visitor) const override;
 
         [[nodiscard]] const std::vector<StatementPtr> &body() const noexcept;
 
@@ -58,7 +59,7 @@ namespace es {
             std::vector<Token> modifiers, Token keyword, Token name,
             std::vector<Parameter> params, Type returnType, StatementPtr body);
 
-        void accept(StatementVisitor &visitor) const override;
+        VisitResult accept(StatementVisitor &visitor) const override;
 
         [[nodiscard]] const std::vector<Token> &modifiers() const noexcept;
         [[nodiscard]] const Token &keyword() const noexcept;
@@ -83,8 +84,8 @@ namespace es {
     public:
         virtual ~StatementVisitor() noexcept = 0;
 
-        virtual void visitExpr(const ExpressionStatement &stmt) = 0;
-        virtual void visitBlock(const BlockStatement &stmt) = 0;
-        virtual void visitFunction(const FunctionStatement &stmt) = 0;
+        virtual VisitResult visitExprStmt(const ExpressionStatement &stmt) = 0;
+        virtual VisitResult visitBlock(const BlockStatement &stmt) = 0;
+        virtual VisitResult visitFunction(const FunctionStatement &stmt) = 0;
     };
 }

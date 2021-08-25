@@ -1,8 +1,8 @@
 #pragma once
 
-#include <memory>
+#include <utility>
 #include "Token.h"
-
+#include "Visitor.h"
 
 namespace es {
     class ExpressionVisitor;
@@ -13,7 +13,7 @@ namespace es {
     public:
         virtual ~Expression() noexcept = 0;
 
-        virtual void accept(ExpressionVisitor &visitor) const = 0;
+        virtual VisitResult accept(ExpressionVisitor &visitor) const = 0;
 
         virtual bool operator==(const Expression &other) const noexcept = 0;
         virtual bool operator!=(const Expression &other) const noexcept = 0;
@@ -23,7 +23,7 @@ namespace es {
     public:
         NumberExpression(Token value, bool isIntLiteral) noexcept;
 
-        void accept(ExpressionVisitor &visitor) const override;
+        VisitResult accept(ExpressionVisitor &visitor) const override;
 
         bool operator==(const Expression &other) const noexcept override;
         bool operator!=(const Expression &other) const noexcept override;
@@ -40,7 +40,7 @@ namespace es {
     public:
         explicit VariableExpression(Token name) noexcept;
 
-        void accept(ExpressionVisitor &visitor) const override;
+        VisitResult accept(ExpressionVisitor &visitor) const override;
 
         bool operator==(const Expression &other) const noexcept override;
         bool operator!=(const Expression &other) const noexcept override;
@@ -55,7 +55,7 @@ namespace es {
     public:
         virtual ~ExpressionVisitor() noexcept = 0;
 
-        virtual void visitNumber(const NumberExpression &expr) = 0;
-        virtual void visitVariable(const VariableExpression &expr) = 0;
+        virtual VisitResult visitNumber(const NumberExpression &expr) = 0;
+        virtual VisitResult visitVariable(const VariableExpression &expr) = 0;
     };
 }

@@ -12,15 +12,36 @@ namespace es {
         }
     }
 
-    void AstPrinter::visitExpr(const ExpressionStatement &stmt) noexcept {
+    VisitResult AstPrinter::visitNumber(const NumberExpression &expr) noexcept {
+        printIndent();
+        if (expr.isIntLiteral()) {
+            m_out << "IntegerLiteral: ";
+        } else {
+            m_out << "FloatLiteral: ";
+        }
+        m_out << expr.value() << "\n";
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitVariable(const VariableExpression &expr) noexcept {
+        printIndent();
+        m_out << "Variable: " << expr.name() << "\n";
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitExprStmt(const ExpressionStatement &stmt) noexcept {
         printIndent();
         m_out << "ExpressionStatement:\n";
         m_depth++;
         stmt.expr().accept(*this);
         m_depth--;
+
+        return {};
     }
 
-    void AstPrinter::visitBlock(const BlockStatement &stmt) noexcept {
+    VisitResult AstPrinter::visitBlock(const BlockStatement &stmt) noexcept {
         printIndent();
         m_out << "Block:\n";
 
@@ -29,9 +50,11 @@ namespace es {
             line->accept(*this);
         }
         m_depth--;
+
+        return {};
     }
 
-    void AstPrinter::visitFunction(const FunctionStatement &stmt) noexcept {
+    VisitResult AstPrinter::visitFunction(const FunctionStatement &stmt) noexcept {
         printIndent();
         m_out << "Function:\n";
 
@@ -68,21 +91,8 @@ namespace es {
         m_depth--;
 
         m_depth--;
-    }
 
-    void AstPrinter::visitNumber(const NumberExpression &expr) noexcept {
-        printIndent();
-        if (expr.isIntLiteral()) {
-            m_out << "IntegerLiteral: ";
-        } else {
-            m_out << "FloatLiteral: ";
-        }
-        m_out << expr.value() << "\n";
-    }
-
-    void AstPrinter::visitVariable(const VariableExpression &expr) noexcept {
-        printIndent();
-        m_out << "Variable: " << expr.name() << "\n";
+        return {};
     }
 
     void AstPrinter::printIndent() noexcept {

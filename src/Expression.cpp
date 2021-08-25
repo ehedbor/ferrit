@@ -9,8 +9,8 @@ namespace es {
         m_value(std::move(value)), m_isIntLiteral(isIntLiteral) {
     }
 
-    void NumberExpression::accept(ExpressionVisitor &visitor) const {
-        visitor.visitNumber(*this);
+    VisitResult NumberExpression::accept(ExpressionVisitor &visitor) const {
+        return visitor.visitNumber(*this);
     }
 
     const Token &NumberExpression::value() const noexcept {
@@ -38,8 +38,8 @@ namespace es {
         m_name(std::move(name)) {
     }
 
-    void VariableExpression::accept(ExpressionVisitor &visitor) const {
-        visitor.visitVariable(*this);
+    VisitResult VariableExpression::accept(ExpressionVisitor &visitor) const {
+        return visitor.visitVariable(*this);
     }
 
     const Token &VariableExpression::name() const noexcept {

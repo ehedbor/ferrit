@@ -233,12 +233,15 @@ namespace es {
     }
 
     ParseError::ParseError(Token cause, std::string msg) noexcept :
-        cause(std::move(cause)), msg(std::move(msg)) {
+        Error(std::move(msg)), m_cause(std::move(cause)) {
     }
 
-    std::ostream &operator<<(std::ostream &out, const ParseError& error) {
-        out << "Parse Error: " << error.msg << "\n"
-        << "    at " << error.cause;
-        return out;
+    const Token &ParseError::cause() const noexcept {
+        return m_cause;
+    }
+
+    void ParseError::printTo(std::ostream &out) const {
+        out << "Parse Error: " << msg() << "\n";
+        out << "    at " << cause();
     }
 }

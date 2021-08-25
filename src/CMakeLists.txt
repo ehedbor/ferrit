@@ -1,4 +1,4 @@
-add_library(escompiler Lexer.cpp Lexer.h Token.cpp Token.h Expression.cpp Expression.h Statement.cpp Statement.h Parser.cpp Parser.h AstElements.cpp AstElements.h ResultTry.h AstPrinter.cpp AstPrinter.h)
+add_library(escompiler Lexer.cpp Lexer.h Token.cpp Token.h Expression.cpp Expression.h Statement.cpp Statement.h Parser.cpp Parser.h AstElements.cpp AstElements.h ResultTry.h AstPrinter.cpp AstPrinter.h Visitor.h Error.h Error.cpp)
 target_include_directories(escompiler SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS})
 target_compile_definitions(escompiler PRIVATE ${LLVM_DEFINITIONS})
 target_link_libraries(escompiler PUBLIC Result::Result)

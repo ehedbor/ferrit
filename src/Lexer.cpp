@@ -338,19 +338,22 @@ namespace es {
     }
 
     LexError::LexError(std::string msg, SourceLocation location) noexcept :
-        msg(std::move(msg)), location(location) {
+        Error(std::move(msg)), m_location(location) {
     }
 
-    bool LexError::operator==(const LexError &other) const {
-        return msg == other.msg && location == other.location;
+    SourceLocation LexError::location() const noexcept {
+        return m_location;
     }
 
-    bool LexError::operator!=(const LexError &other) const {
-        return msg != other.msg && location != other.location;
+    bool LexError::operator==(const LexError &other) const noexcept {
+        return msg() == other.msg() && location() == other.location();
     }
 
-    std::ostream &operator<<(std::ostream &out, const LexError &err) {
-        out << err.location << ": Syntax Error: " << err.msg;
-        return out;
+    bool LexError::operator!=(const LexError &other) const noexcept {
+        return !(*this == other);
+    }
+
+    void LexError::printTo(std::ostream &out) const {
+        out << location() << ": Syntax Error: " << msg();
     }
 }

@@ -6,18 +6,18 @@
 
 
 namespace es {
-    class AstPrinter : private StatementVisitor, private ExpressionVisitor {
+    class AstPrinter : private ExpressionVisitor, private StatementVisitor {
     public:
         explicit AstPrinter(std::ostream &out, std::vector<StatementPtr> &ast) noexcept;
 
         void print() noexcept;
 
     private:
-        void visitNumber(const NumberExpression &expr) noexcept override;
-        void visitVariable(const VariableExpression &expr) noexcept override;
-        void visitExpr(const ExpressionStatement &stmt) noexcept override;
-        void visitBlock(const BlockStatement &stmt) noexcept override;
-        void visitFunction(const FunctionStatement &stmt) noexcept override;
+        VisitResult visitNumber(const NumberExpression &expr) noexcept override;
+        VisitResult visitVariable(const VariableExpression &expr) noexcept override;
+        VisitResult visitExprStmt(const ExpressionStatement &stmt) noexcept override;
+        VisitResult visitBlock(const BlockStatement &stmt) noexcept override;
+        VisitResult visitFunction(const FunctionStatement &stmt) noexcept override;
 
         void printIndent() noexcept;
 

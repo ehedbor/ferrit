@@ -6,10 +6,11 @@
 #include <vector>
 #include <result.hpp>
 #include "Token.h"
+#include "Error.h"
 
 
 namespace es {
-    struct LexError;
+    class LexError;
     using LexResult = cpp::result<Token, LexError>;
 
     class Lexer {
@@ -54,18 +55,20 @@ namespace es {
         SourceLocation m_location{1, 1};
     };
 
-    struct LexError {
+    class LexError : public Error {
     public:
         LexError() noexcept = default;
         LexError(std::string msg, SourceLocation location) noexcept;
 
-        bool operator==(const LexError &other) const;
-        bool operator!=(const LexError &other) const;
+        [[nodiscard]] SourceLocation location() const noexcept;
 
-        friend std::ostream &operator<<(std::ostream &out, const LexError &err);
+        bool operator==(const LexError &other) const noexcept;
+        bool operator!=(const LexError &other) const noexcept;
 
-    public:
-        std::string msg{};
-        SourceLocation location{};
+    protected:
+        void printTo(std::ostream &out) const override;
+
+    private:
+        SourceLocation m_location{};
     };
 }

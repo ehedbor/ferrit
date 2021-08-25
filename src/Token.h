@@ -120,8 +120,8 @@ namespace es {
         friend std::ostream &operator<<(std::ostream &out, const SourceLocation &loc);
 
     public:
-        std::size_t line{0};
-        std::size_t column{0};
+        std::size_t line{1};
+        std::size_t column{1};
     };
 
     struct Token {

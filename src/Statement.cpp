@@ -6,6 +6,7 @@
 namespace es {
     Statement::~Statement() noexcept = default;
 
+
     ExpressionStatement::ExpressionStatement(ExpressionPtr expr) noexcept :
         m_expr(std::move(expr)) {
     }
@@ -18,6 +19,19 @@ namespace es {
         return *m_expr;
     }
 
+    bool ExpressionStatement::operator==(const Statement &other) const noexcept {
+        if (this == &other) return true;
+        if (auto exprStmt = dynamic_cast<const ExpressionStatement *>(&other)) {
+            return expr() == exprStmt->expr();
+        }
+        return false;
+    }
+
+    bool ExpressionStatement::operator!=(const Statement &other) const noexcept {
+        return !(*this == other);
+    }
+
+
     BlockStatement::BlockStatement(std::vector<StatementPtr> body) noexcept :
         m_body(std::move(body)) {
     }
@@ -29,6 +43,19 @@ namespace es {
     const std::vector<StatementPtr> &BlockStatement::body() const noexcept {
         return m_body;
     }
+
+    bool BlockStatement::operator==(const Statement &other) const noexcept {
+        if (this == &other) return true;
+        if (auto blockStmt = dynamic_cast<const BlockStatement *>(&other)) {
+            return body() == blockStmt->body();
+        }
+        return false;
+    }
+
+    bool BlockStatement::operator!=(const Statement &other) const noexcept {
+        return !(*this == other);
+    }
+
 
     FunctionStatement::FunctionStatement(
         std::vector<Token> modifiers, Token keyword, Token name,
@@ -64,6 +91,21 @@ namespace es {
     const Statement &FunctionStatement::body() const noexcept {
         return *m_body;
     }
+
+    bool FunctionStatement::operator==(const Statement &other) const noexcept {
+        if (this == &other) return true;
+        if (auto funcStmt = dynamic_cast<const FunctionStatement *>(&other)) {
+            return modifiers() == funcStmt->modifiers() && keyword() == funcStmt->keyword() &&
+                name() == funcStmt->name() && params() == funcStmt->params() &&
+                returnType() == funcStmt->returnType() && body() == funcStmt->body();
+        }
+        return false;
+    }
+
+    bool FunctionStatement::operator!=(const Statement &other) const noexcept {
+        return !(*this == other);
+    }
+
 
     StatementVisitor::~StatementVisitor() noexcept = default;
 }

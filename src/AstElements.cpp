@@ -10,6 +10,16 @@ namespace es {
         return m_name;
     }
 
+    bool Type::operator==(const Type &other) const noexcept {
+        if (this == &other) return true;
+        return name() == other.name();
+    }
+
+    bool Type::operator!=(const Type &other) const noexcept {
+        return !(*this == other);
+    }
+
+
     Parameter::Parameter(Token name, Type type) noexcept :
         m_name(std::move(name)), m_type(std::move(type)) {
     }
@@ -20,5 +30,14 @@ namespace es {
 
     const Type &Parameter::type() const noexcept {
         return m_type;
+    }
+
+    bool Parameter::operator==(const Parameter &other) const noexcept {
+        if (this == &other) return true;
+        return name() == other.name() && type() == other.type();
+    }
+
+    bool Parameter::operator!=(const Parameter &other) const noexcept {
+        return !(*this == other);
     }
 }

@@ -65,11 +65,12 @@ namespace es {
     }
 
     bool SourceLocation::operator==(const SourceLocation &other) const noexcept {
+        if (this == &other) return true;
         return line == other.line && column == other.column;
     }
 
     bool SourceLocation::operator!=(const SourceLocation &other) const noexcept {
-        return line != other.line && column != other.column;
+        return !(*this == other);
     }
 
     std::ostream &operator<<(std::ostream &out, const SourceLocation &loc) {
@@ -82,11 +83,12 @@ namespace es {
     }
 
     bool Token::operator==(const Token &other) const noexcept {
+        if (this == &other) return true;
         return type == other.type && lexeme == other.lexeme && location == other.location;
     }
 
     bool Token::operator!=(const Token &other) const noexcept {
-        return type != other.type && lexeme != other.lexeme && location != other.location;
+        return !(*this == other);
     }
 
     std::ostream &operator<<(std::ostream &out, const Token &token) {

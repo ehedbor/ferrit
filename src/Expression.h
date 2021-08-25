@@ -14,6 +14,9 @@ namespace es {
         virtual ~Expression() noexcept = 0;
 
         virtual void accept(ExpressionVisitor &visitor) const = 0;
+
+        virtual bool operator==(const Expression &other) const noexcept = 0;
+        virtual bool operator!=(const Expression &other) const noexcept = 0;
     };
 
     class NumberExpression : public Expression {
@@ -21,6 +24,9 @@ namespace es {
         NumberExpression(Token value, bool isIntLiteral) noexcept;
 
         void accept(ExpressionVisitor &visitor) const override;
+
+        bool operator==(const NumberExpression &other) const noexcept;
+        bool operator!=(const NumberExpression &other) const noexcept;
 
         [[nodiscard]] const Token &value() const noexcept;
         [[nodiscard]] bool isIntLiteral() const noexcept;
@@ -35,6 +41,9 @@ namespace es {
         explicit VariableExpression(Token name) noexcept;
 
         void accept(ExpressionVisitor &visitor) const override;
+
+        bool operator==(const VariableExpression &other) const noexcept;
+        bool operator!=(const VariableExpression &other) const noexcept;
 
         [[nodiscard]] const Token &name() const noexcept;
 

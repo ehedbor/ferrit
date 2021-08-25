@@ -10,6 +10,9 @@ namespace es {
 
         [[nodiscard]] const Token &name() const noexcept;
 
+        bool operator==(const Type &other) const noexcept;
+        bool operator!=(const Type &other) const noexcept;
+
     private:
         Token m_name;
     };
@@ -20,6 +23,9 @@ namespace es {
 
         [[nodiscard]] const Token &name() const noexcept;
         [[nodiscard]] const Type &type() const noexcept;
+
+        bool operator==(const Parameter &other) const noexcept;
+        bool operator!=(const Parameter &other) const noexcept;
 
     private:
         Token m_name;

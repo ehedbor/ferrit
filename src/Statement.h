@@ -17,6 +17,9 @@ namespace es {
         virtual ~Statement() noexcept = 0;
 
         virtual void accept(StatementVisitor &visitor) const = 0;
+
+        virtual bool operator==(const Statement &other) const noexcept = 0;
+        virtual bool operator!=(const Statement &other) const noexcept = 0;
     };
 
     class ExpressionStatement : public Statement {
@@ -26,6 +29,9 @@ namespace es {
         void accept(StatementVisitor &visitor) const override;
 
         [[nodiscard]] const Expression &expr() const noexcept;
+
+        bool operator==(const Statement &other) const noexcept override;
+        bool operator!=(const Statement &other) const noexcept override;
 
     private:
         ExpressionPtr m_expr;
@@ -38,6 +44,9 @@ namespace es {
         void accept(StatementVisitor &visitor) const override;
 
         [[nodiscard]] const std::vector<StatementPtr> &body() const noexcept;
+
+        bool operator==(const Statement &other) const noexcept override;
+        bool operator!=(const Statement &other) const noexcept override;
 
     private:
         std::vector<StatementPtr> m_body;
@@ -57,6 +66,9 @@ namespace es {
         [[nodiscard]] const std::vector<Parameter> &params() const noexcept;
         [[nodiscard]] const Type &returnType() const noexcept;
         [[nodiscard]] const Statement &body() const noexcept;
+
+        bool operator==(const Statement &other) const noexcept override;
+        bool operator!=(const Statement &other) const noexcept override;
 
     private:
         std::vector<Token> m_modifiers;

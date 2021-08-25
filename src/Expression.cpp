@@ -21,12 +21,16 @@ namespace es {
         return m_isIntLiteral;
     }
 
-    bool NumberExpression::operator==(const NumberExpression &other) const noexcept {
-        return value() == other.value() && isIntLiteral() == other.isIntLiteral();
+    bool NumberExpression::operator==(const Expression &other) const noexcept {
+        if (this == &other) return true;
+        if (auto *numExpr = dynamic_cast<const NumberExpression *>(&other)) {
+            return value() == numExpr->value() && isIntLiteral() == numExpr->isIntLiteral();
+        }
+        return false;
     }
 
-    bool NumberExpression::operator!=(const NumberExpression &other) const noexcept {
-        return value() != other.value() || isIntLiteral() != other.isIntLiteral();
+    bool NumberExpression::operator!=(const Expression &other) const noexcept {
+        return !(*this == other);
     }
 
 
@@ -38,16 +42,20 @@ namespace es {
         visitor.visitVariable(*this);
     }
 
-    bool VariableExpression::operator==(const VariableExpression &other) const noexcept {
-        return name() == other.name();
-    }
-
-    bool VariableExpression::operator!=(const VariableExpression &other) const noexcept {
-        return name() != other.name();
-    }
-
     const Token &VariableExpression::name() const noexcept {
         return m_name;
+    }
+
+    bool VariableExpression::operator==(const Expression &other) const noexcept {
+        if (this == &other) return true;
+        if (auto *varExpr = dynamic_cast<const VariableExpression *>(&other)) {
+            return name() == varExpr->name();
+        }
+        return false;
+    }
+
+    bool VariableExpression::operator!=(const Expression &other) const noexcept {
+        return !(*this == other);
     }
 
 

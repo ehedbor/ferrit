@@ -25,8 +25,8 @@ namespace es {
 
         void accept(ExpressionVisitor &visitor) const override;
 
-        bool operator==(const NumberExpression &other) const noexcept;
-        bool operator!=(const NumberExpression &other) const noexcept;
+        bool operator==(const Expression &other) const noexcept override;
+        bool operator!=(const Expression &other) const noexcept override;
 
         [[nodiscard]] const Token &value() const noexcept;
         [[nodiscard]] bool isIntLiteral() const noexcept;
@@ -42,8 +42,8 @@ namespace es {
 
         void accept(ExpressionVisitor &visitor) const override;
 
-        bool operator==(const VariableExpression &other) const noexcept;
-        bool operator!=(const VariableExpression &other) const noexcept;
+        bool operator==(const Expression &other) const noexcept override;
+        bool operator!=(const Expression &other) const noexcept override;
 
         [[nodiscard]] const Token &name() const noexcept;
 

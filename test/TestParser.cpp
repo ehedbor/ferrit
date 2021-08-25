@@ -3,6 +3,68 @@
 #include "Parser.h"
 
 namespace es::tests {
+    class TokenGenerator : public ExpressionVisitor, public StatementVisitor {
+    public:
+        TokenGenerator() = default;
+
+        std::vector<Token> takeTokens() noexcept {
+            auto ret = std::move(m_tokens);
+            m_tokens.clear();
+            return ret;
+        }
+
+    public:
+        void visitNumber(const NumberExpression &expr) noexcept override {
+            m_tokens.push_back(expr.value());
+        }
+
+        void visitVariable(const VariableExpression &expr) noexcept override {
+            m_tokens.push_back(expr.name());
+        }
+
+        void visitExpr(const ExpressionStatement &stmt) noexcept override {
+            stmt.expr().accept(*this);
+        }
+
+        void visitBlock(const BlockStatement &stmt) noexcept override {
+            m_tokens.emplace_back(TokenType::LeftBrace, "{", SourceLocation());
+            for (const auto &statement : stmt.body()) {
+                statement->accept(*this);
+                m_tokens.emplace_back(TokenType::Semicolon, ";", SourceLocation());
+            }
+            m_tokens.emplace_back(TokenType::RightBrace, "}", SourceLocation());
+        }
+
+        void visitFunction(const FunctionStatement &stmt) noexcept override {
+            for (const auto &modifier : stmt.modifiers()) {
+                m_tokens.push_back(modifier);
+            }
+
+            m_tokens.push_back(stmt.keyword());
+            m_tokens.push_back(stmt.name());
+
+            m_tokens.emplace_back(TokenType::LeftParen, "(", SourceLocation());
+            for (const auto &param : stmt.params()) {
+                m_tokens.push_back(param.name());
+                m_tokens.emplace_back(TokenType::Colon, ":", SourceLocation());
+                m_tokens.push_back(param.type().name());
+                m_tokens.emplace_back(TokenType::Comma, ",", SourceLocation());
+            }
+            m_tokens.emplace_back(TokenType::RightParen, ")", SourceLocation());
+
+            m_tokens.emplace_back(TokenType::Arrow, "->", SourceLocation());
+            m_tokens.push_back(stmt.returnType().name());
+
+            if (dynamic_cast<const ExpressionStatement *>(&stmt.body()) != nullptr) {
+                m_tokens.emplace_back(TokenType::Assign, "=", SourceLocation());
+            }
+            stmt.body().accept(*this);
+        }
+
+    private:
+        std::vector<Token> m_tokens{};
+    };
+
     static bool checkResultErr(const ParseResult &result) {
         if (result.has_error()) {
             for (auto &err : result.error()) std::cerr << err << std::endl;
@@ -10,33 +72,13 @@ namespace es::tests {
         return result.has_value();
     }
 
-    // TODO: generate tokens from statements by use of a Expr/Stmt visitor.
-
-    static std::vector<Token> generateFunctionHeader(const FunctionStatement &func) {
-        std::vector<Token> result;
-        for (const auto &modifier : func.modifiers()) {
-            result.push_back(modifier);
-        }
-
-        result.push_back(func.keyword());
-        result.push_back(func.name());
-
-        result.emplace_back(TokenType::LeftParen, "(", SourceLocation{});
-        for (const auto &param : func.params()) {
-            result.push_back(param.name());
-            result.emplace_back(TokenType::Colon, ":", SourceLocation{});
-            result.push_back(param.type().name());
-            result.emplace_back(TokenType::Comma, ",", SourceLocation{});
-        }
-        result.emplace_back(TokenType::RightParen, ")", SourceLocation{});
-
-        result.emplace_back(TokenType::Arrow, "->", SourceLocation{});
-        result.push_back(func.returnType().name());
-
-        return result;
+    static void addEof(std::vector<Token> &tokens) {
+        tokens.emplace_back(TokenType::EndOfFile, "", SourceLocation());
     }
 
     TEST_CASE("function declarations can be parsed", "[parser]") {
+        TokenGenerator tokenGen;
+
         SECTION("parsing simple no-op function") {
             FunctionStatement expected(
                 std::vector<Token>(),
@@ -47,16 +89,10 @@ namespace es::tests {
                 std::make_unique<ExpressionStatement>(
                     std::make_unique<NumberExpression>(
                         Token{TokenType::IntegerLiteral, "0", {}}, true)));
-            auto tokens = generateFunctionHeader(expected);
-            tokens.emplace_back(TokenType::Assign, "=", SourceLocation{});
-            // TODO: generate bodies cause this is horrible.
-            tokens.push_back(
-                reinterpret_cast<const NumberExpression &>(
-                    reinterpret_cast<const ExpressionStatement &>(
-                        expected.body()
-                    ).expr()
-                ).value());
-            tokens.emplace_back(TokenType::EndOfFile, "", SourceLocation{});
+
+            tokenGen.visitFunction(expected);
+            auto tokens = tokenGen.takeTokens();
+            addEof(tokens);
 
             Parser parser(std::move(tokens));
             ParseResult result = parser.parse();
@@ -89,15 +125,9 @@ namespace es::tests {
                     std::make_unique<VariableExpression>(
                         Token{TokenType::Identifier, "a", {}}))
             };
-            auto tokens = generateFunctionHeader(expected);
-            tokens.emplace_back(TokenType::Assign, "=", SourceLocation{});
-            tokens.push_back(
-                reinterpret_cast<const VariableExpression &>(
-                    reinterpret_cast<const ExpressionStatement &>(
-                        expected.body()
-                    ).expr()
-                ).name());
-            tokens.emplace_back(TokenType::EndOfFile, "", SourceLocation{});
+            tokenGen.visitFunction(expected);
+            auto tokens = tokenGen.takeTokens();
+            addEof(tokens);
 
             Parser parser(std::move(tokens));
             ParseResult result = parser.parse();

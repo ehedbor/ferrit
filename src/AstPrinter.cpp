@@ -31,6 +31,31 @@ namespace es {
         return {};
     }
 
+    VisitResult AstPrinter::visitBinary(const SimpleBinaryExpression &expr) noexcept {
+        handleBinary("SimpleBinary", expr.op(), expr.left(), expr.right());
+        return {};
+    }
+
+    VisitResult AstPrinter::visitBinary(const BitwiseBinaryExpression &expr) noexcept {
+        handleBinary("BitwiseBinary", expr.op(), expr.left(), expr.right());
+        return {};
+    }
+
+    VisitResult AstPrinter::visitBinary(const CompareBinaryExpression &expr) noexcept {
+        handleBinary("CompareBinary", expr.op(), expr.left(), expr.right());
+        return {};
+    }
+
+    VisitResult AstPrinter::visitUnary(const UnaryExpression &expr) noexcept {
+        printIndent();
+        m_out << "Unary: " << expr.op() << "\n";
+        m_depth++;
+        expr.operand().accept(*this);
+        m_depth--;
+
+        return {};
+    }
+
     VisitResult AstPrinter::visitExprStmt(const ExpressionStatement &stmt) noexcept {
         printIndent();
         m_out << "ExpressionStatement:\n";
@@ -61,10 +86,10 @@ namespace es {
         m_depth++;
 
         printIndent();
-        m_out << "Name: " << stmt.name() << "\n";
+        m_out << "-Name=" << stmt.name() << "\n";
 
         printIndent();
-        m_out << "Modifiers:\n";
+        m_out << "-Modifiers:\n";
         m_depth++;
         for (auto &modifier: stmt.modifiers()) {
             printIndent();
@@ -73,26 +98,54 @@ namespace es {
         m_depth--;
 
         printIndent();
-        m_out << "Params:\n";
+        m_out << "-Params:\n";
         m_depth++;
         for (auto &param : stmt.params()) {
             printIndent();
-            m_out << "" << param.name() << " : " << param.type().name() << "\n";
+            m_out << "Parameter{Name=" << param.name() << ", Type=" << param.type().name() << "}\n";
         }
         m_depth--;
 
         printIndent();
-        m_out << "Returns: " << stmt.returnType().name() << "\n";
+        m_out << "-Returns=" << stmt.returnType().name() << "\n";
 
         printIndent();
-        m_out << "Body:\n";
-        m_depth++;
-        stmt.body().accept(*this);
-        m_depth--;
+
+        m_out << "-Body:\n";
+        if (stmt.body()) {
+            m_depth++;
+            (*stmt.body())->accept(*this);
+            m_depth--;
+        }
 
         m_depth--;
 
         return {};
+    }
+
+    void AstPrinter::handleBinary(
+        const std::string &name, const Token &op,
+        const Expression &left, const Expression &right) noexcept {
+        printIndent();
+        m_out << name << ":\n";
+        m_depth++;
+
+        printIndent();
+        m_out << "-Op=" << op << "\n";
+
+        printIndent();
+        m_out << "-Left:\n";
+        m_depth++;
+        left.accept(*this);
+        m_depth--;
+
+        printIndent();
+        m_out << "-Right:\n";
+        m_depth++;
+        right.accept(*this);
+        m_depth--;
+
+        m_depth--;
     }
 
     void AstPrinter::printIndent() noexcept {

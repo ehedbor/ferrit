@@ -36,6 +36,17 @@ namespace es {
         [[nodiscard]] StmtResult parseBlock() noexcept;
 
         [[nodiscard]] ExprResult parseExpression() noexcept;
+        [[nodiscard]] ExprResult parseDisjunction() noexcept;
+        [[nodiscard]] ExprResult parseConjunction() noexcept;
+        [[nodiscard]] ExprResult parseBitwiseOr() noexcept;
+        [[nodiscard]] ExprResult parseBitwiseXor() noexcept;
+        [[nodiscard]] ExprResult parseBitwiseAnd() noexcept;
+        [[nodiscard]] ExprResult parseEquality() noexcept;
+        [[nodiscard]] ExprResult parseComparison() noexcept;
+        [[nodiscard]] ExprResult parseBitwiseShift() noexcept;
+        [[nodiscard]] ExprResult parseAdditive() noexcept;
+        [[nodiscard]] ExprResult parseMultiplicative() noexcept;
+        [[nodiscard]] ExprResult parseUnary() noexcept;
 
         [[nodiscard]] ExprResult parsePrimary() noexcept;
         [[nodiscard]] ExprResult parseVariable() noexcept;

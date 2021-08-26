@@ -22,7 +22,7 @@ namespace es {
         Arrow,              ///< '->'
         Colon,              ///< ':'
         Semicolon,          ///< ';'
-        Newline,            ///< '\\n'. Defines a possible parseStatement terminator.
+        Newline,            ///< '\\n'. Defines a possible statement terminator.
 
         Plus,               ///< '+'
         Minus,              ///< '-'
@@ -38,6 +38,9 @@ namespace es {
         BitwiseOr,          ///< '|'
         BitwiseXor,         ///< '^'
         BitwiseNot,         ///< '~'
+        BitwiseLeftShift,           ///< '<<'
+        BitwiseRightShift,          ///< '>>'
+        BitwiseUnsignedRightShift,  ///< '>>>'
 
         Assign,             ///< '='
         //PlusAssign,         ///< '+='
@@ -50,6 +53,9 @@ namespace es {
         //BitwiseAndAssign,   ///< '&='
         //BitwiseOrAssign,    ///< '|='
         //BitwiseXorAssign,   ///< '^='
+        //BitwiseLeftShiftAssign, ///< '<<='
+        //BitwiseRightShiftAssign, ///< '>>='
+        //BitwiseUnsignedRightShiftAssign, ///< now this is getting a bit ridiculous... '>>>='
 
         Equal,              ///< '=='
         NotEqual,           ///< '!='
@@ -82,7 +88,6 @@ namespace es {
         True,
         False,
         //Null,
-        //DebugPrint,
 
         //SByte,
         //Byte,

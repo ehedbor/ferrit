@@ -140,7 +140,127 @@ namespace es {
     }
 
     ExprResult Parser::parseExpression() noexcept {
-        return parsePrimary();
+        return parseDisjunction();
+    }
+
+    ExprResult Parser::parseDisjunction() noexcept {
+        TRY(left, parseConjunction());
+        while (match(TokenType::LogicalOr)) {
+            Token op = previous();
+            TRY(right, parseConjunction());
+            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseConjunction() noexcept {
+        TRY(left, parseBitwiseOr());
+        while (match(TokenType::LogicalAnd)) {
+            Token op = previous();
+            TRY(right, parseBitwiseOr());
+            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseBitwiseOr() noexcept {
+        TRY(left, parseBitwiseXor());
+        while (match(TokenType::BitwiseOr)) {
+            Token op = previous();
+            TRY(right, parseBitwiseXor());
+            left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseBitwiseXor() noexcept {
+        TRY(left, parseBitwiseAnd());
+        while (match(TokenType::BitwiseXor)) {
+            Token op = previous();
+            TRY(right, parseBitwiseAnd());
+            left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseBitwiseAnd() noexcept {
+        TRY(left, parseEquality());
+        while (match(TokenType::BitwiseAnd)) {
+            Token op = previous();
+            TRY(right, parseEquality());
+            left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseEquality() noexcept {
+        TRY(left, parseComparison());
+        while (match(TokenType::Equal) || match(TokenType::NotEqual)) {
+            Token op = previous();
+            TRY(right, parseComparison());
+            left = std::make_unique<CompareBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseComparison() noexcept {
+        TRY(left, parseBitwiseShift());
+        while (
+            match(TokenType::Greater) || match(TokenType::GreaterEqual) ||
+            match(TokenType::Less) || match(TokenType::LessEqual))
+        {
+            Token op = previous();
+            TRY(right, parseBitwiseShift());
+            left = std::make_unique<CompareBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseBitwiseShift() noexcept {
+        TRY(left, parseAdditive());
+        while (match(TokenType::BitwiseLeftShift) ||
+            match(TokenType::BitwiseRightShift) ||
+            match(TokenType::BitwiseUnsignedRightShift)) {
+            Token op = previous();
+            TRY(right, parseAdditive());
+            left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseAdditive() noexcept {
+        TRY(left, parseMultiplicative());
+        while (match(TokenType::Plus) || match(TokenType::Minus)) {
+            Token op = previous();
+            TRY(right, parseMultiplicative());
+            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseMultiplicative() noexcept {
+        TRY(left, parseUnary());
+        while (match(TokenType::Times) || match(TokenType::Divide) || match(TokenType::Modulo)) {
+            Token op = previous();
+            TRY(right, parseUnary());
+            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
+        }
+        return left;
+    }
+
+    ExprResult Parser::parseUnary() noexcept {
+        std::vector<Token> operators;
+        while (match(TokenType::Plus) || match(TokenType::Minus) ||
+            match(TokenType::LogicalNot) || match(TokenType::BitwiseNot)) {
+            operators.push_back(previous());
+        }
+
+        TRY(operand, parsePrimary());
+        // apply unary operators in REVERSE order. closer to the expression => higher precedence
+        for (auto iter = operators.rbegin(); iter != operators.rend(); iter++) {
+            operand = std::make_unique<UnaryExpression>(std::move(*iter), std::move(operand));
+        }
+        return operand;
     }
 
     ExprResult Parser::parsePrimary() noexcept {

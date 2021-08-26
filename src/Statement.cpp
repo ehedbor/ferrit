@@ -101,8 +101,8 @@ namespace es {
         return !(*this == other);
     }
 
-    FunctionDefinition::FunctionDefinition(FunctionDeclaration declaration, std::optional<StatementPtr> body) :
-        m_declaration(std::move(declaration)), m_body(body ? std::move(*body) : nullptr) {
+    FunctionDefinition::FunctionDefinition(std::unique_ptr<FunctionDeclaration> declaration, StatementPtr body) :
+        m_declaration(std::move(declaration)), m_body(std::move(body)) {
     }
 
     VisitResult FunctionDefinition::accept(StatementVisitor &visitor) const {
@@ -110,21 +110,17 @@ namespace es {
     }
 
     const FunctionDeclaration &FunctionDefinition::declaration() const noexcept {
-        return m_declaration;
+        return *m_declaration;
     }
 
-    const Statement *FunctionDefinition::body() const noexcept {
-        if (m_body) {
-            return m_body.get();
-        } else {
-            return {};
-        }
+    const Statement &FunctionDefinition::body() const noexcept {
+        return *m_body;
     }
 
     bool FunctionDefinition::operator==(const Statement &other) const noexcept {
         if (this == &other) return true;
         if (auto def = dynamic_cast<const FunctionDefinition *>(&other)) {
-            return declaration() == def->declaration() && *body() == *def->body();
+            return declaration() == def->declaration() && body() == def->body();
         }
         return false;
     }

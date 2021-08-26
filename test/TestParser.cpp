@@ -92,12 +92,12 @@ namespace es::tests {
 
         VisitResult visitFunDefinition(const FunctionDefinition &def) noexcept override {
             def.declaration().accept(*this);
-            if (def.body()) {
-                if (dynamic_cast<const ExpressionStatement *>(def.body())) {
-                    m_tokens.emplace_back(TokenType::Assign, "=", SourceLocation());
-                }
-                def.body()->accept(*this);
+
+            if (dynamic_cast<const ExpressionStatement *>(&def.body())) {
+                m_tokens.emplace_back(TokenType::Assign, "=", SourceLocation());
             }
+            def.body().accept(*this);
+
             return {};
         }
 
@@ -121,15 +121,15 @@ namespace es::tests {
 
         SECTION("parsing simple no-op function") {
             FunctionDefinition expected(
-                FunctionDeclaration(
+                std::make_unique<FunctionDeclaration>(
                     std::vector<Token>(),
-                    {TokenType::Fun, "fun", {}},
-                    {TokenType::Identifier, "my_function", {}},
+                    Token(TokenType::Fun, "fun", {}),
+                    Token({TokenType::Identifier, "my_function", {}}),
                     std::vector<Parameter>(),
-                    Type({TokenType::Int, "int", {}})),
+                    Type(Token(TokenType::Int, "int", {}))),
                 std::make_unique<ExpressionStatement>(
                     std::make_unique<NumberExpression>(
-                        Token{TokenType::IntegerLiteral, "0", {}}, true)));
+                        Token(TokenType::IntegerLiteral, "0", {}), true)));
 
             tokenGen.visitFunDefinition(expected);
             auto tokens = tokenGen.takeTokens();
@@ -148,13 +148,13 @@ namespace es::tests {
 
         SECTION("parsing simple function with 2 parameters") {
             FunctionDefinition expected{
-                FunctionDeclaration(
-                    {
+                std::make_unique<FunctionDeclaration>(
+                    std::vector<Token>{
                         Token{TokenType::Native, "native", {}}
                     },
                     Token{TokenType::Fun, "fun", {}},
                     Token{TokenType::Identifier, "my_func", {}},
-                    {
+                    std::vector<Parameter>{
                     Parameter{
                         Token{TokenType::Identifier, "a", {}},
                         Type{Token{TokenType::Double, "double", {}}}},

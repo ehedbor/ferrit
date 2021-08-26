@@ -106,18 +106,18 @@ namespace es {
      */
     class FunctionDefinition : public Statement {
     public:
-        FunctionDefinition(FunctionDeclaration declaration, std::optional<StatementPtr> body);
+        FunctionDefinition(std::unique_ptr<FunctionDeclaration> declaration, StatementPtr body);
 
         VisitResult accept(StatementVisitor &visitor) const override;
 
         [[nodiscard]] const FunctionDeclaration &declaration() const noexcept;
-        [[nodiscard]] const Statement *body() const noexcept;
+        [[nodiscard]] const Statement &body() const noexcept;
 
         bool operator==(const Statement &other) const noexcept override;
         bool operator!=(const Statement &other) const noexcept override;
 
     private:
-        FunctionDeclaration m_declaration;
+        std::unique_ptr<FunctionDeclaration> m_declaration;
         StatementPtr m_body;
     };
 

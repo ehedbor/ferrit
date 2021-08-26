@@ -55,7 +55,14 @@ namespace es {
 
         void synchronize() noexcept;
 
-        bool skipTerminators(bool softEndingsOnly) noexcept;
+        struct FoundTerminators {
+            bool newline = false;
+            bool semicolon = false;
+            bool eof = false;
+
+            [[nodiscard]] bool any() const noexcept { return newline || semicolon || eof; }
+        };
+        FoundTerminators skipTerminators(bool allowSemicolons) noexcept;
 
         [[nodiscard]] TokenResult consume(TokenType expected, const std::string &errMsg) noexcept;
         [[nodiscard]] bool match(TokenType expected) noexcept;

@@ -83,7 +83,7 @@ namespace es {
         printIndent();
         m_out << "Function Declaration:\n";
 
-        m_out << "-Name=" << funDecl.name() << "\n";
+        m_depth++;
 
         printIndent();
         m_out << "-Modifiers:\n";
@@ -93,6 +93,12 @@ namespace es {
             m_out << modifier << "\n";
         }
         m_depth--;
+
+        printIndent();
+        m_out << "-Keyword=" << funDecl.keyword() << "\n";
+
+        printIndent();
+        m_out << "-Name=" << funDecl.name() << "\n";
 
         printIndent();
         m_out << "-Params:\n";
@@ -105,6 +111,8 @@ namespace es {
 
         printIndent();
         m_out << "-Returns=" << funDecl.returnType().name() << "\n";
+
+        m_depth--;
 
         return {};
     }
@@ -121,12 +129,11 @@ namespace es {
         funDef.declaration().accept(*this);
         m_depth--;
 
+        printIndent();
         m_out << "-Body:\n";
-        if (funDef.body()) {
-            m_depth++;
-            funDef.body()->accept(*this);
-            m_depth--;
-        }
+        m_depth++;
+        funDef.body().accept(*this);
+        m_depth--;
 
         m_depth--;
 

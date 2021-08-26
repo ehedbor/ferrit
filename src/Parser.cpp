@@ -9,10 +9,13 @@ namespace es {
     ParseResult Parser::parse() noexcept {
         std::vector<StatementPtr> program;
         std::vector<ParseError> errors;
+
+        skipTerminators(true);
         while (!isAtEnd()) {
             auto nextDecl = parseDeclaration();
             if (nextDecl) {
                 program.push_back(std::move(nextDecl.value()));
+                skipTerminators(true);
             } else {
                 errors.push_back(std::move(nextDecl.error()));
                 synchronize();
@@ -46,22 +49,43 @@ namespace es {
         EXPECT(consume(TokenType::Arrow, "expected return type after function parameters"));
         TRY(returnType, parseType());
 
-        // function body -- either an expression or a block
-        std::optional<std::unique_ptr<Statement>> body;
-        if (skipTerminators(false)) {
-            // no body
-        } else if (match(TokenType::Assign)) {
-            TRY(expr, parseExpression());
-            body = std::make_unique<ExpressionStatement>(std::move(expr));
-        } else if (match(TokenType::LeftBrace)) {
-            TRY(block, parseBlock());
-            body = std::move(block);
-        } else {
-            return cpp::fail(ParseError(current(), "expected function body"));
-        }
+        auto decl = std::make_unique<FunctionDeclaration>(modifiers, keyword, name, std::move(params), returnType);
 
-        FunctionDeclaration decl(modifiers, keyword, name, std::move(params), returnType);
-        return std::make_unique<FunctionDefinition>(std::move(decl), std::move(body));
+        std::unique_ptr<Statement> body;
+
+        // A function is a declaration if:
+        //   A. it ends with a semicolon, or
+        //   B. it ends with eof, or
+        //   C. it ends with a newline and is not followed by a '=' or '{'
+        //
+        // These are declarations:
+        // fun x() -> void;
+        // fun x() -> void<EOF>
+        // fun x() -> void
+        // class ...
+        //
+        // These are definitions:
+        // fun x() -> int
+        //     = 10
+        // fun x() -> void
+        // { }
+        auto foundTerms = skipTerminators(true);
+        bool isDecl = foundTerms.semicolon || foundTerms.eof ||
+            (foundTerms.newline && (check(TokenType::Assign) || check(TokenType::LeftBrace)));
+        if (isDecl) {
+            return decl;
+        } else {
+            if (match(TokenType::Assign)) {
+                TRY(expr, parseExpression());
+                body = std::make_unique<ExpressionStatement>(std::move(expr));
+            } else if (match(TokenType::LeftBrace)) {
+                TRY(block, parseBlock());
+                body = std::move(block);
+            } else {
+                return cpp::fail(ParseError(current(), "expected function body"));
+            }
+            return std::make_unique<FunctionDefinition>(std::move(decl), std::move(body));
+        }
     }
 
     std::vector<Token> Parser::parseModifiers() noexcept {
@@ -132,8 +156,8 @@ namespace es {
             TRY(statement, parseStatement());
             body.push_back(std::move(statement));
 
-            bool foundTerminator = skipTerminators(false);
-            if (!foundTerminator) break;
+            auto foundTerms = skipTerminators(true);
+            if (!foundTerms.any()) break;
         }
         EXPECT(consume(TokenType::RightBrace, "expected '}' after block"));
 
@@ -303,19 +327,27 @@ namespace es {
         }
     }
 
-    bool Parser::skipTerminators(bool softEndingsOnly) noexcept {
-        bool foundTerminator = false;
+    Parser::FoundTerminators Parser::skipTerminators(bool allowSemicolons) noexcept {
+        FoundTerminators result;
 
-        while (current().type == TokenType::Newline ||
-        (!softEndingsOnly && current().type == TokenType::Semicolon)) {
+        while (true) {
+            if (current().type == TokenType::Newline) {
+                result.newline = true;
+            } else if (allowSemicolons && current().type == TokenType::Semicolon) {
+                result.semicolon = true;
+            } else {
+                if (current().type == TokenType::EndOfFile) {
+                    result.eof = true;
+                }
+                break;
+            }
             advance();
-            foundTerminator = true;
         }
-        return foundTerminator;
+        return result;
     }
 
     TokenResult Parser::consume(TokenType expected, const std::string &errMsg) noexcept {
-        skipTerminators(true);
+        skipTerminators(false);
         if (check(expected)) {
             return advance();
         } else {
@@ -324,7 +356,7 @@ namespace es {
     }
 
     bool Parser::match(TokenType expected) noexcept {
-        skipTerminators(true);
+        skipTerminators(false);
         if (check(expected)) {
             advance();
             return true;
@@ -334,7 +366,7 @@ namespace es {
     }
 
     bool Parser::check(TokenType expected) noexcept {
-        skipTerminators(true);
+        skipTerminators(false);
         return (current().type == expected);
     }
 

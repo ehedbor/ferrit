@@ -47,8 +47,10 @@ namespace es {
         TRY(returnType, parseType());
 
         // function body -- either an expression or a block
-        std::unique_ptr<Statement> body;
-        if (match(TokenType::Assign)) {
+        std::optional<std::unique_ptr<Statement>> body;
+        if (skipTerminators(false)) {
+            // no body
+        } else if (match(TokenType::Assign)) {
             TRY(expr, parseExpression());
             body = std::make_unique<ExpressionStatement>(std::move(expr));
         } else if (match(TokenType::LeftBrace)) {
@@ -104,12 +106,15 @@ namespace es {
         auto name = previous();
         EXPECT(consume(TokenType::Colon, "expected ':' after parameter name"));
         TRY(type, parseType());
+        if (type.name().type == TokenType::Void) {
+            return cpp::fail(ParseError(current(), "cannot declare parameter of type void"));
+        }
 
         return Parameter(name, type);
     }
 
     cpp::result<Type, ParseError> Parser::parseType() noexcept {
-        if (match(TokenType::Int) || match(TokenType::Double)) {
+        if (match(TokenType::Int) || match(TokenType::Double) || match(TokenType::Void)) {
             return Type(previous());
         }
         return cpp::fail(ParseError(current(), "expected type name"));

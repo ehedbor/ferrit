@@ -59,7 +59,7 @@ namespace es {
 
     FunctionStatement::FunctionStatement(
         std::vector<Token> modifiers, Token keyword, Token name,
-        std::vector<Parameter> params, Type returnType, StatementPtr body) :
+        std::vector<Parameter> params, Type returnType, std::optional<StatementPtr> body) :
         m_modifiers(std::move(modifiers)), m_keyword(std::move(keyword)), m_name(std::move(name)),
         m_params(std::move(params)), m_returnType(std::move(returnType)), m_body(std::move(body)) {
     }
@@ -88,8 +88,12 @@ namespace es {
         return m_returnType;
     }
 
-    const Statement &FunctionStatement::body() const noexcept {
-        return *m_body;
+    std::optional<const Statement *> FunctionStatement::body() const noexcept {
+        if (m_body.has_value()) {
+            return m_body->get();
+        } else {
+            return {};
+        }
     }
 
     bool FunctionStatement::operator==(const Statement &other) const noexcept {

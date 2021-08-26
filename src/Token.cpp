@@ -48,6 +48,7 @@ namespace es {
         TOKEN_CASE(False);
         TOKEN_CASE(Int);
         TOKEN_CASE(Double);
+        TOKEN_CASE(Void);
         TOKEN_CASE(Identifier);
         TOKEN_CASE(StringLiteral);
         TOKEN_CASE(CharLiteral);

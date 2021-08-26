@@ -97,6 +97,7 @@ namespace es {
         //Char,
         //String,
         //Bool,
+        Void,
 
         Identifier,
         StringLiteral,

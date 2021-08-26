@@ -253,6 +253,7 @@ namespace es {
             {"false",       TokenType::False},
             {"int",         TokenType::Int},
             {"double",      TokenType::Double},
+            {"void",        TokenType::Void},
         };
 
         auto iter = IDENTIFIER_TYPES.find(lexeme);

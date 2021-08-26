@@ -96,11 +96,11 @@ namespace es {
     /**
      * Represents a function definition.
      *
-     * @note In es, functions do not need to be forward-declared
-     * and in fact, cannot be forward declared. However, code to call a function
-     * cannot be generated unless the function is already known to exist.
-     * To support this, the intermediate resolution step will "hoist" declarations
-     * to the top of the file, creating a standalone @a FunctionDeclaration node.
+     * @note In es, functions do not need to be forward-declared (though they
+     * can be if desired). However, code to call a function cannot be generated
+     * unless the function is already known to exist. To support this, the
+     * intermediate resolution step will "hoist" declarations to the top of the
+     * file, creating a standalone @c FunctionDeclaration node.
      *
      * @see FunctionDeclaration
      */
@@ -122,6 +122,11 @@ namespace es {
     };
 
 
+    /**
+     * Allows for traversal of a hierarchy of \c Statement nodes.
+     *
+     * @see ExpressionVisitor
+     */
     class StatementVisitor {
     public:
         virtual ~StatementVisitor() noexcept = 0;

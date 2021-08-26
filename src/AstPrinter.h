@@ -6,6 +6,9 @@
 
 
 namespace es {
+    /**
+     * Prints a text-based representation of the ast to an output stream.
+     */
     class AstPrinter : private ExpressionVisitor, private StatementVisitor {
     public:
         explicit AstPrinter(std::ostream &out, std::vector<StatementPtr> &ast) noexcept;

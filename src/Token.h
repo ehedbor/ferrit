@@ -5,6 +5,9 @@
 
 
 namespace es {
+    /**
+     * Represents every possible type of \c Token.
+     */
     enum class TokenType {
         LeftParen,          ///< '('
         RightParen,         ///< ')'
@@ -113,6 +116,9 @@ namespace es {
 
     std::ostream &operator<<(std::ostream &out, TokenType type);
 
+    /**
+     * Represents a line:column location in a source code file.
+     */
     struct SourceLocation {
     public:
         SourceLocation() noexcept = default;
@@ -128,6 +134,9 @@ namespace es {
         std::size_t column{1};
     };
 
+    /**
+     * Represents a well-formed token in a source code file.
+     */
     struct Token {
     public:
         Token() noexcept = default;

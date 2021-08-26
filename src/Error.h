@@ -4,6 +4,9 @@
 #include <ostream>
 
 namespace es {
+    /**
+     * Represents any error-type in this program.
+     */
     class Error {
     public:
         Error() noexcept = default;

@@ -24,6 +24,9 @@ namespace es {
 
     /**
      * Represents a literal number (either integer or floating point).
+     * Literals numbers are considered to be an unsized supertype of their
+     * respective number types that get coerced into a sized type when used in
+     * an expression.
      */
     class NumberExpression : public Expression {
     public:
@@ -61,7 +64,7 @@ namespace es {
     };
 
     /**
-     * Represents the binary operators '&&', '||', '+', '-', '*', '/', and '%'.
+     * Represents the logical and/or operators as well as the additive and multiplicative operators.
      */
     class SimpleBinaryExpression : public Expression {
     public:
@@ -83,7 +86,7 @@ namespace es {
     };
 
     /**
-     * Represents the bitwise binary operators '&', '|', '^', '<<', '>>>' and '>>>'.
+     * Represents the binary bitwise operators, such as '&' and '<<'.
      */
     class BitwiseBinaryExpression : public Expression {
     public:
@@ -105,7 +108,7 @@ namespace es {
     };
 
     /**
-     * Represents the comparison operators '==', '!=', '>', '>=', '<',and '<='.
+     * Represents the two equality operators as well as the four comparison operators.
      */
     class CompareBinaryExpression : public Expression {
     public:
@@ -127,7 +130,7 @@ namespace es {
     };
 
     /**
-     * Represents the unary operators '+', '-', '!' and '~'.
+     * Represents the unary operators.
      */
     class UnaryExpression : public Expression {
     public:
@@ -146,6 +149,11 @@ namespace es {
         ExpressionPtr m_operand;
     };
 
+    /**
+     * Allows for traversal of a hierarchy of \c Expression nodes.
+     *
+     * @see StatementVisitor
+     */
     class ExpressionVisitor {
     public:
         virtual ~ExpressionVisitor() noexcept = 0;

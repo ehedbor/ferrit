@@ -347,7 +347,6 @@ namespace es {
     }
 
     TokenResult Parser::consume(TokenType expected, const std::string &errMsg) noexcept {
-        skipTerminators(false);
         if (check(expected)) {
             return advance();
         } else {
@@ -356,7 +355,6 @@ namespace es {
     }
 
     bool Parser::match(TokenType expected) noexcept {
-        skipTerminators(false);
         if (check(expected)) {
             advance();
             return true;

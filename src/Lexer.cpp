@@ -42,23 +42,23 @@ namespace es {
         case ':': return makeToken(TokenType::Colon);
         case ';': return makeToken(TokenType::Semicolon);
         case '+': return makeToken(TokenType::Plus);
-        case '-': return makeToken(expect('>') ? TokenType::Arrow : TokenType::Minus);
+        case '-': return makeToken(match('>') ? TokenType::Arrow : TokenType::Minus);
         case '*': return makeToken(TokenType::Times);
         case '/': return makeToken(TokenType::Divide);
         case '%': return makeToken(TokenType::Modulo);
-        case '&': return makeToken(expect('&') ? TokenType::LogicalAnd : TokenType::BitwiseAnd);
-        case '|': return makeToken(expect('|') ? TokenType::LogicalOr : TokenType::BitwiseOr);
+        case '&': return makeToken(match('&') ? TokenType::LogicalAnd : TokenType::BitwiseAnd);
+        case '|': return makeToken(match('|') ? TokenType::LogicalOr : TokenType::BitwiseOr);
         case '^': return makeToken(TokenType::BitwiseXor);
         case '~': return makeToken(TokenType::BitwiseNot);
-        case '!': return makeToken(expect('=') ? TokenType::NotEqual : TokenType::LogicalNot);
-        case '=': return makeToken(expect('=') ? TokenType::Equal : TokenType::Assign);
+        case '!': return makeToken(match('=') ? TokenType::NotEqual : TokenType::LogicalNot);
+        case '=': return makeToken(match('=') ? TokenType::Equal : TokenType::Assign);
         case '>':
-            if (expect('>')) return makeToken(TokenType::BitwiseRightShift);
-            if (expect('=')) return makeToken(TokenType::GreaterEqual);
+            if (match('>')) return makeToken(TokenType::BitwiseRightShift);
+            if (match('=')) return makeToken(TokenType::GreaterEqual);
             return makeToken(TokenType::Greater);
         case '<':
-            if (expect('<')) return makeToken(TokenType::BitwiseLeftShift);
-            if (expect('=')) return makeToken(TokenType::LessEqual);
+            if (match('<')) return makeToken(TokenType::BitwiseLeftShift);
+            if (match('=')) return makeToken(TokenType::LessEqual);
             return makeToken(TokenType::Less);
         default: {
             std::stringstream msg;
@@ -129,8 +129,8 @@ namespace es {
         while (true) {
             auto next = advance();
             if (!next) {
-                return cpp::fail(makeError("unterminated parseBlock comment"));
-            } else if (*next == '*' && expect('/')) {
+                return cpp::fail(makeError("unterminated block comment"));
+            } else if (*next == '*' && match('/')) {
                 return {};
             } else if (*next == '\n') {
                 // since this newline is inside a block comment,
@@ -147,7 +147,7 @@ namespace es {
         }
 
         // consume closing quote
-        if (expect('"')) {
+        if (match('"')) {
             return makeToken(TokenType::StringLiteral);
         } else {
             return cpp::fail(makeError("unterminated string literal"));
@@ -161,7 +161,7 @@ namespace es {
 
         EXPECT(advanceStringChar("char literal"));
 
-        if (expect('\'')) {
+        if (match('\'')) {
             return makeToken(TokenType::CharLiteral);
         } else if (!peek()) {
             return cpp::fail(makeError("unterminated char literal"));
@@ -309,7 +309,7 @@ namespace es {
         }
     }
 
-    bool Lexer::expect(char expected) noexcept {
+    bool Lexer::match(char expected) noexcept {
         auto ch = peek();
         if (ch && *ch == expected) {
             advance();

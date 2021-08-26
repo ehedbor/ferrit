@@ -12,45 +12,45 @@ namespace es {
         }
     }
 
-    VisitResult AstPrinter::visitNumber(const NumberExpression &expr) {
+    VisitResult AstPrinter::visitNumber(const NumberExpression &numExpr) {
         printIndent();
-        if (expr.isIntLiteral()) {
+        if (numExpr.isIntLiteral()) {
             m_out << "IntegerLiteral: ";
         } else {
             m_out << "FloatLiteral: ";
         }
-        m_out << expr.value() << "\n";
+        m_out << numExpr.value() << "\n";
 
         return {};
     }
 
-    VisitResult AstPrinter::visitVariable(const VariableExpression &expr) {
+    VisitResult AstPrinter::visitVariable(const VariableExpression &varExpr) {
         printIndent();
-        m_out << "Variable: " << expr.name() << "\n";
+        m_out << "Variable: " << varExpr.name() << "\n";
 
         return {};
     }
 
-    VisitResult AstPrinter::visitBinary(const SimpleBinaryExpression &expr) {
-        handleBinary("SimpleBinary", expr.op(), expr.left(), expr.right());
+    VisitResult AstPrinter::visitBinary(const SimpleBinaryExpression &binaryExpr) {
+        handleBinary("SimpleBinary", binaryExpr.op(), binaryExpr.left(), binaryExpr.right());
         return {};
     }
 
-    VisitResult AstPrinter::visitBinary(const BitwiseBinaryExpression &expr) {
-        handleBinary("BitwiseBinary", expr.op(), expr.left(), expr.right());
+    VisitResult AstPrinter::visitBinary(const BitwiseBinaryExpression &binaryExpr) {
+        handleBinary("BitwiseBinary", binaryExpr.op(), binaryExpr.left(), binaryExpr.right());
         return {};
     }
 
-    VisitResult AstPrinter::visitBinary(const CompareBinaryExpression &expr) {
-        handleBinary("CompareBinary", expr.op(), expr.left(), expr.right());
+    VisitResult AstPrinter::visitBinary(const CompareBinaryExpression &binaryExpr) {
+        handleBinary("CompareBinary", binaryExpr.op(), binaryExpr.left(), binaryExpr.right());
         return {};
     }
 
-    VisitResult AstPrinter::visitUnary(const UnaryExpression &expr) {
+    VisitResult AstPrinter::visitUnary(const UnaryExpression &unaryExpr) {
         printIndent();
-        m_out << "Unary: " << expr.op() << "\n";
+        m_out << "Unary: " << unaryExpr.op() << "\n";
         m_depth++;
-        expr.operand().accept(*this);
+        unaryExpr.operand().accept(*this);
         m_depth--;
 
         return {};
@@ -66,7 +66,7 @@ namespace es {
         return {};
     }
 
-    VisitResult AstPrinter::visitBlock(const BlockStatement &stmt) {
+    VisitResult AstPrinter::visitBlock(const Block &stmt) {
         printIndent();
         m_out << "Block:\n";
 
@@ -79,19 +79,16 @@ namespace es {
         return {};
     }
 
-    VisitResult AstPrinter::visitFunction(const FunctionStatement &stmt) {
+    VisitResult AstPrinter::visitFunDeclaration(const FunctionDeclaration &funDecl) {
         printIndent();
-        m_out << "Function:\n";
+        m_out << "Function Declaration:\n";
 
-        m_depth++;
-
-        printIndent();
-        m_out << "-Name=" << stmt.name() << "\n";
+        m_out << "-Name=" << funDecl.name() << "\n";
 
         printIndent();
         m_out << "-Modifiers:\n";
         m_depth++;
-        for (auto &modifier: stmt.modifiers()) {
+        for (auto &modifier: funDecl.modifiers()) {
             printIndent();
             m_out << modifier << "\n";
         }
@@ -100,21 +97,34 @@ namespace es {
         printIndent();
         m_out << "-Params:\n";
         m_depth++;
-        for (auto &param : stmt.params()) {
+        for (auto &param : funDecl.params()) {
             printIndent();
             m_out << "Parameter{Name=" << param.name() << ", Type=" << param.type().name() << "}\n";
         }
         m_depth--;
 
         printIndent();
-        m_out << "-Returns=" << stmt.returnType().name() << "\n";
+        m_out << "-Returns=" << funDecl.returnType().name() << "\n";
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitFunDefinition(const FunctionDefinition &funDef) {
+        printIndent();
+        m_out << "Function Definition:\n";
+
+        m_depth++;
 
         printIndent();
+        m_out << "-Declaration:\n";
+        m_depth++;
+        funDef.declaration().accept(*this);
+        m_depth--;
 
         m_out << "-Body:\n";
-        if (stmt.body()) {
+        if (funDef.body()) {
             m_depth++;
-            stmt.body()->accept(*this);
+            funDef.body()->accept(*this);
             m_depth--;
         }
 

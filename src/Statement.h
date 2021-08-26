@@ -14,6 +14,9 @@ namespace es {
     class Statement;
     using StatementPtr = std::unique_ptr<Statement>;
 
+    /**
+     * Base class for any AST construct that can NOT produce a value.
+     */
     class Statement {
     public:
         virtual ~Statement() noexcept = 0;
@@ -24,6 +27,9 @@ namespace es {
         virtual bool operator!=(const Statement &other) const noexcept = 0;
     };
 
+    /**
+     * Represents an expression whose value is unused (for instance, a function call in a block).
+     */
     class ExpressionStatement : public Statement {
     public:
         explicit ExpressionStatement(ExpressionPtr expr) noexcept;
@@ -39,9 +45,12 @@ namespace es {
         ExpressionPtr m_expr;
     };
 
-    class BlockStatement : public Statement {
+    /**
+     * Represents a group of statements.
+     */
+    class Block : public Statement {
     public:
-        explicit BlockStatement(std::vector<StatementPtr> body) noexcept;
+        explicit Block(std::vector<StatementPtr> body) noexcept;
 
         VisitResult accept(StatementVisitor &visitor) const override;
 
@@ -54,11 +63,16 @@ namespace es {
         std::vector<StatementPtr> m_body;
     };
 
-    class FunctionStatement : public Statement {
+    /**
+     * Represents a function's forward-declaration.
+     *
+     * @see FunctionDefinition
+     */
+    class FunctionDeclaration : public Statement {
     public:
-        FunctionStatement(
+        FunctionDeclaration(
             std::vector<Token> modifiers, Token keyword, Token name,
-            std::vector<Parameter> params, Type returnType, std::optional<StatementPtr> body = {});
+            std::vector<Parameter> params, Type returnType) noexcept;
 
         VisitResult accept(StatementVisitor &visitor) const override;
 
@@ -67,7 +81,6 @@ namespace es {
         [[nodiscard]] const Token &name() const noexcept;
         [[nodiscard]] const std::vector<Parameter> &params() const noexcept;
         [[nodiscard]] const Type &returnType() const noexcept;
-        [[nodiscard]] const Statement *body() const noexcept;
 
         bool operator==(const Statement &other) const noexcept override;
         bool operator!=(const Statement &other) const noexcept override;
@@ -78,15 +91,44 @@ namespace es {
         Token m_name;
         std::vector<Parameter> m_params;
         Type m_returnType;
+    };
+
+    /**
+     * Represents a function definition.
+     *
+     * @note In es, functions do not need to be forward-declared
+     * and in fact, cannot be forward declared. However, code to call a function
+     * cannot be generated unless the function is already known to exist.
+     * To support this, the intermediate resolution step will "hoist" declarations
+     * to the top of the file, creating a standalone @a FunctionDeclaration node.
+     *
+     * @see FunctionDeclaration
+     */
+    class FunctionDefinition : public Statement {
+    public:
+        FunctionDefinition(FunctionDeclaration declaration, std::optional<StatementPtr> body);
+
+        VisitResult accept(StatementVisitor &visitor) const override;
+
+        [[nodiscard]] const FunctionDeclaration &declaration() const noexcept;
+        [[nodiscard]] const Statement *body() const noexcept;
+
+        bool operator==(const Statement &other) const noexcept override;
+        bool operator!=(const Statement &other) const noexcept override;
+
+    private:
+        FunctionDeclaration m_declaration;
         StatementPtr m_body;
     };
+
 
     class StatementVisitor {
     public:
         virtual ~StatementVisitor() noexcept = 0;
 
-        virtual VisitResult visitExprStmt(const ExpressionStatement &stmt) = 0;
-        virtual VisitResult visitBlock(const BlockStatement &stmt) = 0;
-        virtual VisitResult visitFunction(const FunctionStatement &stmt) = 0;
+        virtual VisitResult visitExprStmt(const ExpressionStatement &exprStmt) = 0;
+        virtual VisitResult visitBlock(const Block &block) = 0;
+        virtual VisitResult visitFunDefinition(const FunctionDefinition &def) = 0;
+        virtual VisitResult visitFunDeclaration(const FunctionDeclaration &decl) = 0;
     };
 }

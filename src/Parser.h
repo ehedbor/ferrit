@@ -48,6 +48,7 @@ namespace es {
         [[nodiscard]] ExprResult parseMultiplicative() noexcept;
         [[nodiscard]] ExprResult parseUnary() noexcept;
 
+
         [[nodiscard]] ExprResult parsePrimary() noexcept;
         [[nodiscard]] ExprResult parseVariable() noexcept;
         [[nodiscard]] ExprResult parseNumber() noexcept;

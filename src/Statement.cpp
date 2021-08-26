@@ -32,63 +32,88 @@ namespace es {
     }
 
 
-    BlockStatement::BlockStatement(std::vector<StatementPtr> body) noexcept :
+    Block::Block(std::vector<StatementPtr> body) noexcept :
         m_body(std::move(body)) {
     }
 
-    VisitResult BlockStatement::accept(StatementVisitor &visitor) const {
+    VisitResult Block::accept(StatementVisitor &visitor) const {
         return visitor.visitBlock(*this);
     }
 
-    const std::vector<StatementPtr> &BlockStatement::body() const noexcept {
+    const std::vector<StatementPtr> &Block::body() const noexcept {
         return m_body;
     }
 
-    bool BlockStatement::operator==(const Statement &other) const noexcept {
+    bool Block::operator==(const Statement &other) const noexcept {
         if (this == &other) return true;
-        if (auto blockStmt = dynamic_cast<const BlockStatement *>(&other)) {
+        if (auto blockStmt = dynamic_cast<const Block *>(&other)) {
             return body() == blockStmt->body();
         }
         return false;
     }
 
-    bool BlockStatement::operator!=(const Statement &other) const noexcept {
+    bool Block::operator!=(const Statement &other) const noexcept {
         return !(*this == other);
     }
 
 
-    FunctionStatement::FunctionStatement(
+    FunctionDeclaration::FunctionDeclaration(
         std::vector<Token> modifiers, Token keyword, Token name,
-        std::vector<Parameter> params, Type returnType, std::optional<StatementPtr> body) :
+        std::vector<Parameter> params, Type returnType) noexcept :
         m_modifiers(std::move(modifiers)), m_keyword(std::move(keyword)), m_name(std::move(name)),
-        m_params(std::move(params)), m_returnType(std::move(returnType)), m_body(body ? std::move(*body) : nullptr) {
+        m_params(std::move(params)), m_returnType(std::move(returnType)) {
     }
 
-    VisitResult FunctionStatement::accept(StatementVisitor &visitor) const {
-        return visitor.visitFunction(*this);
+    VisitResult FunctionDeclaration::accept(StatementVisitor &visitor) const {
+        return visitor.visitFunDeclaration(*this);
     }
 
-    const std::vector<Token> &FunctionStatement::modifiers() const noexcept {
+    const std::vector<Token> &FunctionDeclaration::modifiers() const noexcept {
         return m_modifiers;
     }
 
-    const Token &FunctionStatement::keyword() const noexcept {
+    const Token &FunctionDeclaration::keyword() const noexcept {
         return m_keyword;
     }
 
-    const Token &FunctionStatement::name() const noexcept {
+    const Token &FunctionDeclaration::name() const noexcept {
         return m_name;
     }
 
-    const std::vector<Parameter> &FunctionStatement::params() const noexcept {
+    const std::vector<Parameter> &FunctionDeclaration::params() const noexcept {
         return m_params;
     }
 
-    const Type &FunctionStatement::returnType() const noexcept {
+    const Type &FunctionDeclaration::returnType() const noexcept {
         return m_returnType;
     }
 
-    const Statement *FunctionStatement::body() const noexcept {
+    bool FunctionDeclaration::operator==(const Statement &other) const noexcept {
+        if (this == &other) return true;
+        if (auto decl = dynamic_cast<const FunctionDeclaration *>(&other)) {
+            return modifiers() == decl->modifiers() && keyword() == decl->keyword() &&
+                name() == decl->name() && params() == decl->params() && returnType() == decl->returnType();
+        }
+        return false;
+    }
+
+    bool FunctionDeclaration::operator!=(const Statement &other) const noexcept {
+        return !(*this == other);
+    }
+
+    FunctionDefinition::FunctionDefinition(FunctionDeclaration declaration, std::optional<StatementPtr> body) :
+        m_declaration(std::move(declaration)), m_body(body ? std::move(*body) : nullptr) {
+    }
+
+    VisitResult FunctionDefinition::accept(StatementVisitor &visitor) const {
+        return visitor.visitFunDefinition(*this);
+    }
+
+    const FunctionDeclaration &FunctionDefinition::declaration() const noexcept {
+        return m_declaration;
+    }
+
+    const Statement *FunctionDefinition::body() const noexcept {
         if (m_body) {
             return m_body.get();
         } else {
@@ -96,17 +121,15 @@ namespace es {
         }
     }
 
-    bool FunctionStatement::operator==(const Statement &other) const noexcept {
+    bool FunctionDefinition::operator==(const Statement &other) const noexcept {
         if (this == &other) return true;
-        if (auto funcStmt = dynamic_cast<const FunctionStatement *>(&other)) {
-            return modifiers() == funcStmt->modifiers() && keyword() == funcStmt->keyword() &&
-                name() == funcStmt->name() && params() == funcStmt->params() &&
-                returnType() == funcStmt->returnType() && *body() == *funcStmt->body();
+        if (auto def = dynamic_cast<const FunctionDefinition *>(&other)) {
+            return declaration() == def->declaration() && *body() == *def->body();
         }
         return false;
     }
 
-    bool FunctionStatement::operator!=(const Statement &other) const noexcept {
+    bool FunctionDefinition::operator!=(const Statement &other) const noexcept {
         return !(*this == other);
     }
 

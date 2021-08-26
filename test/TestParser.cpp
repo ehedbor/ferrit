@@ -56,7 +56,7 @@ namespace es::tests {
             return {};
         }
 
-        VisitResult visitBlock(const BlockStatement &stmt) noexcept override {
+        VisitResult visitBlock(const Block &stmt) noexcept override {
             m_tokens.emplace_back(TokenType::LeftBrace, "{", SourceLocation());
             for (const auto &statement : stmt.body()) {
                 statement->accept(*this);
@@ -67,7 +67,7 @@ namespace es::tests {
             return {};
         }
 
-        VisitResult visitFunction(const FunctionStatement &stmt) noexcept override {
+        VisitResult visitFunDeclaration(const FunctionDeclaration &stmt) noexcept override {
             for (const auto &modifier : stmt.modifiers()) {
                 m_tokens.push_back(modifier);
             }
@@ -87,13 +87,17 @@ namespace es::tests {
             m_tokens.emplace_back(TokenType::Arrow, "->", SourceLocation());
             m_tokens.push_back(stmt.returnType().name());
 
-            if (stmt.body()) {
-                if (dynamic_cast<const ExpressionStatement *>(stmt.body())) {
+            return {};
+        }
+
+        VisitResult visitFunDefinition(const FunctionDefinition &def) noexcept override {
+            def.declaration().accept(*this);
+            if (def.body()) {
+                if (dynamic_cast<const ExpressionStatement *>(def.body())) {
                     m_tokens.emplace_back(TokenType::Assign, "=", SourceLocation());
                 }
-                stmt.body()->accept(*this);
+                def.body()->accept(*this);
             }
-
             return {};
         }
 
@@ -116,17 +120,18 @@ namespace es::tests {
         TokenGenerator tokenGen;
 
         SECTION("parsing simple no-op function") {
-            FunctionStatement expected(
-                std::vector<Token>(),
-                {TokenType::Fun, "fun", {}},
-                {TokenType::Identifier, "my_function", {}},
-                std::vector<Parameter>(),
-                Type({TokenType::Int, "int", {}}),
+            FunctionDefinition expected(
+                FunctionDeclaration(
+                    std::vector<Token>(),
+                    {TokenType::Fun, "fun", {}},
+                    {TokenType::Identifier, "my_function", {}},
+                    std::vector<Parameter>(),
+                    Type({TokenType::Int, "int", {}})),
                 std::make_unique<ExpressionStatement>(
                     std::make_unique<NumberExpression>(
                         Token{TokenType::IntegerLiteral, "0", {}}, true)));
 
-            tokenGen.visitFunction(expected);
+            tokenGen.visitFunDefinition(expected);
             auto tokens = tokenGen.takeTokens();
             addEof(tokens);
 
@@ -136,32 +141,33 @@ namespace es::tests {
             REQUIRE(result->size() == 1);
 
             Statement *decl = result.value()[0].get();
-            auto *funcDecl = dynamic_cast<FunctionStatement *>(decl);
-            REQUIRE(funcDecl != nullptr);
-            REQUIRE(*funcDecl == expected);
+            auto *funcDef = dynamic_cast<FunctionDefinition *>(decl);
+            REQUIRE(funcDef != nullptr);
+            REQUIRE(*funcDef == expected);
         }
 
         SECTION("parsing simple function with 2 parameters") {
-            FunctionStatement expected{
-                {
-                    Token{TokenType::Native, "native", {}}
+            FunctionDefinition expected{
+                FunctionDeclaration(
+                    {
+                        Token{TokenType::Native, "native", {}}
                     },
-                Token{TokenType::Fun, "fun", {}},
-                Token{TokenType::Identifier, "my_func", {}},
-                {
+                    Token{TokenType::Fun, "fun", {}},
+                    Token{TokenType::Identifier, "my_func", {}},
+                    {
                     Parameter{
                         Token{TokenType::Identifier, "a", {}},
                         Type{Token{TokenType::Double, "double", {}}}},
-                    Parameter{
-                        Token{TokenType::Identifier, "b", {}},
-                        Type{Token{TokenType::Int, "int", {}}}}
-                        },
-                Type(Token{TokenType::Double, "double", {}}),
+                        Parameter{
+                            Token{TokenType::Identifier, "b", {}},
+                            Type{Token{TokenType::Int, "int", {}}}}
+                    },
+                    Type(Token{TokenType::Double, "double", {}})),
                 std::make_unique<ExpressionStatement>(
                     std::make_unique<VariableExpression>(
                         Token{TokenType::Identifier, "a", {}}))
             };
-            tokenGen.visitFunction(expected);
+            tokenGen.visitFunDefinition(expected);
             auto tokens = tokenGen.takeTokens();
             addEof(tokens);
 
@@ -171,7 +177,7 @@ namespace es::tests {
             REQUIRE(result->size() == 1);
 
             Statement *decl = result.value()[0].get();
-            auto *funcDecl = dynamic_cast<FunctionStatement *>(decl);
+            auto *funcDecl = dynamic_cast<FunctionDefinition *>(decl);
             REQUIRE(funcDecl != nullptr);
             REQUIRE(*funcDecl == expected);
         }

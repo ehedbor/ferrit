@@ -60,7 +60,8 @@ namespace es {
             return cpp::fail(ParseError(current(), "expected function body"));
         }
 
-        return std::make_unique<FunctionStatement>(modifiers, keyword, name, std::move(params), returnType, std::move(body));
+        FunctionDeclaration decl(modifiers, keyword, name, std::move(params), returnType);
+        return std::make_unique<FunctionDefinition>(std::move(decl), std::move(body));
     }
 
     std::vector<Token> Parser::parseModifiers() noexcept {
@@ -136,7 +137,7 @@ namespace es {
         }
         EXPECT(consume(TokenType::RightBrace, "expected '}' after block"));
 
-        return std::make_unique<BlockStatement>(std::move(body));
+        return std::make_unique<Block>(std::move(body));
     }
 
     ExprResult Parser::parseExpression() noexcept {

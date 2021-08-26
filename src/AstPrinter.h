@@ -10,23 +10,24 @@ namespace es {
     public:
         explicit AstPrinter(std::ostream &out, std::vector<StatementPtr> &ast) noexcept;
 
-        void print() noexcept;
+        void print();
 
     private:
-        VisitResult visitNumber(const NumberExpression &expr) noexcept override;
-        VisitResult visitVariable(const VariableExpression &expr) noexcept override;
-        VisitResult visitBinary(const SimpleBinaryExpression &expr) noexcept override;
-        VisitResult visitBinary(const BitwiseBinaryExpression &expr) noexcept override;
-        VisitResult visitBinary(const CompareBinaryExpression &expr) noexcept override;
-        VisitResult visitUnary(const UnaryExpression &expr) noexcept override;
+        VisitResult visitNumber(const NumberExpression &numExpr) override;
+        VisitResult visitVariable(const VariableExpression &varExpr) override;
+        VisitResult visitBinary(const SimpleBinaryExpression &binaryExpr) override;
+        VisitResult visitBinary(const BitwiseBinaryExpression &binaryExpr) override;
+        VisitResult visitBinary(const CompareBinaryExpression &binaryExpr) override;
+        VisitResult visitUnary(const UnaryExpression &unaryExpr) override;
 
-        VisitResult visitExprStmt(const ExpressionStatement &stmt) noexcept override;
-        VisitResult visitBlock(const BlockStatement &stmt) noexcept override;
-        VisitResult visitFunction(const FunctionStatement &stmt) noexcept override;
+        VisitResult visitExprStmt(const ExpressionStatement &exprStmt) override;
+        VisitResult visitBlock(const Block &block) override;
+        VisitResult visitFunDeclaration(const FunctionDeclaration &funDecl) override;
+        VisitResult visitFunDefinition(const FunctionDefinition &funDeF) override;
 
         void handleBinary(
             const std::string &name, const Token &op,
-            const Expression &left, const Expression &right) noexcept;
+            const Expression &left, const Expression &right);
         void printIndent() noexcept;
 
     private:

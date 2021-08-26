@@ -99,7 +99,7 @@ namespace es::tests {
             }
         }
         GIVEN("two-character operators") {
-            Lexer lexer("-> && || != == >= <=");
+            Lexer lexer("-> && || != == >= <= << >>");
             WHEN("the tokens are lexed") {
                 THEN("there will be no errors") {
                     REQUIRE(lexer.lex() == Token{TokenType::Arrow, "->", {1, 1}});
@@ -109,7 +109,9 @@ namespace es::tests {
                     REQUIRE(lexer.lex() == Token{TokenType::Equal, "==", {1, 13}});
                     REQUIRE(lexer.lex() == Token{TokenType::GreaterEqual, ">=", {1, 16}});
                     REQUIRE(lexer.lex() == Token{TokenType::LessEqual, "<=", {1, 19}});
-                    REQUIRE(lexer.lex() == Token{TokenType::EndOfFile, "", {1, 21}});
+                    REQUIRE(lexer.lex() == Token{TokenType::BitwiseLeftShift, "<<", {1, 22}});
+                    REQUIRE(lexer.lex() == Token{TokenType::BitwiseRightShift, ">>", {1, 25}});
+                    REQUIRE(lexer.lex() == Token{TokenType::EndOfFile, "", {1, 27}});
                 }
             }
         }

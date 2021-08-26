@@ -40,7 +40,6 @@ namespace es {
         BitwiseNot,         ///< '~'
         BitwiseLeftShift,           ///< '<<'
         BitwiseRightShift,          ///< '>>'
-        BitwiseUnsignedRightShift,  ///< '>>>'
 
         Assign,             ///< '='
         //PlusAssign,         ///< '+='
@@ -55,7 +54,6 @@ namespace es {
         //BitwiseXorAssign,   ///< '^='
         //BitwiseLeftShiftAssign, ///< '<<='
         //BitwiseRightShiftAssign, ///< '>>='
-        //BitwiseUnsignedRightShiftAssign, ///< now this is getting a bit ridiculous... '>>>='
 
         Equal,              ///< '=='
         NotEqual,           ///< '!='

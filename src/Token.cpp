@@ -5,7 +5,7 @@ namespace es {
 #define TOKEN_CASE(tokenName)                                                  \
     case TokenType::tokenName:                                                 \
         out << #tokenName;                                                     \
-        break
+        return out
 
     std::ostream &operator<<(std::ostream &out, TokenType type) {
         switch (type) {
@@ -33,6 +33,8 @@ namespace es {
         TOKEN_CASE(BitwiseOr);
         TOKEN_CASE(BitwiseXor);
         TOKEN_CASE(BitwiseNot);
+        TOKEN_CASE(BitwiseLeftShift);
+        TOKEN_CASE(BitwiseRightShift);
         TOKEN_CASE(Assign);
         TOKEN_CASE(Equal);
         TOKEN_CASE(NotEqual);
@@ -55,8 +57,9 @@ namespace es {
         TOKEN_CASE(IntegerLiteral);
         TOKEN_CASE(FloatLiteral);
         TOKEN_CASE(EndOfFile);
+        default:
+            throw std::logic_error("Unknown enum type for Token");
         }
-        return out;
     }
 
 #undef TOKEN_CASE

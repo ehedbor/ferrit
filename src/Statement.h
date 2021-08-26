@@ -58,7 +58,7 @@ namespace es {
     public:
         FunctionStatement(
             std::vector<Token> modifiers, Token keyword, Token name,
-            std::vector<Parameter> params, Type returnType, std::optional<StatementPtr> body);
+            std::vector<Parameter> params, Type returnType, std::optional<StatementPtr> body = {});
 
         VisitResult accept(StatementVisitor &visitor) const override;
 
@@ -67,7 +67,7 @@ namespace es {
         [[nodiscard]] const Token &name() const noexcept;
         [[nodiscard]] const std::vector<Parameter> &params() const noexcept;
         [[nodiscard]] const Type &returnType() const noexcept;
-        [[nodiscard]] std::optional<const Statement *> body() const noexcept;
+        [[nodiscard]] const Statement *body() const noexcept;
 
         bool operator==(const Statement &other) const noexcept override;
         bool operator!=(const Statement &other) const noexcept override;
@@ -78,7 +78,7 @@ namespace es {
         Token m_name;
         std::vector<Parameter> m_params;
         Type m_returnType;
-        std::optional<StatementPtr> m_body;
+        StatementPtr m_body;
     };
 
     class StatementVisitor {

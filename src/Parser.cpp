@@ -218,9 +218,7 @@ namespace es {
 
     ExprResult Parser::parseBitwiseShift() noexcept {
         TRY(left, parseAdditive());
-        while (match(TokenType::BitwiseLeftShift) ||
-            match(TokenType::BitwiseRightShift) ||
-            match(TokenType::BitwiseUnsignedRightShift)) {
+        while (match(TokenType::BitwiseLeftShift) || match(TokenType::BitwiseRightShift)) {
             Token op = previous();
             TRY(right, parseAdditive());
             left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));

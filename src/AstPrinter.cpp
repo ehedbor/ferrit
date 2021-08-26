@@ -6,13 +6,13 @@ namespace es {
         m_out(out), m_ast(ast) {
     }
 
-    void AstPrinter::print() noexcept {
+    void AstPrinter::print() {
         for (auto &declaration : m_ast) {
             declaration->accept(*this);
         }
     }
 
-    VisitResult AstPrinter::visitNumber(const NumberExpression &expr) noexcept {
+    VisitResult AstPrinter::visitNumber(const NumberExpression &expr) {
         printIndent();
         if (expr.isIntLiteral()) {
             m_out << "IntegerLiteral: ";
@@ -24,29 +24,29 @@ namespace es {
         return {};
     }
 
-    VisitResult AstPrinter::visitVariable(const VariableExpression &expr) noexcept {
+    VisitResult AstPrinter::visitVariable(const VariableExpression &expr) {
         printIndent();
         m_out << "Variable: " << expr.name() << "\n";
 
         return {};
     }
 
-    VisitResult AstPrinter::visitBinary(const SimpleBinaryExpression &expr) noexcept {
+    VisitResult AstPrinter::visitBinary(const SimpleBinaryExpression &expr) {
         handleBinary("SimpleBinary", expr.op(), expr.left(), expr.right());
         return {};
     }
 
-    VisitResult AstPrinter::visitBinary(const BitwiseBinaryExpression &expr) noexcept {
+    VisitResult AstPrinter::visitBinary(const BitwiseBinaryExpression &expr) {
         handleBinary("BitwiseBinary", expr.op(), expr.left(), expr.right());
         return {};
     }
 
-    VisitResult AstPrinter::visitBinary(const CompareBinaryExpression &expr) noexcept {
+    VisitResult AstPrinter::visitBinary(const CompareBinaryExpression &expr) {
         handleBinary("CompareBinary", expr.op(), expr.left(), expr.right());
         return {};
     }
 
-    VisitResult AstPrinter::visitUnary(const UnaryExpression &expr) noexcept {
+    VisitResult AstPrinter::visitUnary(const UnaryExpression &expr) {
         printIndent();
         m_out << "Unary: " << expr.op() << "\n";
         m_depth++;
@@ -56,7 +56,7 @@ namespace es {
         return {};
     }
 
-    VisitResult AstPrinter::visitExprStmt(const ExpressionStatement &stmt) noexcept {
+    VisitResult AstPrinter::visitExprStmt(const ExpressionStatement &stmt) {
         printIndent();
         m_out << "ExpressionStatement:\n";
         m_depth++;
@@ -66,7 +66,7 @@ namespace es {
         return {};
     }
 
-    VisitResult AstPrinter::visitBlock(const BlockStatement &stmt) noexcept {
+    VisitResult AstPrinter::visitBlock(const BlockStatement &stmt) {
         printIndent();
         m_out << "Block:\n";
 
@@ -79,7 +79,7 @@ namespace es {
         return {};
     }
 
-    VisitResult AstPrinter::visitFunction(const FunctionStatement &stmt) noexcept {
+    VisitResult AstPrinter::visitFunction(const FunctionStatement &stmt) {
         printIndent();
         m_out << "Function:\n";
 
@@ -114,7 +114,7 @@ namespace es {
         m_out << "-Body:\n";
         if (stmt.body()) {
             m_depth++;
-            (*stmt.body())->accept(*this);
+            stmt.body()->accept(*this);
             m_depth--;
         }
 
@@ -123,9 +123,7 @@ namespace es {
         return {};
     }
 
-    void AstPrinter::handleBinary(
-        const std::string &name, const Token &op,
-        const Expression &left, const Expression &right) noexcept {
+    void AstPrinter::handleBinary(const std::string &name, const Token &op, const Expression &left, const Expression &right) {
         printIndent();
         m_out << name << ":\n";
         m_depth++;

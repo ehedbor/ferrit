@@ -61,7 +61,7 @@ namespace es {
         std::vector<Token> modifiers, Token keyword, Token name,
         std::vector<Parameter> params, Type returnType, std::optional<StatementPtr> body) :
         m_modifiers(std::move(modifiers)), m_keyword(std::move(keyword)), m_name(std::move(name)),
-        m_params(std::move(params)), m_returnType(std::move(returnType)), m_body(std::move(body)) {
+        m_params(std::move(params)), m_returnType(std::move(returnType)), m_body(body ? std::move(*body) : nullptr) {
     }
 
     VisitResult FunctionStatement::accept(StatementVisitor &visitor) const {
@@ -88,9 +88,9 @@ namespace es {
         return m_returnType;
     }
 
-    std::optional<const Statement *> FunctionStatement::body() const noexcept {
-        if (m_body.has_value()) {
-            return m_body->get();
+    const Statement *FunctionStatement::body() const noexcept {
+        if (m_body) {
+            return m_body.get();
         } else {
             return {};
         }
@@ -101,7 +101,7 @@ namespace es {
         if (auto funcStmt = dynamic_cast<const FunctionStatement *>(&other)) {
             return modifiers() == funcStmt->modifiers() && keyword() == funcStmt->keyword() &&
                 name() == funcStmt->name() && params() == funcStmt->params() &&
-                returnType() == funcStmt->returnType() && body() == funcStmt->body();
+                returnType() == funcStmt->returnType() && *body() == *funcStmt->body();
         }
         return false;
     }

@@ -52,8 +52,14 @@ namespace es {
         case '~': return makeToken(TokenType::BitwiseNot);
         case '!': return makeToken(expect('=') ? TokenType::NotEqual : TokenType::LogicalNot);
         case '=': return makeToken(expect('=') ? TokenType::Equal : TokenType::Assign);
-        case '>': return makeToken(expect('=') ? TokenType::GreaterEqual : TokenType::Greater);
-        case '<': return makeToken(expect('=') ? TokenType::LessEqual : TokenType::Less);
+        case '>':
+            if (expect('>')) return makeToken(TokenType::BitwiseRightShift);
+            if (expect('=')) return makeToken(TokenType::GreaterEqual);
+            return makeToken(TokenType::Greater);
+        case '<':
+            if (expect('<')) return makeToken(TokenType::BitwiseLeftShift);
+            if (expect('=')) return makeToken(TokenType::LessEqual);
+            return makeToken(TokenType::Less);
         default: {
             std::stringstream msg;
             msg << "unexpected character '" << *ch << "'";

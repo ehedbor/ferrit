@@ -22,9 +22,36 @@ namespace es::tests {
         VisitResult visitVariable(const VariableExpression &expr) noexcept override {
             m_tokens.push_back(expr.name());
             return {};
-       }
+        }
 
-        VisitResult visitExpr(const ExpressionStatement &stmt) noexcept override {
+        VisitResult visitBinary(const SimpleBinaryExpression &expr) noexcept override {
+            expr.left().accept(*this);
+            m_tokens.push_back(expr.op());
+            expr.right().accept(*this);
+            return {};
+        }
+
+        VisitResult visitBinary(const BitwiseBinaryExpression &expr) noexcept override {
+            expr.left().accept(*this);
+            m_tokens.push_back(expr.op());
+            expr.right().accept(*this);
+            return {};
+        }
+
+        VisitResult visitBinary(const CompareBinaryExpression &expr) noexcept override {
+            expr.left().accept(*this);
+            m_tokens.push_back(expr.op());
+            expr.right().accept(*this);
+            return {};
+        }
+
+        VisitResult visitUnary(const UnaryExpression &expr) noexcept override {
+            m_tokens.push_back(expr.op());
+            expr.operand().accept(*this);
+            return {};
+        }
+
+        VisitResult visitExprStmt(const ExpressionStatement &stmt) noexcept override {
             stmt.expr().accept(*this);
             return {};
         }
@@ -60,10 +87,12 @@ namespace es::tests {
             m_tokens.emplace_back(TokenType::Arrow, "->", SourceLocation());
             m_tokens.push_back(stmt.returnType().name());
 
-            if (dynamic_cast<const ExpressionStatement *>(&stmt.body()) != nullptr) {
-                m_tokens.emplace_back(TokenType::Assign, "=", SourceLocation());
+            if (stmt.body()) {
+                if (dynamic_cast<const ExpressionStatement *>(stmt.body())) {
+                    m_tokens.emplace_back(TokenType::Assign, "=", SourceLocation());
+                }
+                stmt.body()->accept(*this);
             }
-            stmt.body().accept(*this);
 
             return {};
         }

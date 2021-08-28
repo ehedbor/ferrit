@@ -33,7 +33,7 @@ namespace es {
     };
 
     /**
-     * Base class for any AST construct that can produce a value when executed.
+     * Base class for any AST construct that can produce a value when compiled.
      */
     class Expression {
     public:

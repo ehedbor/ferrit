@@ -396,6 +396,6 @@ namespace es {
 
     void ParseError::printTo(std::ostream &out) const {
         out << "Parse Error: " << msg() << "\n";
-        out << "    at " << cause();
+        out << "    at " << cause().location << ": " << cause().type << " \"" << cause().lexeme << "\"";
     }
 }

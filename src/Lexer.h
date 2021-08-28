@@ -132,8 +132,9 @@ namespace es {
     class LexError : public Error {
     public:
         LexError() noexcept = default;
-        LexError(std::string msg, SourceLocation location) noexcept;
+        LexError(std::string msg, std::string cause, SourceLocation location) noexcept;
 
+        [[nodiscard]] const std::string &cause() const noexcept;
         [[nodiscard]] SourceLocation location() const noexcept;
 
         bool operator==(const LexError &other) const noexcept;
@@ -143,6 +144,7 @@ namespace es {
         void printTo(std::ostream &out) const override;
 
     private:
+        std::string m_cause{};
         SourceLocation m_location{};
     };
 }

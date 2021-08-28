@@ -34,7 +34,7 @@ namespace es {
     };
 
     /**
-     * Base class for any AST construct that can NOT produce a value.
+     * Base class for any AST construct that can be compiled, but does not produce a value.
      */
     class Statement {
     public:

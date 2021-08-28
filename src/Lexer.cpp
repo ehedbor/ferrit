@@ -274,13 +274,14 @@ namespace es {
         std::size_t count = m_current - m_start;
         std::size_t startColumn = m_location.column - count;
         std::string lexeme = m_code.substr(m_start, count);
-        return {type, lexeme, {m_location.line, startColumn}};
+        return {type, std::move(lexeme), {m_location.line, startColumn}};
     }
 
     LexError Lexer::makeError(const std::string &msg) const noexcept {
         std::size_t count = m_current - m_start;
         std::size_t startColumn = m_location.column - count;
-        return {msg, {m_location.line, startColumn}};
+        std::string cause = m_code.substr(m_start, count);
+        return {msg, std::move(cause), {m_location.line, startColumn}};
     }
 
     std::optional<char> Lexer::peek() const noexcept {
@@ -344,8 +345,12 @@ namespace es {
         return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
     }
 
-    LexError::LexError(std::string msg, SourceLocation location) noexcept :
-        Error(std::move(msg)), m_location(location) {
+    LexError::LexError(std::string msg, std::string cause, SourceLocation location) noexcept :
+        Error(std::move(msg)), m_cause(std::move(cause)), m_location(location) {
+    }
+
+    const std::string &LexError::cause() const noexcept {
+        return m_cause;
     }
 
     SourceLocation LexError::location() const noexcept {
@@ -353,7 +358,7 @@ namespace es {
     }
 
     bool LexError::operator==(const LexError &other) const noexcept {
-        return msg() == other.msg() && location() == other.location();
+        return msg() == other.msg() && cause() == other.cause() && location() == other.location();
     }
 
     bool LexError::operator!=(const LexError &other) const noexcept {
@@ -361,6 +366,7 @@ namespace es {
     }
 
     void LexError::printTo(std::ostream &out) const {
-        out << location() << ": Syntax Error: " << msg();
+        out << "Syntax Error: " << msg() << "\n";
+        out << "    at " << location() << ": \"" << cause() << "\"";
     }
 }

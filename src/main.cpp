@@ -37,8 +37,8 @@ void parseLine(std::vector<es::Token> tokens) {
         return;
     }
 
-    es::AstPrinter printer{std::cout, *result};
-    printer.print();
+    es::AstPrinter printer{std::cout};
+    printer.print(*result);
 }
 
 int main() {

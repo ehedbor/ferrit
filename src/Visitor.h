@@ -3,6 +3,23 @@
 #include <any>
 
 
+/**
+ * Generates an implementation for a visitor's accept method.
+ *
+ * @param visitorType name of the visitor class
+ * @param methodCall name of the visit method, ommiting the initial "visit" portion
+ */
+#define MAKE_VISITABLE(visitorType, methodCall)                                \
+    VisitResult accept(visitorType &visitor) const override {                  \
+        return visitor.visit##methodCall(*this);                               \
+    }
+
+/**
+ * Generates a base-class definition of an accept method.
+ */
+#define MAKE_BASE_VISITABLE(visitorType) \
+    virtual VisitResult accept(visitorType &visitor) const = 0;
+
 namespace es {
     /**
      * The result of a visitXXX() function.

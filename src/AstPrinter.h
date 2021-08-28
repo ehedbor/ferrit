@@ -9,33 +9,33 @@ namespace es {
     /**
      * Prints a text-based representation of the ast to an output stream.
      */
-    class AstPrinter : private ExpressionVisitor, private StatementVisitor {
+    class AstPrinter : public StatementVisitor, public ExpressionVisitor {
     public:
-        explicit AstPrinter(std::ostream &out, std::vector<StatementPtr> &ast) noexcept;
+        explicit AstPrinter(std::ostream &out) noexcept;
 
-        void print();
+        void print(const std::vector<StatementPtr> &ast);
 
-    private:
-        VisitResult visitNumber(const NumberExpression &numExpr) override;
-        VisitResult visitVariable(const VariableExpression &varExpr) override;
-        VisitResult visitBinary(const SimpleBinaryExpression &binaryExpr) override;
-        VisitResult visitBinary(const BitwiseBinaryExpression &binaryExpr) override;
-        VisitResult visitBinary(const CompareBinaryExpression &binaryExpr) override;
-        VisitResult visitUnary(const UnaryExpression &unaryExpr) override;
-
-        VisitResult visitExprStmt(const ExpressionStatement &exprStmt) override;
-        VisitResult visitBlock(const Block &block) override;
+    public:
         VisitResult visitFunDeclaration(const FunctionDeclaration &funDecl) override;
-        VisitResult visitFunDefinition(const FunctionDefinition &funDeF) override;
+        VisitResult visitFunDefinition(const FunctionDefinition &funDef) override;
+        VisitResult visitBlock(const Block &block) override;
+        VisitResult visitExprStmt(const ExpressionStatement &exprStmt) override;
+
+        VisitResult visitSimpleBinary(const SimpleBinaryExpression &binExpr) override;
+        VisitResult visitBitwiseBinary(const BitwiseBinaryExpression &bitBinExpr) override;
+        VisitResult visitComparison(const ComparisonExpression &cmpExpr) override;
+        VisitResult visitUnary(const UnaryExpression &unaryExpr) override;
+        VisitResult visitVariable(const VariableExpression &varExpr) override;
+        VisitResult visitNumber(const NumberExpression &numExpr) override;
 
         void handleBinary(
             const std::string &name, const Token &op,
             const Expression &left, const Expression &right);
+
         void printIndent() noexcept;
 
     private:
         std::ostream &m_out;
-        std::vector<StatementPtr> &m_ast;
         unsigned int m_depth{0};
     };
 }

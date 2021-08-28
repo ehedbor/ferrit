@@ -5,7 +5,7 @@
 
 namespace es {
     /**
-     * Represents a type that a value can have, such as @c int or <tt>Comparable\<double\></tt>.
+     * Represents a type as defined by the user (as opposed to an <tt>llvm::Type</tt> for instance).
      */
     class Type {
     public:

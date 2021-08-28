@@ -2,82 +2,15 @@
 
 
 namespace es {
-    AstPrinter::AstPrinter(std::ostream &out, std::vector<StatementPtr> &ast) noexcept :
-        m_out(out), m_ast(ast) {
+    AstPrinter::AstPrinter(std::ostream &out) noexcept : m_out(out) {
     }
 
-    void AstPrinter::print() {
-        for (auto &declaration : m_ast) {
+    void AstPrinter::print(const std::vector<StatementPtr> &ast) {
+        for (const auto &declaration : ast) {
             declaration->accept(*this);
         }
     }
 
-    VisitResult AstPrinter::visitNumber(const NumberExpression &numExpr) {
-        printIndent();
-        if (numExpr.isIntLiteral()) {
-            m_out << "IntegerLiteral: ";
-        } else {
-            m_out << "FloatLiteral: ";
-        }
-        m_out << numExpr.value() << "\n";
-
-        return {};
-    }
-
-    VisitResult AstPrinter::visitVariable(const VariableExpression &varExpr) {
-        printIndent();
-        m_out << "Variable: " << varExpr.name() << "\n";
-
-        return {};
-    }
-
-    VisitResult AstPrinter::visitBinary(const SimpleBinaryExpression &binaryExpr) {
-        handleBinary("SimpleBinary", binaryExpr.op(), binaryExpr.left(), binaryExpr.right());
-        return {};
-    }
-
-    VisitResult AstPrinter::visitBinary(const BitwiseBinaryExpression &binaryExpr) {
-        handleBinary("BitwiseBinary", binaryExpr.op(), binaryExpr.left(), binaryExpr.right());
-        return {};
-    }
-
-    VisitResult AstPrinter::visitBinary(const CompareBinaryExpression &binaryExpr) {
-        handleBinary("CompareBinary", binaryExpr.op(), binaryExpr.left(), binaryExpr.right());
-        return {};
-    }
-
-    VisitResult AstPrinter::visitUnary(const UnaryExpression &unaryExpr) {
-        printIndent();
-        m_out << "Unary: " << unaryExpr.op() << "\n";
-        m_depth++;
-        unaryExpr.operand().accept(*this);
-        m_depth--;
-
-        return {};
-    }
-
-    VisitResult AstPrinter::visitExprStmt(const ExpressionStatement &stmt) {
-        printIndent();
-        m_out << "ExpressionStatement:\n";
-        m_depth++;
-        stmt.expr().accept(*this);
-        m_depth--;
-
-        return {};
-    }
-
-    VisitResult AstPrinter::visitBlock(const Block &stmt) {
-        printIndent();
-        m_out << "Block:\n";
-
-        m_depth++;
-        for (auto &line : stmt.body()) {
-            line->accept(*this);
-        }
-        m_depth--;
-
-        return {};
-    }
 
     VisitResult AstPrinter::visitFunDeclaration(const FunctionDeclaration &funDecl) {
         printIndent();
@@ -136,6 +69,73 @@ namespace es {
         m_depth--;
 
         m_depth--;
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitBlock(const Block &block) {
+        printIndent();
+        m_out << "Block:\n";
+
+        m_depth++;
+        for (auto &line : block.body()) {
+            line->accept(*this);
+        }
+        m_depth--;
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitExprStmt(const ExpressionStatement &exprStmt) {
+        printIndent();
+        m_out << "Expression Statement:\n";
+        m_depth++;
+        exprStmt.expr().accept(*this);
+        m_depth--;
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitSimpleBinary(const SimpleBinaryExpression &binExpr) {
+        handleBinary("Simple Binary", binExpr.op(), binExpr.left(), binExpr.right());
+        return {};
+    }
+
+    VisitResult AstPrinter::visitBitwiseBinary(const BitwiseBinaryExpression &bitBinExpr) {
+        handleBinary("Bitwise Binary", bitBinExpr.op(), bitBinExpr.left(), bitBinExpr.right());
+        return {};
+    }
+
+    VisitResult AstPrinter::visitComparison(const ComparisonExpression &cmpExpr) {
+        handleBinary("Comparison", cmpExpr.op(), cmpExpr.left(), cmpExpr.right());
+        return {};
+    }
+
+    VisitResult AstPrinter::visitUnary(const UnaryExpression &unaryExpr) {
+        printIndent();
+        m_out << "Unary: " << unaryExpr.op() << "\n";
+        m_depth++;
+        unaryExpr.operand().accept(*this);
+        m_depth--;
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitVariable(const VariableExpression &varExpr) {
+        printIndent();
+        m_out << "Variable: " << varExpr.name() << "\n";
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitNumber(const NumberExpression &numExpr) {
+        printIndent();
+        if (numExpr.isIntLiteral()) {
+            m_out << "Integer Literal: ";
+        } else {
+            m_out << "Float Literal: ";
+        }
+        m_out << numExpr.value() << "\n";
 
         return {};
     }

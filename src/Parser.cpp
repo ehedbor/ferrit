@@ -223,7 +223,7 @@ namespace es {
         while (match(TokenType::Equal) || match(TokenType::NotEqual)) {
             Token op = previous();
             TRY(right, parseComparison());
-            left = std::make_unique<CompareBinaryExpression>(op, std::move(left), std::move(right));
+            left = std::make_unique<ComparisonExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
@@ -236,7 +236,7 @@ namespace es {
         {
             Token op = previous();
             TRY(right, parseBitwiseShift());
-            left = std::make_unique<CompareBinaryExpression>(op, std::move(left), std::move(right));
+            left = std::make_unique<ComparisonExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }

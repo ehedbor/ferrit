@@ -11,7 +11,7 @@ namespace es {
     public:
         Error() noexcept = default;
         explicit Error(std::string msg) noexcept;
-        virtual ~Error() noexcept = 0;
+        virtual ~Error() noexcept = default;
 
         [[nodiscard]] const std::string &msg() const noexcept;
 

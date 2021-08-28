@@ -7,8 +7,6 @@ namespace es {
         m_msg(std::move(msg)) {
     }
 
-    Error::~Error() noexcept = default;
-
     const std::string &Error::msg() const noexcept {
         return m_msg;
     }

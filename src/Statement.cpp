@@ -4,68 +4,15 @@
 
 
 namespace es {
-    Statement::~Statement() noexcept = default;
-
-
-    ExpressionStatement::ExpressionStatement(ExpressionPtr expr) noexcept :
-        m_expr(std::move(expr)) {
-    }
-
-    VisitResult ExpressionStatement::accept(StatementVisitor &visitor) const {
-        return visitor.visitExprStmt(*this);
-    }
-
-    const Expression &ExpressionStatement::expr() const noexcept {
-        return *m_expr;
-    }
-
-    bool ExpressionStatement::operator==(const Statement &other) const noexcept {
-        if (this == &other) return true;
-        if (auto exprStmt = dynamic_cast<const ExpressionStatement *>(&other)) {
-            return expr() == exprStmt->expr();
-        }
-        return false;
-    }
-
-    bool ExpressionStatement::operator!=(const Statement &other) const noexcept {
+    bool Statement::operator!=(const Statement &other) const noexcept {
         return !(*this == other);
     }
-
-
-    Block::Block(std::vector<StatementPtr> body) noexcept :
-        m_body(std::move(body)) {
-    }
-
-    VisitResult Block::accept(StatementVisitor &visitor) const {
-        return visitor.visitBlock(*this);
-    }
-
-    const std::vector<StatementPtr> &Block::body() const noexcept {
-        return m_body;
-    }
-
-    bool Block::operator==(const Statement &other) const noexcept {
-        if (this == &other) return true;
-        if (auto blockStmt = dynamic_cast<const Block *>(&other)) {
-            return body() == blockStmt->body();
-        }
-        return false;
-    }
-
-    bool Block::operator!=(const Statement &other) const noexcept {
-        return !(*this == other);
-    }
-
 
     FunctionDeclaration::FunctionDeclaration(
         std::vector<Token> modifiers, Token keyword, Token name,
         std::vector<Parameter> params, Type returnType) noexcept :
         m_modifiers(std::move(modifiers)), m_keyword(std::move(keyword)), m_name(std::move(name)),
         m_params(std::move(params)), m_returnType(std::move(returnType)) {
-    }
-
-    VisitResult FunctionDeclaration::accept(StatementVisitor &visitor) const {
-        return visitor.visitFunDeclaration(*this);
     }
 
     const std::vector<Token> &FunctionDeclaration::modifiers() const noexcept {
@@ -97,16 +44,8 @@ namespace es {
         return false;
     }
 
-    bool FunctionDeclaration::operator!=(const Statement &other) const noexcept {
-        return !(*this == other);
-    }
-
     FunctionDefinition::FunctionDefinition(std::unique_ptr<FunctionDeclaration> declaration, StatementPtr body) :
         m_declaration(std::move(declaration)), m_body(std::move(body)) {
-    }
-
-    VisitResult FunctionDefinition::accept(StatementVisitor &visitor) const {
-        return visitor.visitFunDefinition(*this);
     }
 
     const FunctionDeclaration &FunctionDefinition::declaration() const noexcept {
@@ -125,10 +64,35 @@ namespace es {
         return false;
     }
 
-    bool FunctionDefinition::operator!=(const Statement &other) const noexcept {
-        return !(*this == other);
+    Block::Block(std::vector<StatementPtr> body) noexcept :
+        m_body(std::move(body)) {
     }
 
+    const std::vector<StatementPtr> &Block::body() const noexcept {
+        return m_body;
+    }
 
-    StatementVisitor::~StatementVisitor() noexcept = default;
+    bool Block::operator==(const Statement &other) const noexcept {
+        if (this == &other) return true;
+        if (auto blockStmt = dynamic_cast<const Block *>(&other)) {
+            return body() == blockStmt->body();
+        }
+        return false;
+    }
+
+    ExpressionStatement::ExpressionStatement(ExpressionPtr expr) noexcept :
+        m_expr(std::move(expr)) {
+    }
+
+    const Expression &ExpressionStatement::expr() const noexcept {
+        return *m_expr;
+    }
+
+    bool ExpressionStatement::operator==(const Statement &other) const noexcept {
+        if (this == &other) return true;
+        if (auto exprStmt = dynamic_cast<const ExpressionStatement *>(&other)) {
+            return expr() == exprStmt->expr();
+        }
+        return false;
+    }
 }

@@ -9,7 +9,7 @@
 #include "Error.h"
 
 
-namespace es {
+namespace ferrit {
     class LexError;
     using LexResult = cpp::result<Token, LexError>;
 

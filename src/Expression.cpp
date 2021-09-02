@@ -1,7 +1,7 @@
 #include "Expression.h"
 
 
-namespace es {
+namespace ferrit {
     bool Expression::operator!=(const Expression &other) const noexcept {
         return !(*this == other);
     }

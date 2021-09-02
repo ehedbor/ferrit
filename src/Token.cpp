@@ -1,7 +1,7 @@
 #include "Token.h"
 
 
-namespace es {
+namespace ferrit {
 #define TOKEN_CASE(tokenName)                                                  \
     case TokenType::tokenName:                                                 \
         out << #tokenName;                                                     \

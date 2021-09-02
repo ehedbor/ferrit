@@ -1,10 +1,10 @@
-# ES Design Document
+# Ferrit Design Document
 
-This is an overview of what is planned to be added to the ES language.
+This is an overview of what is planned to be added to the Ferrit language.
 
 ## Basic Types
 
-ES has the following primitive types:
+Ferrit has the following primitive types:
  * 8-bit integers: `sbyte` and `byte`
  * 16-bit integers: `short` and `ushort`
  * 32-bit integers: `int` and `uint`

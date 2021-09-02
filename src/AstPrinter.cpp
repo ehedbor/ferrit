@@ -1,7 +1,7 @@
 #include "AstPrinter.h"
 
 
-namespace es {
+namespace ferrit {
     AstPrinter::AstPrinter(std::ostream &out) noexcept : m_out(out) {
     }
 

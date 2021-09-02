@@ -2,7 +2,7 @@
 #include <utility>
 
 
-namespace es {
+namespace ferrit {
     Error::Error(std::string msg) noexcept :
         m_msg(std::move(msg)) {
     }

@@ -20,7 +20,7 @@
 #define MAKE_BASE_VISITABLE(visitorType) \
     virtual VisitResult accept(visitorType &visitor) const = 0;
 
-namespace es {
+namespace ferrit {
     /**
      * The result of a visitXXX() function.
      *

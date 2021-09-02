@@ -3,7 +3,7 @@
 #include <utility>
 
 
-namespace es {
+namespace ferrit {
     bool Statement::operator!=(const Statement &other) const noexcept {
         return !(*this == other);
     }

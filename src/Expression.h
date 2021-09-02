@@ -4,7 +4,7 @@
 #include "Token.h"
 #include "Visitor.h"
 
-namespace es {
+namespace ferrit {
     class Expression;
     class SimpleBinaryExpression;
     class BitwiseBinaryExpression;

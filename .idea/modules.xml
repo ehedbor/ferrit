@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/es.iml" filepath="$PROJECT_DIR$/.idea/es.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ferrit.iml" filepath="$PROJECT_DIR$/.idea/ferrit.iml" />
     </modules>
   </component>
 </project>

@@ -1,7 +1,7 @@
 #include "AstElements.h"
 
 
-namespace es {
+namespace ferrit {
     Type::Type(Token name) noexcept :
         m_name(std::move(name)) {
     }

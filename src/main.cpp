@@ -12,10 +12,10 @@ namespace fs = std::filesystem;
 namespace opts = boost::program_options;
 
 
-std::optional<std::vector<es::Token>> lexLine(const std::string &line, bool showOutput) {
-    std::vector<es::Token> result;
+std::optional<std::vector<ferrit::Token>> lexLine(const std::string &line, bool showOutput) {
+    std::vector<ferrit::Token> result;
     bool hadError = false;
-    es::Lexer lexer{line};
+    ferrit::Lexer lexer{line};
 
     while (true) {
         auto maybeToken = lexer.lex();
@@ -27,7 +27,7 @@ std::optional<std::vector<es::Token>> lexLine(const std::string &line, bool show
         if (showOutput) {
             std::cout << *maybeToken << std::endl;
         }
-        bool shouldBreak = (maybeToken->type == es::TokenType::EndOfFile);
+        bool shouldBreak = (maybeToken->type == ferrit::TokenType::EndOfFile);
         if (!hadError) result.push_back(std::move(*maybeToken));
         if (shouldBreak) break;
     }
@@ -35,8 +35,8 @@ std::optional<std::vector<es::Token>> lexLine(const std::string &line, bool show
     return hadError ? std::nullopt : std::optional(result);
 }
 
-void parseLine(std::vector<es::Token> tokens, bool showOutput) {
-    es::Parser parser{std::move(tokens)};
+void parseLine(std::vector<ferrit::Token> tokens, bool showOutput) {
+    ferrit::Parser parser{std::move(tokens)};
 
     auto result = parser.parse();
     if (!result) {
@@ -48,7 +48,7 @@ void parseLine(std::vector<es::Token> tokens, bool showOutput) {
     }
 
     if (showOutput) {
-        es::AstPrinter printer{std::cout};
+        ferrit::AstPrinter printer{std::cout};
         printer.print(*result);
     }
 }

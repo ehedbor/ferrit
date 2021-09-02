@@ -4,7 +4,7 @@
 #include <string>
 
 
-namespace es {
+namespace ferrit {
     /**
      * Represents every possible type of \c Token.
      */

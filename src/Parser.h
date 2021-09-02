@@ -10,7 +10,7 @@
 #include "Statement.h"
 #include "Token.h"
 
-namespace es {
+namespace ferrit {
     class ParseError;
 
     using ParseResult = cpp::result<std::vector<StatementPtr>, std::vector<ParseError>>;

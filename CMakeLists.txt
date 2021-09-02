@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(es)
+project(ferrit)
 
 set(CMAKE_CXX_STANDARD 17)
 

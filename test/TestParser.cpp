@@ -2,7 +2,7 @@
 #include <iostream>
 #include "Parser.h"
 
-namespace es::tests {
+namespace ferrit::tests {
     class TokenGenerator : public ExpressionVisitor, public StatementVisitor {
     public:
         TokenGenerator() = default;

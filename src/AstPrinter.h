@@ -5,7 +5,7 @@
 #include "Expression.h"
 
 
-namespace es {
+namespace ferrit {
     /**
      * Prints a text-based representation of the ast to an output stream.
      */

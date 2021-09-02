@@ -2,7 +2,7 @@
 #include "ResultTry.h"
 
 
-namespace es {
+namespace ferrit {
     Parser::Parser(std::vector<Token> tokens) noexcept : m_tokens(std::move(tokens)) {
     }
 

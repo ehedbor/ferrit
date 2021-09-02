@@ -9,7 +9,7 @@
 #include "Token.h"
 #include "Visitor.h"
 
-namespace es {
+namespace ferrit {
     class Statement;
     class FunctionDeclaration;
     class FunctionDefinition;
@@ -76,12 +76,6 @@ namespace es {
 
     /**
      * Represents a function definition.
-     *
-     * @note In es, functions do not need to be forward-declared (though they
-     * can be if desired). However, code to call a function cannot be generated
-     * unless the function is already known to exist. To support this, the
-     * intermediate resolution step will "hoist" declarations to the top of the
-     * file, creating a standalone @c FunctionDeclaration node.
      *
      * @see FunctionDeclaration
      */

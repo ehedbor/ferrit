@@ -5,7 +5,7 @@
 #include "ResultTry.h"
 
 
-namespace es {
+namespace ferrit {
     Lexer::Lexer(std::string code) noexcept : m_code(std::move(code)) {
     }
 

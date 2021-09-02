@@ -3,7 +3,7 @@
 #include <string>
 #include <ostream>
 
-namespace es {
+namespace ferrit {
     /**
      * Represents any error-type in this program.
      */

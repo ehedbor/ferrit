@@ -3,7 +3,7 @@
 #include "Token.h"
 
 
-namespace es {
+namespace ferrit {
     /**
      * Represents a type as defined by the user (as opposed to an <tt>llvm::Type</tt> for instance).
      */

@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 #include "Lexer.h"
 
-namespace es::tests {
+namespace ferrit::tests {
     SCENARIO("literals can be lexed", "[lexer]") {
         GIVEN("basic number literals") {
             Lexer lexer{"1 6.9 42"};

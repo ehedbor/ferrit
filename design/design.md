@@ -4,7 +4,7 @@ This is an overview of what is planned to be added to the ES language.
 
 ## Basic Types
 
-The following primitive types will be introduced:
+ES has the following primitive types:
  * 8-bit integers: `sbyte` and `byte`
  * 16-bit integers: `short` and `ushort`
  * 32-bit integers: `int` and `uint`
@@ -12,7 +12,7 @@ The following primitive types will be introduced:
  * 32-bit floats: `float`
  * 64-bit floats: `double`
  * booleans: `bool`
- * characters: `char`. Note that `char` is 8 bits in size and does not necessarily represent a complete unicode character.
+ * characters: `char`. Note that `char` is only 8 bits in size and does not necessarily represent a complete unicode character.
 
 Each of these types can be created with literals. Take numeric literals, for example:
 

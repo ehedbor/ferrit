@@ -23,23 +23,23 @@ Each of these types can be created with literals.
 Integer literals are represented with whole number values.
 
 ```
-let myInt = 42
-let myInt = -63 
+val myInt = 42
+val myInt = -63 
 // underscores can be used as digit separators
-let bigInt = 1_000_000_000 
+val bigInt = 1_000_000_000 
 ```
 
 A base can be specified by prefixing the literal with `0x` (hexadecimal), `0b` (binary) or `0o` (octal).
 Leading zeroes are ignored and do not specify an octal literal.
 
 ``` 
-let hexInt = 0xA9 
+val hexInt = 0xA9 
 // letters are case-insensitive
-let hexInt = 0Xa9 
+val hexInt = 0Xa9 
    
-let binaryInt = 0b11001001 
-let octalInt = 0o257 
-let notOctal = 0257 
+val binaryInt = 0b11001001 
+val octalInt = 0o257 
+val notOctal = 0257 
 ```
 
 
@@ -49,20 +49,20 @@ Float literals are represented with decimal values.
 Note that both the whole-number component and fractional component must be specified.
 
 ```
-let myDouble = 23.985 
+val myDouble = 23.985 
     
-//let notADouble = 32. 
-//let notADouble = .1463 
-//let notADouble = 64.abs()
-let aDouble = 39.0
-let aDouble = 932.0.abs()
+//val notADouble = 32. 
+//val notADouble = .1463 
+//val notADouble = 64.abs()
+val aDouble = 39.0
+val aDouble = 932.0.abs()
 ```
 
 Float literals support exponential notation.
 
 ```
-let oneThousand = 1.0e3
-let threeHalves = 15.0e-1
+val oneThousand = 1.0e3
+val threeHalves = 15.0e-1
 ```
 
 ### Specifying numeric literal types
@@ -85,19 +85,19 @@ Integer and float literals default to the types `Int` and `Double` respectively.
 Alternatively, you may explicitly specify the literal's type or  use the `to` operator.
 
 ```
-let myByte = 0b11001001b 
-let myByte: Byte = 0b11001001
-let myByte = 0b11001001 to Byte 
+val myByte = 0b11001001b 
+val myByte: Byte = 0b11001001
+val myByte = 0b11001001 to Byte 
 // Illegal: Byte is not a subclass or superclass of Int
-//let myByte = 2b11001001 as Byte 
+//val myByte = 2b11001001 as Byte 
 
 // Illegal: integer literals can only be assigned to integer types,
 // and floating-point literals can only be assigned to float types
-//let myInt: Int = 32.0 
-//let myDouble: Double = 259 
+//val myInt: Int = 32.0 
+//val myDouble: Double = 259 
 // Allowed
-let myInt = 32.0 to Int
-let myDouble = 259 to Double
+val myInt = 32.0 to Int
+val myDouble = 259 to Double
 ```
 
 ### Other literals
@@ -105,19 +105,18 @@ let myDouble = 259 to Double
 Literals for non-numeric types also exist:
 
 ```
-let myBool = true
-let yourBool = false
-let aChar = 'q'
+val myBool = true
+val yourBool = false
+val aChar = 'q'
 
-let aString = "Wow! Strings are pretty great!"
-let escapeCodeCollection = "Check out my escape code collection: \t\r\n\0\'\"\\"
+val aString = "Wow! Strings are pretty great!"
+val escapeCodeCollection = "Check out my escape code collection: \t\r\n\0\'\"\\"
 
-// Literal array syntax just calls Array.init[]
-let someNumbers = [1, 1, 2, 3, 5, 8, 13, 21]
-let someNumbers = Array[1, 1, 2, 3, 5, 8, 13, 21]
+val someNumbers = [1, 1, 2, 3, 5, 8, 13, 21]
+val someNumbers = Array[1, 1, 2, 3, 5, 8, 13, 21]
 
-let myRange = 1..10
-let myExclusiveRange = 1 until 10
+val myRange = 1..10
+val myExclusiveRange = 1 until 10
 ```
 
 ## Operators
@@ -125,75 +124,77 @@ Ferrit supports the following operators:
 - Basic operators: `+ - * / %` 
 - Logical operators: `! && ||`
 - Comparison operators: `== != > < >= <=`
-- Bitwise operators: `& | ^ ~ << >> >>>`
-- Assignment operators: `= += -= *= /= %= &&= ||= &= |= ^= <<= >>= >>>=`
+- Assignment operators: `= += -= *= /= %= &&= ||=`
 - Type operators: `is` `!is` `as` `as?` `to` `to?`
 - Contains operator: `in` `!in`
 - Range operator: `..`
  
 ### Examples:
 ```
-let mut sum = 5.0 + 10.0 
+var sum = 5.0 + 10.0 
 sum /= 3.0
 sum *= 2.6              
 
-let bitPattern: Byte = (0b10101101 & 0b10) << 2 
+val bitPattern: Byte = (0b10101101 & 0b10) << 2 
 
-let isEven = bitPattern % 2 == 0
-let isOdd = !isEven
-let condition = isOdd || !isEven
+val isEven = bitPattern % 2 == 0
+val isOdd = !isEven
+val condition = isOdd || !isEven
 
 // Attempt to dereference a null value, 
 // but short circuiting prevents the right side from being executed
-let ohNo = false && null!!
+val ohNo = false && null!!
 
-let answer = 42
+val answer = 42
 
-let isInteger = answer is Int // true
-let asDouble = answer as Double // panics
-let asDouble = answer as? Double // None
-let toDouble = answer to? Double // Some(42.0)
+val isInteger = answer is Int // true
+val asDouble = answer as Double // panics
+val asDouble = answer as? Double // None
+val toDouble = answer to? Double // Some(42.0)
 
-let toBoolean = answer to Bool // panics
-let toBoolean = answer to? Bool // None
+val toBoolean = answer to Bool // panics
+val toBoolean = answer to? Bool // None
 
-let containsA = 'A' in "Hello, world!" // = false
+val containsA = 'A' in "Hello, world!" // = false
 ```
 
 
 ## Variables
-Ferrit allows you to declare variables with the `let` keyword.
-All variables must be given a value before they are used.
+Ferrit allows you to declare variables with the `var` and `val` keywords. 
+`var` defines a read-write variable, and `val` defines a read-only variable.
 
 The type is specified with a colon after the variable's name, followed by the type's name. 
 If the variable is given an initializer, then the type can be deduced automatically and is not necessary. 
 
+Note: variables must be given a value before they are used.
+
 ```
 // Illegal: read-only variables can not be changed
-//let myVal: Int 
+//val myVal: Int 
 //myVal = 10
 
 // Legal
-let myVal: Int = 10
-let myVal = 10
+val myVal: Int = 10
+val myVal = 10
 ```
 
 Variables are immutable by default.
-To specify that a variable is mutable, declare it with `let mut` instead.
+To specify that a variable is mutable, declare it with `var` instead.
 
 ```
 // Defines a mutable variable
-let mut counter = 1
+var counter = 1
 counter += 1
 counter += 10
 ```
 
-Assignments can be used as expressions in Ferrit. This can be combined with pattern matching like so:
+Assignments can be used as expressions in Ferrit.
 
 ```
-let someUnknownType = ...
-if (let Some(value) = someUnknownType to? Int) { 
-    // I can use  
+if ((val value: Int? = ..) is Int) { 
+    // Smart casting and pattern matching is intended to be supported in the future,
+    // but is out of the scope for Ferrit 1.0 
+    print(value!!)
 }
 ```
 
@@ -209,8 +210,8 @@ These statements work much as they do in other C-like languages.
 However, they have the added benefit of being usable as expressions.
 
 ```
-let answer: Int = ...
-let guess: Int = ...
+val answer: Int = ...
+val guess: Int = ...
 if (guess > answer) {
     println("Too high!")
 } else if (guess < answer) {
@@ -223,7 +224,7 @@ if (guess > answer) {
 if (guess == 69) println("nice")
 
 // Used as an expression:
-let message = if (guess > answer) { 
+val message = if (guess > answer) { 
         "Too high!" 
     } else if (guess < answer) { 
         "Too low!" 
@@ -241,7 +242,7 @@ Note that Ferrit does not support traditional C-style for loops.
 
 ```
 // iterate elements
-let nums = [1, 2, 3, 4, 5]
+val nums = [1, 2, 3, 4, 5]
 for (num in nums) {
     println(num)
 }
@@ -256,9 +257,9 @@ While-loops run until the condition is false.
 
 ```
 // For-loops are just syntactic sugar for while-loops
-let mut _iter = nums to Iterator<Int>
+val _iter = nums to Iterator<Int>
 while (_iter.hasNext()) {
-    let i = _iter.next()
+    val i = _iter.next()
     println(i)
 }
 
@@ -273,7 +274,7 @@ except that the condition is checked at the end of the loop body instead of befo
 
 ```
 fun getInput() -> Input
-let mut input = Input()
+var input = Input()
 do {
     input = getInput()
 } while (!input.isValid)
@@ -288,24 +289,6 @@ for (x in 0 until 16) {
 }
 ```
 
-### Pattern Matching
-TODO
-```
-let x: Int = ... 
-let message = when (x) {
-    0 -> "X is 0"
-    in 1..100 -> "X is small"
-    n if n > 100 -> "X is big"
-    n if n == n.abs() -> "x == |x|"
-    else -> "unknown"
-}
-
-let y: Option<Int>
-let message = when (y) {
-    is Some(n) -> print(n)
-}
-```
-
 ## Functions
 Functions are declared by specifying the `fun` keyword and then the function's name, parameters, and return type.
 They are then called by writing the function's name and arguments.
@@ -315,7 +298,7 @@ fun pythagoras(x: Double, y: Double) -> Double {
     return sqrt(x * x + y * y)
 }
 
-let c = pythagoras(3.0, 4.0)
+val c = pythagoras(3.0, 4.0)
 ```
 
 Functions can return a value via the `return` keyword. If no value is specified, 
@@ -389,9 +372,257 @@ myPrint(params = ["this is a single parameter", "not two!"])
 myPrint(params = *["this counts as multiple parameters", "thanks to the spread operator *"])
 ```
 
+### Native Support
+
+Functions may be declared `native` to provide a C/C++ implementation. 
+This feature is not finalized and is likely to change.
+
+```
+// in module MyCode
+
+native fun doSomeStuff(a: Int, b: Int)
+// C function is:
+// ferrit_Unit MyCode_doSomeStuff(ferrit_Int a, ferrit_Int b)
+
+class MyClass {
+    native mut fun doMoreStuff(foo: Double?, bar: Int) -> Result<String, String>
+}
+// C function is:
+// ferrit_Result MyCode_MyClass_doMoreStuff(struct MyCode_MyClass *self, ferrit_Optional foo, ferrit_Optional bar)
+```
+
 ### First-Class Functions
+
 Functions in Ferrit are first-class, meaning they are distinct objects in and of themselves.
 
 ```
-let doSum = 
+// both sum and doSum are of type (Int, Int) -> Int
+fun sum(a: Int, b: Int) = a + b
+val doSum = sum
+
+println(doSum(3, 4)) 
 ```
+
+Anonymous functions are also supported:
+
+```
+fun doStuff(myNums: mut Double[], block: Double.() -> Double) {
+    for i in myNums.indices() {
+        myNums[i] = num.block()
+    }
+}
+
+var myNums = [1.0, 3.1415926535, 2.714, 6.022e23]
+doStuff(myNums) { n -> n * 4 }
+println(myNums)
+```
+
+## Classes
+
+Classes can be declared with the `class` keyword.
+
+Classes in Ferrit 1.0 will support single inheritance, traits, (pure) virtual functions, 
+static members and multiple access modifiers.
+
+### Example - Assumptions
+```
+// The following is true about TestClass:
+//   - TestClass and all of its members are public
+//   - TestClass extends ferrit.Any and nothing else
+//   - TestClass cannot be inherited from
+//   - TestClass has a constructor that accepts no parameters and does nothing
+//   - foo and bar are both plain fields
+//   - doThings is not virtual
+class TestClass {
+    var foo: Int = 40
+    var bar: Bool = true
+
+    fun doThings() = if (bar) foo else -1 
+}
+```
+```
+open class Base {
+    val alpha: Int
+    protected val beta: Int 
+    private val delta: Int
+    
+    init(alpha: Int, beta: Int, delta: Int) {
+        this.alpha = alpha
+        this.beta = beta
+        this.delta = delta
+        println("Base init")
+    }
+    
+    fun foo() { 
+        println("Base foo") 
+    }
+    
+    open fun bar() {
+        println("Base bar")
+    }
+}
+
+// Derived is 'closed' 
+class Derived : Base { 
+    // must call superclass constructor before proceeding with this constructor
+    init() : super(10, 20, 40) {
+        print("Derived init")
+    }
+    
+    // illegal - foo is not marked 'open' in 'Base'
+    //override fun foo() { ... }
+    
+    override fun bar() { 
+        println("Derived bar")
+    }
+    
+    fun getSum() -> Int = {
+        var sum = 0
+       
+        // ok - alpha is public
+        sum += alpha
+        // ok - beta is protected 
+        sum += beta
+        // illegal - delta is private to Base
+        //sum += delta
+        
+        sum 
+    }
+}
+
+val myBase = Base(1, 2, 3)
+myBase.foo() 
+myBase.bar()
+println()
+
+val myDerived = Derived()
+derived.foo()
+derived.bar()
+
+var sum = derived.getSum()
+// ok - alpha is public
+sum += derived.alpha 
+// illegal - beta and delta are not public
+//sum += derived.beta
+//sum += derived.delta
+
+/*
+ * Output:
+ * Base init
+ * Base foo
+ * Base bar
+ * 
+ * Base init
+ * Derived init
+ * Base foo
+ * Base bar
+ * Derived bar
+ */
+```
+
+### Example - Shape
+```
+trait Shape {
+    fun getPerimeter() -> Double
+    fun getArea() -> Double
+}
+
+class Rectangle : Shape {
+    private val length: Double
+    private val width: Double
+    
+    init(l: Double, w: Double) {
+        length = l
+        width = w
+    }
+    
+    fun getLength() = length
+    fun getWidth() = width
+
+    override fun getPerimeter() = 2.0 * (length + width)
+    override fun getArea() = length * width
+}
+
+val shape: Shape = Rectangle(5, 10) 
+println("p=" + shape.getPerimeter() + ", A=" + shape.getArea())
+
+// illegal - shape is a Shape, not a Rectangle
+//println("size=" + shape.getLength() + " by " + shape.getWidth())
+
+val rect = shape as? Rectangle
+if (rect != null) {
+    println("size=" + shape.getLength() + " by " + shape.getWidth())
+}
+```
+
+### Example - Point
+```
+class Point : ToString, Equals {
+    private var x: Int 
+    private var y: Int
+    
+    static val Origin = Point(0, 0)
+    
+    init(x: Int, y: Int) {
+        this.x = x
+        this.y = y
+    }
+    
+    fun getDistanceFromOrigin() = {
+        sqrt(pow(x to Double, 2.0) + pow(y to Double, 2.0))  
+    }
+    
+    fun getX() =  this.x 
+    fun setX(x: Int) = this.x = x
+    
+    fun getY() = this.y 
+    fun setY() = this.y = y
+    
+    override fun operator to() = {
+        "(" + x to String + ", " + y to String + ")"
+    }
+    
+    override fun operator equals(other: Any) = {
+        if (other !is Point) {
+            false
+        } else {
+            val other = other as Point
+            x == other.x && y == other.y
+        }
+    }
+}
+```
+
+This class creates a simple data holder with two fields, appropriate getter and setter methods, 
+two constructors to initialize the fields, a computed property, and a basic implementation of `ToString` and `Equals`.
+In version 1.0 of the language, this will be required.
+
+In the future, additional features may be added to reduce this boilerplate.
+
+A future example might look like this:
+
+```
+class Point : default Into<String>, default Equals<Point>, default Hashable {
+    companion val Origin = Point(0, 0)
+    
+    primary init(var x: Int, var y: Int)
+    
+    val distanceFromOrigin: Double {  
+        get() = sqrt(pow(x to Double, 2.0) + pow(y to Double, 2.0)) 
+    }
+}
+```
+
+Or perhaps:
+
+```
+data class Point(var x: Int, var y: Int) {
+    companion object {
+        val Origin = Point(0, 0)
+    }
+    
+    val distanceFromOrigin: Double   
+        get() = sqrt(pow(x to Double, 2.0) + pow(y to Double, 2.0)) 
+}
+```
+

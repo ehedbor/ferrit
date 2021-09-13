@@ -417,40 +417,128 @@ doStuff(myNums) { n -> n * 4 }
 println(myNums)
 ```
 
+## Modules
+
+Modules allow logical units of code to be grouped together.
+They are declared at the top of a source file with the `module` keywords.
+Modules can be further grouped into submodules by separating its components with periods.
+
+```
+module my.mod.name
+```
+
+Module names are correlated with file system paths. For instance, if the above line was written in
+`MyCode.fe`, then it should be saved in `"<source_root>/my/mod/name/MyCode.fe"`.
+
+Items in other modules must be referred to by their fully-qualified names. 
+
+```
+val f = ferrit.io.File(ferrit.io.getCurrentDirectory())
+```
+
+You can remove the need to use the full name with a `using` statement.
+You can import individual declarations, multiple declarations at once (with `[]`), or all declarations in a scope (with `*`).
+
+```
+using ferrit.io.File
+using ferrit.io.getCurrentDirectory
+//using ferrit.io.[File, getCurrentDirectory]
+//using ferrit.io.*
+
+
+val f = File(getCurrentDirectory)
+```
+
+You don't need to import a fully-qualified path to a declaration. The general rule of thumb is that 
+when you use a `using` statement, you can omit everything before the last period.
+
+```
+using ferrit.io
+
+val f = io.File(io.getCurrentDirectory())
+```
+
+Imports can be aliased to a new name with `as`.
+
+```
+using ferrit.io as fio
+
+val io = fio.File(fio.getCurrentDirectory())
+```
+
+### Access Modifiers
+
+Access modifiers can be used to restrict declaration visibility. Ferrit has four access modifiers:
+
+* `public` - (default) Visible everywhere
+* `module` - Visible everywhere within the same module
+* `protected` - (class members only) Visible to the current class and its subclasses
+* `private` - Visible only to the current module/class
+
 ## Classes
 
-Classes can be declared with the `class` keyword.
-
-Classes in Ferrit 1.0 will support single inheritance, traits, (pure) virtual functions, 
+Ferrit supports object-oriented programming. Ferrit 1.0 will support single inheritance, traits, (pure) virtual functions, 
 static members and multiple access modifiers.
 
-### Example - Assumptions
-```
-// The following is true about TestClass:
-//   - TestClass and all of its members are public
-//   - TestClass extends ferrit.Any and nothing else
-//   - TestClass cannot be inherited from
-//   - TestClass has a constructor that accepts no parameters and does nothing
-//   - foo and bar are both plain fields
-//   - doThings is not virtual
-class TestClass {
-    var foo: Int = 40
-    var bar: Bool = true
+### Basic Usage
+A class can be declared with the `class` keyword.
 
-    fun doThings() = if (bar) foo else -1 
-}
+The following definition specifies a complete class:
+
 ```
+class MyClass 
+```
+
+In this example, `MyClass` extends from `ferrit.Any` and has an automatically-generated default constructor.
+
+Since `ferrit.Any` does not define any fields or methods, and `MyClass` does not declare any of its own,
+`MyClass` is completely useless.
+
+```
+val instance = MyClass()
+// Now what?
+```
+
+A more useful class would have fields and methods:
+
+```
+class IntBox {
+    private var value: Int 
+    
+    init() : init(0)
+    
+    init(value: Int) {
+        this.value = value
+    }
+    
+    fun getValue() = this.value
+    fun setValue(value: Int) = this.value = value
+}
+
+val box = IntBox()
+println(box.getValue()) // 0
+println(box.setValue(10)) // 10
+```
+
+This defines a simple data class that wraps an `Int`.
+
+### Polymorphism
+
+To make a class polymorphic, declare it as well as all overridable methods with the `open` modifier.
+
 ```
 open class Base {
-    val alpha: Int
-    protected val beta: Int 
+    public val alpha: Int
+    module val beta: Int 
+    protected val gamma: Int
     private val delta: Int
     
-    init(alpha: Int, beta: Int, delta: Int) {
+    init(alpha: Int, beta: Int, gamma, Int, delta: Int) {
+        println("Base init")
         this.alpha = alpha
         this.beta = beta
+        this.gamma = gamma
         this.delta = delta
-        println("Base init")
     }
     
     fun foo() { 
@@ -461,15 +549,22 @@ open class Base {
         println("Base bar")
     }
 }
+```
 
-// Derived is 'closed' 
+To extend a class, write `:` and then the superclass' name after the derived class' name.
+
+Overridden members must be declared with `override` (which implies `open`).
+
+```
+// Since Derived is not explicitly 'open', it is 'closed' (cannot be extended) 
 class Derived : Base { 
-    // must call superclass constructor before proceeding with this constructor
-    init() : super(10, 20, 40) {
+    // must explicitly call superclass constructor 
+    // when initializing a derived class
+    init() : super(10, 20, 30, 40) {
         print("Derived init")
     }
     
-    // illegal - foo is not marked 'open' in 'Base'
+    // illegal - foo is 'closed' in Base
     //override fun foo() { ... }
     
     override fun bar() { 
@@ -479,18 +574,18 @@ class Derived : Base {
     fun getSum() -> Int = {
         var sum = 0
        
-        // ok - alpha is public
+        // ok 
         sum += alpha
-        // ok - beta is protected 
         sum += beta
-        // illegal - delta is private to Base
+        sum += gamma
+        // illegal - delta is private in Base
         //sum += delta
         
         sum 
     }
 }
 
-val myBase = Base(1, 2, 3)
+val myBase = Base(1, 2, 3, 4)
 myBase.foo() 
 myBase.bar()
 println()
@@ -500,10 +595,11 @@ derived.foo()
 derived.bar()
 
 var sum = derived.getSum()
-// ok - alpha is public
+// ok
 sum += derived.alpha 
-// illegal - beta and delta are not public
-//sum += derived.beta
+sum += derived.beta
+// illegal
+//sum += derived.gamma
 //sum += derived.delta
 
 /*
@@ -520,44 +616,78 @@ sum += derived.alpha
  */
 ```
 
-### Example - Shape
-```
-trait Shape {
-    fun getPerimeter() -> Double
-    fun getArea() -> Double
-}
+### Abstract Classes and Traits
 
+You can use the `abstract` keyword to declare classes and methods that do not have an implementation.
+
+```
+abstract class Shape {
+    private val x: Double
+    private val y: Double
+    
+    init(x: Double, y: Double) {
+        this.x = x
+        this.y = y
+    }
+    
+    fun getX() -> Double = x
+    fun getY() -> Double = y
+    
+    abstract fun getPerimeter() -> Double
+    abstract fun getArea() -> Double
+}
+```
+
+This can be implemented like normal:
+```
 class Rectangle : Shape {
     private val length: Double
     private val width: Double
     
-    init(l: Double, w: Double) {
+    init(x: Double, y: Double, l: Double, w: Double) : super(x, y) {
         length = l
         width = w
     }
     
-    fun getLength() = length
+    fun getLength() = length 
     fun getWidth() = width
 
     override fun getPerimeter() = 2.0 * (length + width)
     override fun getArea() = length * width
 }
 
-val shape: Shape = Rectangle(5, 10) 
-println("p=" + shape.getPerimeter() + ", A=" + shape.getArea())
 
-// illegal - shape is a Shape, not a Rectangle
-//println("size=" + shape.getLength() + " by " + shape.getWidth())
+// Illegal - Shape is abstract
+//val shape = Shape(3.0, 4.0)
+//println("perimeter = " + shape.getPerimeter() to String)
 
-val rect = shape as? Rectangle
-if (rect != null) {
-    println("size=" + shape.getLength() + " by " + shape.getWidth())
+val shape: Shape = Rectangle(3.0, 4.0, 10.3, 3.7)
+println("perimeter = " + shape.getPerimeter() to String)
+```
+
+Classes can only have one superclass, however, so it might be preferable to use a trait instead.
+Traits define abstract members without providing an implementation. A class can implement any number of traits,
+but can only extend one class.
+
+Here's what the previous `Shape` class would look like as a trait:
+
+```
+trait Shape {
+    fun getX() -> Double 
+    fun getY() -> Double
+    
+    fun getPerimeter() -> Double
+    fun getArea() -> Double
 }
 ```
 
+
 ### Example - Point
+Here's an example of a class that implements the traits `Display`, `Equals` and `Hash`.
 ```
-class Point : ToString, Equals {
+using ferrit.math.[sqrt, pow]
+
+class Point : Display, Equals, Hash {
     private var x: Int 
     private var y: Int
     
@@ -569,10 +699,10 @@ class Point : ToString, Equals {
     }
     
     fun getDistanceFromOrigin() = {
-        sqrt(pow(x to Double, 2.0) + pow(y to Double, 2.0))  
+        sqrt(pow(x, 2) + pow(y, 2))  
     }
     
-    fun getX() =  this.x 
+    fun getX() = this.x 
     fun setX(x: Int) = this.x = x
     
     fun getY() = this.y 
@@ -590,25 +720,28 @@ class Point : ToString, Equals {
             x == other.x && y == other.y
         }
     }
+    
+    override fun getHash() = x ^ 31 + y
 }
 ```
 
 This class creates a simple data holder with two fields, appropriate getter and setter methods, 
-two constructors to initialize the fields, a computed property, and a basic implementation of `ToString` and `Equals`.
-In version 1.0 of the language, this will be required.
+two constructors to initialize the fields, a computed property, and a basic implementation of the three traits.
+In version 1.0 of the language, this boilerplate will be required.
 
 In the future, additional features may be added to reduce this boilerplate.
-
 A future example might look like this:
 
 ```
-class Point : default Into<String>, default Equals<Point>, default Hashable {
-    companion val Origin = Point(0, 0)
+using ferrit.math.[sqrt, pow]
+
+class Point : default Into<String>, default Equals<Point>, default Hash {
+    static val Origin = Point(0, 0)
     
     primary init(var x: Int, var y: Int)
     
     val distanceFromOrigin: Double {  
-        get() = sqrt(pow(x to Double, 2.0) + pow(y to Double, 2.0)) 
+        get() = sqrt(pow(x, 2) + pow(y, 2)) 
     }
 }
 ```
@@ -616,13 +749,15 @@ class Point : default Into<String>, default Equals<Point>, default Hashable {
 Or perhaps:
 
 ```
+using ferrit.math.[sqrt, pow]
+
 data class Point(var x: Int, var y: Int) {
     companion object {
         val Origin = Point(0, 0)
     }
     
     val distanceFromOrigin: Double   
-        get() = sqrt(pow(x to Double, 2.0) + pow(y to Double, 2.0)) 
+        get() = sqrt(pow(x, 2) + pow(y, 2)) 
 }
 ```
 

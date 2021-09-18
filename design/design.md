@@ -430,7 +430,7 @@ module my.mod.name
 Module names are correlated with file system paths. For instance, if the above line was written in
 `MyCode.fe`, then it should be saved in `"<source_root>/my/mod/name/MyCode.fe"`.
 
-Items in other modules must be referred to by their fully-qualified names. 
+Items in other modules can be referred to by their fully-qualified names. 
 
 ```
 val f = ferrit.io.File(ferrit.io.getCurrentDirectory())

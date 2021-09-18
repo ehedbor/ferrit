@@ -1,0 +1,68 @@
+module ferrit
+
+using some.stuff
+using some.other.stuff.[aaa, bbb, ccc]
+using all.of.dis.*
+
+class Class {
+    private var n: Int
+    
+    init(n: Int) {
+        this.n = n
+    }
+    
+    /**
+     * This is a function.
+     *
+     * @param param1 Description
+     */
+    fun function(param1: Int, param2: Int, param3: Int) {
+        // Comment
+        val localVar = [param1, param2, param3]
+        this.n = sum(localVar)
+    }
+    
+    private static fun sum(array: Int[]) -> Int {
+        var result = 0
+        for (e in array) {
+            result += e
+        }
+        return result
+    }
+}
+
+module abstract class Foo {
+    abstract fun function()
+}
+
+module class Bar : Foo {
+"${println(3.4 to String)}"
+    override fun function() { println("bar") }
+}
+
+fun doSomeMath() {
+    val first = 149
+    val second = -63
+    println((first + second) / 2)
+    
+    val byte: Byte = 0b0100_0101f
+    val short: Short = 0o1374s 
+    val int: Int = 4127092i
+    val long: Long = 1234567890L
+    
+    // This is fine: small types implicitly widened to large types
+    val result = byte + short - int * long
+    println(result)
+    
+    val shortened = long to Int
+    
+    val a = 3.0f
+    val b = 4.0f
+    val c = sqrt(pow(a, 2.0f) + pow(b, 2.0f))
+    
+    println("{}^2 + {}^2 = {}^2", a, b, c)
+}
+
+fun getInput(min: Int, max: Int) -> Int {
+    val input = io.prompt()
+}

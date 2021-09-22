@@ -4,9 +4,44 @@ This is an overview of what is planned to be added to the Ferrit language.
 This document is not final and anything inside it may change at any point.
 
 
+## Overview
+
+Ferrit is an object-oriented, statically-typed, garbage-collected, compiled programming language.
+Its syntax is based off C-like languages such as Java and Kotlin.
+
+Programs consist of declarations, statements and expressions organized in an `.fe` file.
+There is no restriction on what may appear at top-level.
+
+Here is a "Hello World" program written in Ferrit:
+
+```
+println("Hello")
+```
+
+For a more complicated example, this program computes the Fibonacci sequence up to 10:
+
+```
+fun fib(n: Int) -> Int = {
+    if (n <= 0) {
+        0
+    } else if (n == 1 || n == 2) {
+        1
+    } else {
+        fib(n - 1) + fib(n - 2)
+    }
+}
+
+for (n in 1...10) {
+    println("Fib(" + n + ") = " + fib(n)) 
+}
+```
+
+Ferrit allows you to organize code across multiple files. Simply specify all source files as parameters
+to `ferritc`.
+
 ## Basic Types
 
-Ferrit has the following primitive types:
+Ferrit has the following basic types:
  * 8-bit integers: `SByte` and `Byte`
  * 16-bit integers: `Short` and `UShort` 
  * 32-bit integers: `Int` and `UInt`
@@ -15,11 +50,10 @@ Ferrit has the following primitive types:
  * 64-bit floats: `Double` 
  * booleans: `Bool`
  * characters: `Char`. Note that `Char` is only 8 bits in size and does not necessarily represent a complete unicode character.
+ * strings: `String`
+ * arrays: `Array<T>`
 
-Each of these types can be created with literals. 
-
-
-### Integer Literals
+### Integers
 Integer literals are represented with whole number values.
 
 ```
@@ -65,7 +99,7 @@ val oneThousand = 1.0e3
 val threeHalves = 15.0e-1
 ```
 
-### Specifying numeric literal types
+### Converting between literals
 
 Integer and float literals default to the types `Int` and `Double` respectively. To specify a different type, add a suffix to the literal.
 
@@ -100,6 +134,18 @@ val myInt = 32.0 to Int
 val myDouble = 259 to Double
 ```
 
+Implicit widening conversions are allowed, but implicit narrowing conversions are permitted.
+Conversions between integers/floats must also be made explicit, as conversion between them is
+inherently lossy.
+
+```
+val myByte: Byte = 10 // illegal, narrowing conversion
+val myLong: Long = 10L // allowed, widening conversion 
+
+val myInt: Int = 10.0 // illegal
+val myDouble: Double = 10 // illegal
+```
+
 ### Other literals
 
 Literals for non-numeric types also exist:
@@ -112,8 +158,10 @@ val aChar = 'q'
 val aString = "Wow! Strings are pretty great!"
 val escapeCodeCollection = "Check out my escape code collection: \t\r\n\0\'\"\\"
 
+// implcitly calls Array's collection constructor, init[T...]
 val someNumbers = [1, 1, 2, 3, 5, 8, 13, 21]
-val someNumbers = Array[1, 1, 2, 3, 5, 8, 13, 21]
+// explicit version of the above
+val someNumbers: Array<Int> = Array[1, 1, 2, 3, 5, 8, 13, 21]
 
 val myRange = 1..10
 val myExclusiveRange = 1 until 10
@@ -123,11 +171,12 @@ val myExclusiveRange = 1 until 10
 Ferrit supports the following operators:
 - Basic operators: `+ - * / %` 
 - Logical operators: `! && ||`
+- Bitwise operators: `~ & | << >>`
 - Comparison operators: `== != > < >= <=`
-- Assignment operators: `= += -= *= /= %= &&= ||=`
+- Assignment operators: `= += -= *= /= %= &&= ||= &= |= <<= >>=`
 - Type operators: `is` `!is` `as` `as?` `to` `to?`
 - Contains operator: `in` `!in`
-- Range operator: `..`
+- Range operator: exclusive (`..`) and inclusive (`...`)
  
 ### Examples:
 ```
@@ -141,9 +190,7 @@ val isEven = bitPattern % 2 == 0
 val isOdd = !isEven
 val condition = isOdd || !isEven
 
-// Attempt to dereference a null value, 
-// but short circuiting prevents the right side from being executed
-val ohNo = false && null!!
+val hmmmm = false && true
 
 val answer = 42
 
@@ -165,44 +212,25 @@ Ferrit allows you to declare variables with the `var` and `val` keywords.
 
 The type is specified with a colon after the variable's name, followed by the type's name. 
 If the variable is given an initializer, then the type can be deduced automatically and is not necessary. 
-
-Note: variables must be given a value before they are used.
+While variables do not need to be initialized immediately, they must be initialized before they are used.
 
 ```
 // Illegal: read-only variables can not be changed
-//val myVal: Int 
-//myVal = 10
+//val myVal = 10 
+//myVal += 4
 
-// Legal
-val myVal: Int = 10
+// Legal: myVar is read-write
+var myVar = 10
+myVar += 4
+
+// Legal: name shadowing is permitted
 val myVal = 10
+val myVal = myVal + 4
 ```
-
-Variables are immutable by default.
-To specify that a variable is mutable, declare it with `var` instead.
-
-```
-// Defines a mutable variable
-var counter = 1
-counter += 1
-counter += 10
-```
-
-Assignments can be used as expressions in Ferrit.
-
-```
-if ((val value: Int? = ..) is Int) { 
-    // Smart casting and pattern matching is intended to be supported in the future,
-    // but is out of the scope for Ferrit 1.0 
-    print(value!!)
-}
-```
-
 
 ## Control Flow
 
 Ferrit supports standard control flow constructs such as `if`/`else` statements and `for` and `while` loops.
-The language also supports pattern matching with `when`.
 
 ### If/else statements:
 
@@ -248,7 +276,7 @@ for (num in nums) {
 }
 
 // iterate indices
-for (index in 0 until nums.size) {
+for (index in 0..nums.size) {
     println(nums[index])
 }
 ```
@@ -273,25 +301,43 @@ Do-while loops act much the same as while loops,
 except that the condition is checked at the end of the loop body instead of before.
 
 ```
-fun getInput() -> Input
-var input = Input()
+var num: Int? = null
 do {
-    input = getInput()
-} while (!input.isValid)
+    val input: String = getInput()
+    num = input to? Int
+} while (num == null)
+
+println
 ```
 
 The `break` and `continue` keywords can be used to exit or continue a loop respectively.
 
 ```
-for (x in 0 until 16) {
-    if (x % 2 == 0) continue
-    if (x == 8) break
+for (n in 0...10) {
+    if (n % 2 == 0) continue
+    if (n == 8) break
+}
+```
+
+Labels allow you to break and continue across nested loops:
+```
+val chunk: Array<Byte> = getChunk()
+val DIAMOND_ORE = 56b
+for (x in 0..16) @outer:{
+    for (z in 0..16) {
+        for (y in 0..256) {
+            val block = chunk[(x * 16 + z) * 16 + y]
+            if (block == DIAMOND_ORE) {
+                println("OMG DIAMONDS!!!")
+                break@outer
+            }
+        }
+    } 
 }
 ```
 
 ## Functions
-Functions are declared by specifying the `fun` keyword and then the function's name, parameters, and return type.
-They are then called by writing the function's name and arguments.
+Functions are declared with the `fun` keyword. They can be called by writing their name and arguments.
 
 ```
 fun pythagoras(x: Double, y: Double) -> Double {
@@ -309,14 +355,17 @@ fun returnsUnit() {}
 fun returnsTen() -> Int { return 10 }
 ```
 
-If a function is defined with an equals sign after its return type, then its body may be an expression.
-The value returned is the last value in the expression. 
+If a function is defined with an equals sign after its return type, then its body is an expression 
+and the return type can be inferred.
 
 ```
 // Return type ommitted, deduced to Int
 fun returnsTen() = 10
+
 // This syntax works with blocks too
+// Note that this does NOT return a closure!
 fun doSomeMath(n: Int) = {
+    println("This is a block!")
     if (n % 2 == 0) {
         n / 2
     } else {
@@ -325,7 +374,7 @@ fun doSomeMath(n: Int) = {
 }
 ```
 
-Functions may specify default values with an equals sign after the parameter.
+Functions may specify default values for their parameters. The parameter's type is still required.
 
 ```
 fun pow(number: Int, exponent: Int = 2) -> Int { ... }
@@ -333,28 +382,13 @@ pow(4) // exponent is implicitly 2
 pow(4, 3) // exponent is explicitly 3
 ```
 
-Arguments may be named when you call a function.
+Arguments may be named when you call a function. No positional arguments may come after a named argument,
+and named arguments need not be in order.
 
 ```
 fun huh(a: Int = 4, b: Int = 93, c: Int = -1) { ... }
-huh(a: 1, b: 2, c: 3)
-huh(b: 49) 
-
-// This assigns 24 to a local variable named 'a', then passes it in as a parameter to huh
-huh(a = 24)
-```
-
-If the last argument to a function is a lambda, it may be written outside the argument list.
-
-```
-fun doStuff(foo: Int = 39, bar: () -> Unit) { ... }
-
-doStuff(20, { println("i did it") }) 
-doStuff(30) { println("i did it") }
-
-doStuff(bar = { println("i did it") })
-// parenthesis can be ommitted if no other arguments are passed
-doStuff { println("i did it") }
+huh(c = 30, a = 10, b = 57)
+huh(b = 49) 
 ```
 
 You can pass a variable number of arguments by adding `...` to the argument's type.
@@ -372,49 +406,57 @@ myPrint(params = ["this is a single parameter", "not two!"])
 myPrint(params = *["this counts as multiple parameters", "thanks to the spread operator *"])
 ```
 
-### Native Support
+### First-Class functions
 
-Functions may be declared `native` to provide a C/C++ implementation. 
-This feature is not finalized and is likely to change.
-
-```
-// in module MyCode
-
-native fun doSomeStuff(a: Int, b: Int)
-// C function is:
-// ferrit_Unit MyCode_doSomeStuff(ferrit_Int a, ferrit_Int b)
-
-class MyClass {
-    native mut fun doMoreStuff(foo: Double?, bar: Int) -> Result<String, String>
-}
-// C function is:
-// ferrit_Result MyCode_MyClass_doMoreStuff(struct MyCode_MyClass *self, ferrit_Optional foo, ferrit_Optional bar)
-```
-
-### First-Class Functions
-
-Functions in Ferrit are first-class, meaning they are distinct objects in and of themselves.
+Functions in Ferrit are first-class, meaning they are distinct objects that can be passed around.
 
 ```
-// both sum and doSum are of type (Int, Int) -> Int
 fun sum(a: Int, b: Int) = a + b
-val doSum = sum
+
+val doSum: (Int, Int) -> Int = sum
 
 println(doSum(3, 4)) 
 ```
 
-Anonymous functions are also supported:
+Ferrit provides a concise syntax to create anonymous functions. 
 
 ```
-fun doStuff(myNums: mut Double[], block: Double.() -> Double) {
-    for i in myNums.indices() {
-        myNums[i] = num.block()
-    }
+
+```
+
+If the last argument to a function is a lambda, it may be written outside the argument list.
+In addition, if there are no other arguments to the function, the parenthesis may be omitted.
+
+```
+fun fooBar(foo: Int = 39, bar: (Int) -> Unit) { 
+    bar(foo)
+}
+ 
+fooBar(20, { f -> println("Foo is " + f) }) 
+
+// Shortened syntax: 
+fooBar(30) { f -> println("Foo is " + f) }
+
+// Even shorter:
+fooBar { println("i did it") }
+```
+
+### Native Support
+
+Functions may be declared `native` to provide a C/C++ implementation. 
+You can pass a flag to the compiler to generate header files from Ferrit source files. 
+This feature is not finalized and is likely to change.
+
+```
+module mycode
+
+native fun doSomeStuff(a: Int, b: Int)
+
+class MyClass {
+    native fun doMoreStuff(foo: String, bar: Int) -> Double
 }
 
-var myNums = [1.0, 3.1415926535, 2.714, 6.022e23]
-doStuff(myNums) { n -> n * 4 }
-println(myNums)
+// This would result in functions called "mycode_doSomeStuff" and "mycode_MyClass_doMoreStuff".
 ```
 
 ## Modules
@@ -428,7 +470,7 @@ module my.mod.name
 ```
 
 Module names are correlated with file system paths. For instance, if the above line was written in
-`MyCode.fe`, then it should be saved in `"<source_root>/my/mod/name/MyCode.fe"`.
+`MyCode.fe`, then it should be saved in "my/mod/name/MyCode.fe".
 
 Items in other modules can be referred to by their fully-qualified names. 
 
@@ -499,32 +541,100 @@ val instance = MyClass()
 // Now what?
 ```
 
-A more useful class would have fields and methods:
+### Properties, Fields and Constructors
+
+A more useful class would have state and behavior:
 
 ```
-class IntBox {
-    private var value: Int 
+class Address : Into<String> {
+    private var street: String
+    private var city: String
+    private var state: String?
+    private var zip: String
+    private var country: String
     
-    init() : init(0)
-    
-    init(value: Int) {
-        this.value = value
+    init(street: String, city: String, state: String?, zip: String, country: String) {
+        this.street = street
+        this.city = city
+        this.state = state
+        this.zip = zip
+        this.country = country
     }
     
-    fun getValue() = this.value
-    fun setValue(value: Int) = this.value = value
+    override operator fun into() -> String {
+        return street + "\n" +
+            city + (if (state == null) "" else ", " + state + " ") + 
+            zip + "\n" +
+            country + "\n"
+    }
+    
+    fun getStreet() = this.street
+    fun setStreet(street: String) { this.street = street } 
+    ... more getters/setters ...
 }
-
-val box = IntBox()
-println(box.getValue()) // 0
-println(box.setValue(10)) // 10
 ```
 
-This defines a simple data class that wraps an `Int`.
+That's a lot of boilerplate. Thankfully, we can leverage properties and primary constructors to reduce it.
+
+```
+// This code is semantically equvalent!
+class IntBox : Into<String> {
+    primary init(
+        var street: String,
+        var city: String,
+        var state: String?,
+        var zip: String,
+        var country: String,
+    )
+    
+    override operator fun into() -> String {
+        return street + "\n" +
+            city + (if (state == null) "" else ", " + state + " ") + 
+            zip + "\n" +
+            country + "\n"
+    }    
+}
+```
+
+I'm getting tired of writing stuff so here's how you do custom properties:
+
+```
+class AHRRGRGGGDSFDFB {
+    var customBehavior: Int = 10 private get
+    var something: Double 
+        module get() = random.next() 
+        protected set(value) { panic("lol") }
+}
+```
+
+### Collection Constructors
+
+Collection constructors are a neat way to make your own collection literals. Here's how you use them:
+```
+class CharList {
+    private var data: String
+    
+    init[chars: Char...] {
+        data = String.fromChars(chars)
+    }
+    ...
+}
+
+val firstList = CharList['T', 'e', 's', 't', '.', '\0']
+val secondList: CharList = ['N', 'e', 'a', 't', '\0']
+```
+
+If a collection constructor takes a `Pair<T>...`, then you may use a special syntax to specify the pairs.
+```
+class Map {
+    primary init[val data: Pair<String, String>...] 
+}
+val cookieRatings = Map["Peanut Butter": 10, "Chocolate chip": 8, "Oatmeal Raisin": 7] 
+```
 
 ### Polymorphism
 
-To make a class polymorphic, declare it as well as all overridable methods with the `open` modifier.
+To make a class polymorphic, declare it and all overridable properties/methods with the `open` modifier.
 
 ```
 open class Base {
@@ -761,3 +871,21 @@ data class Point(var x: Int, var y: Int) {
 }
 ```
 
+## Generics
+We got 'em.
+
+```
+class List<T> {
+    private val data = Array<T>()
+    var size = 0 private set
+    var capacity = 0 private set
+    
+    init[private val data: T...] {
+        size = data.size
+        capacity = size
+    }
+    
+    operator fun get(i: Int) = data[i]
+    operator fun set(i: Int, value: in T) { data[i] = value }  
+}
+```

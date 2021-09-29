@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(ferrit)
+project(ferrit VERSION "0.0.0" LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -30,11 +30,7 @@ endfunction()
 
 install_submodule(result extern/result)
 install_submodule(Catch2 extern/Catch2)
-
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_NO_WARN_NEW_VERSIONS ON)
-find_package(Boost 1.70 REQUIRED COMPONENTS program_options)
-message(STATUS "Found Boost version ${Boost_VERSION} in \"${Boost_INCLUDE_DIR}\"")
+install_submodule(cxxopts extern/cxxopts)
 
 find_package(LLVM 12 REQUIRED CONFIG)
 message(STATUS "Found LLVM version ${LLVM_PACKAGE_VERSION} in \"${LLVM_DIR}\"")

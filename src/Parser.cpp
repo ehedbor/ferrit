@@ -8,7 +8,7 @@ namespace ferrit {
 
     ParseResult Parser::parse() noexcept {
         std::vector<StatementPtr> program;
-        std::vector<ParseError> errors;
+        std::vector<Error> errors;
 
         skipTerminators(true);
         while (!isAtEnd()) {
@@ -33,8 +33,7 @@ namespace ferrit {
         if (match(TokenType::Fun)) {
             return parseFunctionDeclaration(mods);
         }
-
-        return cpp::fail(ParseError(current(), "expected declaration"));
+        return cpp::fail(makeError({"expected declaration"}));
     }
 
     StmtResult Parser::parseFunctionDeclaration(const std::vector<Token> &modifiers) noexcept {
@@ -82,7 +81,7 @@ namespace ferrit {
                 TRY(block, parseBlock());
                 body = std::move(block);
             } else {
-                return cpp::fail(ParseError(current(), "expected function body"));
+                return cpp::fail(makeError({"expected function body"}));
             }
             return std::make_unique<FunctionDefinition>(std::move(decl), std::move(body));
         }
@@ -100,7 +99,7 @@ namespace ferrit {
         return result;
     }
 
-    cpp::result<std::vector<Parameter>, ParseError> Parser::parseParameters() noexcept {
+    cpp::result<std::vector<Parameter>, Error> Parser::parseParameters() noexcept {
         std::vector<Parameter> result;
         if (!check(TokenType::RightParen)) {
             // parameter list is not empty.
@@ -127,22 +126,22 @@ namespace ferrit {
         return result;
     }
 
-    cpp::result<Parameter, ParseError> Parser::parseParameter() noexcept {
+    cpp::result<Parameter, Error> Parser::parseParameter() noexcept {
         auto name = previous();
         EXPECT(consume(TokenType::Colon, "expected ':' after parameter name"));
         TRY(type, parseType());
         if (type.name().type == TokenType::Void) {
-            return cpp::fail(ParseError(current(), "cannot declare parameter of type void"));
+            return cpp::fail(makeError({"cannot declare parameter of type void"}));
         }
 
         return Parameter(name, type);
     }
 
-    cpp::result<Type, ParseError> Parser::parseType() noexcept {
+    cpp::result<Type, Error> Parser::parseType() noexcept {
         if (match(TokenType::Int) || match(TokenType::Double) || match(TokenType::Void)) {
             return Type(previous());
         }
-        return cpp::fail(ParseError(current(), "expected type name"));
+        return cpp::fail(makeError({"expected type name"}));
     }
 
     StmtResult Parser::parseStatement() noexcept {
@@ -292,7 +291,7 @@ namespace ferrit {
         } else if (match(TokenType::FloatLiteral) || match(TokenType::IntegerLiteral)) {
             return parseNumber();
         } else {
-            return cpp::fail(ParseError(current(), "expected primary expression"));
+            return cpp::fail(makeError({"expected primary expression"}));
         }
     }
 
@@ -350,7 +349,7 @@ namespace ferrit {
         if (check(expected)) {
             return advance();
         } else {
-            return cpp::fail(ParseError(current(), errMsg));
+            return cpp::fail(makeError({errMsg}));
         }
     }
 
@@ -386,16 +385,7 @@ namespace ferrit {
         return current().type == TokenType::EndOfFile;
     }
 
-    ParseError::ParseError(Token cause, std::string msg) noexcept :
-        Error(std::move(msg)), m_cause(std::move(cause)) {
-    }
-
-    const Token &ParseError::cause() const noexcept {
-        return m_cause;
-    }
-
-    void ParseError::printTo(std::ostream &out) const {
-        out << "Parse Error: " << msg() << "\n";
-        out << "    at " << cause().location << ": " << cause().type << " \"" << cause().lexeme << "\"";
+    Error Parser::makeError(const std::vector<std::string> &fmtArgs) const noexcept {
+        return Error(current(), ErrorCode::SyntaxParseError, fmtArgs);
     }
 }

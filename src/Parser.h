@@ -11,12 +11,10 @@
 #include "Token.h"
 
 namespace ferrit {
-    class ParseError;
-
-    using ParseResult = cpp::result<std::vector<StatementPtr>, std::vector<ParseError>>;
-    using StmtResult = cpp::result<StatementPtr, ParseError>;
-    using ExprResult = cpp::result<ExpressionPtr, ParseError>;
-    using TokenResult = cpp::result<const Token &, ParseError>;
+    using ParseResult = cpp::result<std::vector<StatementPtr>, std::vector<Error>>;
+    using StmtResult = cpp::result<StatementPtr, Error>;
+    using ExprResult = cpp::result<ExpressionPtr, Error>;
+    using TokenResult = cpp::result<const Token &, Error>;
 
     /**
      * Converts a stream of tokens into an abstract syntax tree.
@@ -39,9 +37,9 @@ namespace ferrit {
 
         // Supporting AST elements
         [[nodiscard]] std::vector<Token> parseModifiers() noexcept;
-        [[nodiscard]] cpp::result<std::vector<Parameter>, ParseError> parseParameters() noexcept;
-        [[nodiscard]] cpp::result<Parameter, ParseError> parseParameter() noexcept;
-        [[nodiscard]] cpp::result<Type, ParseError> parseType() noexcept;
+        [[nodiscard]] cpp::result<std::vector<Parameter>, Error> parseParameters() noexcept;
+        [[nodiscard]] cpp::result<Parameter, Error> parseParameter() noexcept;
+        [[nodiscard]] cpp::result<Type, Error> parseType() noexcept;
 
         // Other statements
         [[nodiscard]] StmtResult parseStatement() noexcept;
@@ -122,23 +120,10 @@ namespace ferrit {
         [[nodiscard]] const Token &previous() const noexcept;
         [[nodiscard]] bool isAtEnd() const noexcept;
 
+        Error makeError(const std::vector<std::string> &fmtArgs) const noexcept;
 
     private:
         std::vector<Token> m_tokens;
         std::size_t m_current{0};
-    };
-
-    class ParseError : public Error {
-    public:
-        ParseError() noexcept = default;
-        ParseError(Token cause, std::string msg) noexcept;
-
-        [[nodiscard]] const Token &cause() const noexcept;
-
-    protected:
-        void printTo(std::ostream &out) const override;
-
-    private:
-        Token m_cause{};
     };
 }

@@ -2,15 +2,13 @@
 #include <filesystem>
 #include <utility>
 
-#include <boost/program_options.hpp>
+#include <cxxopts.hpp>
 
 #include "Lexer.h"
 #include "Parser.h"
 #include "AstPrinter.h"
 
 namespace fs = std::filesystem;
-namespace opts = boost::program_options;
-
 
 std::optional<std::vector<ferrit::Token>> lexLine(const std::string &line, bool showOutput) {
     std::vector<ferrit::Token> result;
@@ -54,50 +52,56 @@ void parseLine(std::vector<ferrit::Token> tokens, bool showOutput) {
 }
 
 int main(int argc, char *argv[]) {
-    opts::positional_options_description posDesc{};
-    posDesc.add("input_file", -1);
+    cxxopts::Options options("ferritc", "Compiler and interpreter for the Ferrit programming language.");
 
-    opts::options_description desc("Options");
-    desc.add_options()
-        ("help,h", "display this message")
-        ("lexer,l", "show lexer output")
-        ("parser,p","show parser output");
+    options.add_options()
+        ("h,help", "display this message")
+        ("l,lexer","show lexer output")
+        ("p,parser", "show parser output")
+        ("file", "files to compile", cxxopts::value<std::vector<std::string>>());
 
-    opts::variables_map vars;
-    opts::store(opts::command_line_parser(argc, argv).options(desc).positional(posDesc).run(),vars);
-    opts::notify(vars);
+    options.parse_positional("file");
+    options.positional_help("FILE...");
 
+    bool lexerOutput, parserOutput;
+    try {
+        cxxopts::ParseResult result = options.parse(argc, argv);
 
-    if (vars.count("help")) {
-        std::string programName = fs::path(argv[0]).filename().string();
-        std::cout << "Usage: " << programName << " [options] input_file\n";
-        std::cout << desc << std::endl;
-        return 0;
-    }
-    bool lexerOutput = false;
-    if (vars.count("lexer")) {
-        lexerOutput = true;
-    }
-    bool parserOutput = false;
-    if (vars.count("parser")) {
-        parserOutput = true;
-    }
-    if (vars.count("input-file")) {
-        // TOOD: add file support
-        std::cout << "Got a file argument: " << vars["input_file"].as<std::string>() << std::endl;
-    }
-
-    while (true) {
-        std::cout << "> " << std::flush;
-        std::string line;
-        std::getline(std::cin, line);
-        if (line == "exit") {
+        if (result.count("help")) {
+            std::cout << options.help() << std::endl;
             return 0;
         }
 
-        auto tokens = lexLine(line, lexerOutput);
-        if (!tokens) continue;
+        lexerOutput = result.count("lexer") > 1;
+        parserOutput = result.count("parser") > 1;
+        if (result.count("file")) {
+            // TOOD: add file support
+            auto files = result["file"].as<std::vector<std::string>>();
+            std::cout << "Got a file argument: ";
+            for (const auto &file : files) {
+                std::cout << "'" << file << "' ";
+            }
+            std::cout << std::endl;
+        }
 
-        parseLine(*tokens, parserOutput);
+        while (true) {
+            std::cout << "> " << std::flush;
+            std::string line;
+            std::getline(std::cin, line);
+            if (line == "exit") {
+                return 0;
+            }
+
+            auto tokens = lexLine(line, lexerOutput);
+            if (!tokens) continue;
+
+            parseLine(*tokens, parserOutput);
+        }
+    } catch (const cxxopts::OptionParseException &e) {
+        std::cerr << "Error parsing arguments: " << e.what() << std::endl;
+        return 1;
+    } catch (const std::exception &e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 2;
     }
 }

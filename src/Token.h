@@ -9,6 +9,9 @@ namespace ferrit {
      * Represents every possible type of \c Token.
      */
     enum class TokenType {
+        Unknown,
+        EndOfFile,
+
         LeftParen,          ///< '('
         RightParen,         ///< ')'
         LeftBrace,          ///< '{'
@@ -110,8 +113,6 @@ namespace ferrit {
         CharLiteral,
         IntegerLiteral,
         FloatLiteral,
-
-        EndOfFile,
     };
 
     std::ostream &operator<<(std::ostream &out, TokenType type);

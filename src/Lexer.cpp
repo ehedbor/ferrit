@@ -9,7 +9,7 @@ namespace ferrit {
     Lexer::Lexer(std::string code) noexcept : m_code(std::move(code)) {
     }
 
-    LexResult Lexer::lex() noexcept {
+    LexResult Lexer::lex() {
         TRY(optWhitespaceToken, skipWhitespace());
         if (optWhitespaceToken) {
             return *optWhitespaceToken;
@@ -61,12 +61,11 @@ namespace ferrit {
             if (match('=')) return makeToken(TokenType::LessEqual);
             return makeToken(TokenType::Less);
         default:
-            return cpp::fail(makeError(
-                ErrorCode::SyntaxUnexpectedChar, {std::to_string(*ch)}));
+            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedChar, *ch));
         }
     }
 
-    cpp::result<std::optional<Token>, Error> Lexer::skipWhitespace() noexcept {
+    cpp::result<std::optional<Token>, Error> Lexer::skipWhitespace() {
         // ignore whitespace until the next token is found
         // if all whitespace is consumed, return {}
         while (true) {
@@ -106,7 +105,7 @@ namespace ferrit {
         }
     }
 
-    void Lexer::ignoreLineComment() noexcept {
+    void Lexer::ignoreLineComment() {
         // consume the '//'
         advance();
         advance();
@@ -118,7 +117,7 @@ namespace ferrit {
         }
     }
 
-    cpp::result<void, Error> Lexer::ignoreBlockComment() noexcept {
+    cpp::result<void, Error> Lexer::ignoreBlockComment() {
         // consume '/*'
         advance();
         advance();
@@ -127,7 +126,7 @@ namespace ferrit {
         while (true) {
             auto next = advance();
             if (!next) {
-                return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, {"block comment"}));
+                return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, "block comment"));
             } else if (*next == '*' && match('/')) {
                 return {};
             } else if (*next == '\n') {
@@ -139,7 +138,7 @@ namespace ferrit {
         }
     }
 
-    LexResult Lexer::lexString() noexcept {
+    LexResult Lexer::lexString() {
         while (peek() && *peek() != '"') {
             EXPECT(advanceStringChar("string literal"));
         }
@@ -148,49 +147,47 @@ namespace ferrit {
         if (match('"')) {
             return makeToken(TokenType::StringLiteral);
         } else {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, {"string literal"}));
+            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, "string literal"));
         }
     }
 
-    LexResult Lexer::lexChar() noexcept {
+    LexResult Lexer::lexChar() {
         if (peek() && *peek() == '\'') {
-            return cpp::fail(makeError(ErrorCode::SyntaxEmptyElement, {"char literal"}));
+            return cpp::fail(makeError(ErrorCode::SyntaxEmptyElement, "char literal"));
         }
         EXPECT(advanceStringChar("char literal"));
 
         if (match('\'')) {
             return makeToken(TokenType::CharLiteral);
         } else if (!peek()) {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, {"string literal"}));
+            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, "string literal"));
         } else {
             return cpp::fail(makeError(ErrorCode::SyntaxCharLiteralTooBig));
         }
     }
 
-    cpp::result<void, Error> Lexer::advanceStringChar(const std::string &literalType) noexcept {
+    cpp::result<void, Error> Lexer::advanceStringChar(const std::string &literalType) {
         auto nextChar = peek();
         if (!nextChar) {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, {literalType}));
+            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, literalType));
         }
 
         switch (*nextChar) {
         case '\n': {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedNewlineInElement, {literalType}));
+            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedNewlineInElement, literalType));
         }
         case '\\': {
             // consume the backslash, then the escape sequence.
             advance();
             auto escapeSeq = peek();
             if (!escapeSeq) {
-                return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, {literalType}));
+                return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, literalType));
             } else if (*escapeSeq == '0' || *escapeSeq == 't' || *escapeSeq == 'n' || *escapeSeq == 'r' ||
                 *escapeSeq == '\'' || *escapeSeq == '"' || *escapeSeq == '\\') {
                 advance();
                 return {};
             } else {
-                return cpp::fail(makeError(
-                    ErrorCode::SyntaxIllegalEscapeSequence,
-                    {std::to_string(*escapeSeq), literalType}));
+                return cpp::fail(makeError(ErrorCode::SyntaxIllegalEscapeSequence, *escapeSeq, literalType));
             }
         }
         default:
@@ -199,7 +196,7 @@ namespace ferrit {
         }
     }
 
-    LexResult Lexer::lexNumber() noexcept {
+    LexResult Lexer::lexNumber() {
         TokenType numberType = TokenType::IntegerLiteral;
         while (peek() && isDigit(*peek())) {
             advance();
@@ -218,14 +215,13 @@ namespace ferrit {
         // prevent numbers from being immediately followed by an identifier
         char nextChar = peek().value_or('\0');
         if (isIdentifierStart(nextChar)) {
-            return cpp::fail(makeError(
-                ErrorCode::SyntaxUnknownLiteralSuffix, {std::to_string(nextChar)}));
+            return cpp::fail(makeError(ErrorCode::SyntaxUnknownLiteralSuffix, nextChar));
         }
 
         return makeToken(numberType);
     }
 
-    LexResult Lexer::lexIdentifier() noexcept {
+    LexResult Lexer::lexIdentifier() {
         while (true) {
             auto next = peek();
             if (next && isIdentifier(*next)) {
@@ -267,14 +263,6 @@ namespace ferrit {
         std::size_t startColumn = m_location.column - count;
         std::string lexeme = m_code.substr(m_start, count);
         return {type, std::move(lexeme), {m_location.line, startColumn}};
-    }
-
-    Error Lexer::makeError(ErrorCode errorCode, std::vector<std::string> fmtArgs) const noexcept {
-        std::size_t count = m_current - m_start;
-        std::size_t startColumn = m_location.column - count;
-        std::string lexeme = m_code.substr(m_start, count);
-        Token cause{TokenType::Unknown, lexeme, {m_location.line, startColumn}};
-        return {cause, errorCode, std::move(fmtArgs)};
     }
 
     std::optional<char> Lexer::peek() const noexcept {

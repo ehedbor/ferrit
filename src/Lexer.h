@@ -22,7 +22,7 @@ namespace ferrit {
         /**
          * Scans the next token from the source code.
          */
-        [[nodiscard]] LexResult lex() noexcept;
+        [[nodiscard]] LexResult lex();
 
     private:
         /**
@@ -30,29 +30,29 @@ namespace ferrit {
          *
          * @return \c Error if something goes wrong, a newline \c Token if one is found, or \c std::nullopt otherwise.
          */
-        [[nodiscard]] cpp::result<std::optional<Token>, Error> skipWhitespace() noexcept;
+        [[nodiscard]] cpp::result<std::optional<Token>, Error> skipWhitespace();
 
         /**
          * Ignores a line comment (starting with // and ending at the next newline).
          */
-        void ignoreLineComment() noexcept;
+        void ignoreLineComment();
 
         /**
          * Ignores a block comment (starting with \c /&#42; and ending at \c &#42;/)
          *
          * @return nothing on success, \c Error if the block comment is not terminated.
          */
-        [[nodiscard]] cpp::result<void, Error> ignoreBlockComment() noexcept;
+        [[nodiscard]] cpp::result<void, Error> ignoreBlockComment();
 
         /**
          * Scans and returns a string literal.
          */
-        [[nodiscard]] LexResult lexString() noexcept;
+        [[nodiscard]] LexResult lexString();
 
         /**
          * Scans and returns a char literal.
          */
-        [[nodiscard]] LexResult lexChar() noexcept;
+        [[nodiscard]] LexResult lexChar();
 
         /**
          * Advances the lexer, returning an error if the next char cannot
@@ -61,14 +61,15 @@ namespace ferrit {
          * @param literalType the type of literal (i.e. <tt>"string literal"</tt>)
          * @return nothing on success, \c Error on failure.
          */
-        [[nodiscard]] cpp::result<void, Error> advanceStringChar(const std::string &literalType) noexcept;
+        [[nodiscard]] cpp::result<void, Error> advanceStringChar(const std::string &literalType);
 
-        [[nodiscard]] LexResult lexNumber() noexcept;
-        [[nodiscard]] LexResult lexIdentifier() noexcept;
+        [[nodiscard]] LexResult lexNumber();
+        [[nodiscard]] LexResult lexIdentifier();
         [[nodiscard]] static TokenType getTokenTypeForIdent(const std::string &lexeme) noexcept;
 
         [[nodiscard]] Token makeToken(TokenType type) const noexcept;
-        [[nodiscard]] Error makeError(ErrorCode errorCode, std::vector<std::string> fmtArgs = {}) const noexcept;
+        template <typename... Args>
+        [[nodiscard]] Error makeError(ErrorCode errorCode, const Args&... args) const;
 
         /**
          * Gets the current character without advancing the \c Lexer.
@@ -127,4 +128,13 @@ namespace ferrit {
         std::size_t m_current{0};
         SourceLocation m_location{1, 1};
     };
+
+    template <typename... Args>
+    Error Lexer::makeError(ErrorCode errorCode, const Args&... args) const {
+        std::size_t count = m_current - m_start;
+        std::size_t startColumn = m_location.column - count;
+        std::string lexeme = m_code.substr(m_start, count);
+        Token cause{TokenType::Unknown, lexeme, {m_location.line, startColumn}};
+        return {cause, errorCode, args...};
+    }
 }

@@ -6,7 +6,7 @@ namespace ferrit {
     Parser::Parser(std::vector<Token> tokens) noexcept : m_tokens(std::move(tokens)) {
     }
 
-    ParseResult Parser::parse() noexcept {
+    ParseResult Parser::parse() {
         std::vector<StatementPtr> program;
         std::vector<Error> errors;
 
@@ -28,15 +28,15 @@ namespace ferrit {
         }
     }
 
-    StmtResult Parser::parseDeclaration() noexcept {
+    StmtResult Parser::parseDeclaration() {
         auto mods = parseModifiers();
         if (match(TokenType::Fun)) {
             return parseFunctionDeclaration(mods);
         }
-        return cpp::fail(makeError({"expected declaration"}));
+        return cpp::fail(makeError("expected declaration"));
     }
 
-    StmtResult Parser::parseFunctionDeclaration(const std::vector<Token> &modifiers) noexcept {
+    StmtResult Parser::parseFunctionDeclaration(const std::vector<Token> &modifiers) {
         // remember the keyword
         Token keyword = previous();
 
@@ -81,13 +81,13 @@ namespace ferrit {
                 TRY(block, parseBlock());
                 body = std::move(block);
             } else {
-                return cpp::fail(makeError({"expected function body"}));
+                return cpp::fail(makeError("expected function body"));
             }
             return std::make_unique<FunctionDefinition>(std::move(decl), std::move(body));
         }
     }
 
-    std::vector<Token> Parser::parseModifiers() noexcept {
+    std::vector<Token> Parser::parseModifiers() {
         std::vector<Token> result;
         while (true) {
             if (match(TokenType::Native)) {
@@ -99,7 +99,7 @@ namespace ferrit {
         return result;
     }
 
-    cpp::result<std::vector<Parameter>, Error> Parser::parseParameters() noexcept {
+    cpp::result<std::vector<Parameter>, Error> Parser::parseParameters() {
         std::vector<Parameter> result;
         if (!check(TokenType::RightParen)) {
             // parameter list is not empty.
@@ -126,30 +126,30 @@ namespace ferrit {
         return result;
     }
 
-    cpp::result<Parameter, Error> Parser::parseParameter() noexcept {
+    cpp::result<Parameter, Error> Parser::parseParameter() {
         auto name = previous();
         EXPECT(consume(TokenType::Colon, "expected ':' after parameter name"));
         TRY(type, parseType());
         if (type.name().type == TokenType::Void) {
-            return cpp::fail(makeError({"cannot declare parameter of type void"}));
+            return cpp::fail(makeError("cannot declare parameter of type void"));
         }
 
         return Parameter(name, type);
     }
 
-    cpp::result<Type, Error> Parser::parseType() noexcept {
+    cpp::result<Type, Error> Parser::parseType() {
         if (match(TokenType::Int) || match(TokenType::Double) || match(TokenType::Void)) {
             return Type(previous());
         }
-        return cpp::fail(makeError({"expected type name"}));
+        return cpp::fail(makeError("expected type name"));
     }
 
-    StmtResult Parser::parseStatement() noexcept {
+    StmtResult Parser::parseStatement() {
         TRY(expr, parseExpression());
         return std::make_unique<ExpressionStatement>(std::move(expr));
     }
 
-    StmtResult Parser::parseBlock() noexcept {
+    StmtResult Parser::parseBlock() {
         std::vector<StatementPtr> body;
         while (!check(TokenType::RightBrace) && !isAtEnd()) {
             TRY(statement, parseStatement());
@@ -163,11 +163,11 @@ namespace ferrit {
         return std::make_unique<Block>(std::move(body));
     }
 
-    ExprResult Parser::parseExpression() noexcept {
+    ExprResult Parser::parseExpression() {
         return parseDisjunction();
     }
 
-    ExprResult Parser::parseDisjunction() noexcept {
+    ExprResult Parser::parseDisjunction() {
         TRY(left, parseConjunction());
         while (match(TokenType::LogicalOr)) {
             Token op = previous();
@@ -177,7 +177,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseConjunction() noexcept {
+    ExprResult Parser::parseConjunction() {
         TRY(left, parseBitwiseOr());
         while (match(TokenType::LogicalAnd)) {
             Token op = previous();
@@ -187,7 +187,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseBitwiseOr() noexcept {
+    ExprResult Parser::parseBitwiseOr() {
         TRY(left, parseBitwiseXor());
         while (match(TokenType::BitwiseOr)) {
             Token op = previous();
@@ -197,7 +197,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseBitwiseXor() noexcept {
+    ExprResult Parser::parseBitwiseXor() {
         TRY(left, parseBitwiseAnd());
         while (match(TokenType::BitwiseXor)) {
             Token op = previous();
@@ -207,7 +207,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseBitwiseAnd() noexcept {
+    ExprResult Parser::parseBitwiseAnd() {
         TRY(left, parseEquality());
         while (match(TokenType::BitwiseAnd)) {
             Token op = previous();
@@ -217,7 +217,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseEquality() noexcept {
+    ExprResult Parser::parseEquality() {
         TRY(left, parseComparison());
         while (match(TokenType::Equal) || match(TokenType::NotEqual)) {
             Token op = previous();
@@ -227,7 +227,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseComparison() noexcept {
+    ExprResult Parser::parseComparison() {
         TRY(left, parseBitwiseShift());
         while (
             match(TokenType::Greater) || match(TokenType::GreaterEqual) ||
@@ -240,7 +240,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseBitwiseShift() noexcept {
+    ExprResult Parser::parseBitwiseShift() {
         TRY(left, parseAdditive());
         while (match(TokenType::BitwiseLeftShift) || match(TokenType::BitwiseRightShift)) {
             Token op = previous();
@@ -250,7 +250,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseAdditive() noexcept {
+    ExprResult Parser::parseAdditive() {
         TRY(left, parseMultiplicative());
         while (match(TokenType::Plus) || match(TokenType::Minus)) {
             Token op = previous();
@@ -260,7 +260,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseMultiplicative() noexcept {
+    ExprResult Parser::parseMultiplicative() {
         TRY(left, parseUnary());
         while (match(TokenType::Times) || match(TokenType::Divide) || match(TokenType::Modulo)) {
             Token op = previous();
@@ -270,7 +270,7 @@ namespace ferrit {
         return left;
     }
 
-    ExprResult Parser::parseUnary() noexcept {
+    ExprResult Parser::parseUnary() {
         std::vector<Token> operators;
         while (match(TokenType::Plus) || match(TokenType::Minus) ||
             match(TokenType::LogicalNot) || match(TokenType::BitwiseNot)) {
@@ -285,27 +285,27 @@ namespace ferrit {
         return operand;
     }
 
-    ExprResult Parser::parsePrimary() noexcept {
+    ExprResult Parser::parsePrimary() {
         if (match(TokenType::Identifier)) {
             return parseVariable();
         } else if (match(TokenType::FloatLiteral) || match(TokenType::IntegerLiteral)) {
             return parseNumber();
         } else {
-            return cpp::fail(makeError({"expected primary expression"}));
+            return cpp::fail(makeError("expected primary expression"));
         }
     }
 
-    ExprResult Parser::parseVariable() noexcept {
+    ExprResult Parser::parseVariable() {
         return std::make_unique<VariableExpression>(previous());
     }
 
-    ExprResult Parser::parseNumber() noexcept {
+    ExprResult Parser::parseNumber() {
         Token number = previous();
         bool isInteger = (number.type == TokenType::IntegerLiteral);
         return std::make_unique<NumberExpression>(std::move(number), isInteger);
     }
 
-    void Parser::synchronize() noexcept {
+    void Parser::synchronize() {
         advance();
 
         while (!isAtEnd()) {
@@ -326,7 +326,7 @@ namespace ferrit {
         }
     }
 
-    Parser::FoundTerminators Parser::skipTerminators(bool allowSemicolons) noexcept {
+    Parser::FoundTerminators Parser::skipTerminators(bool allowSemicolons) {
         FoundTerminators result;
 
         while (true) {
@@ -345,15 +345,15 @@ namespace ferrit {
         return result;
     }
 
-    TokenResult Parser::consume(TokenType expected, const std::string &errMsg) noexcept {
+    TokenResult Parser::consume(TokenType expected, const std::string &errMsg) {
         if (check(expected)) {
             return advance();
         } else {
-            return cpp::fail(makeError({errMsg}));
+            return cpp::fail(makeError(errMsg));
         }
     }
 
-    bool Parser::match(TokenType expected) noexcept {
+    bool Parser::match(TokenType expected) {
         if (check(expected)) {
             advance();
             return true;
@@ -362,12 +362,12 @@ namespace ferrit {
         }
     }
 
-    bool Parser::check(TokenType expected) noexcept {
+    bool Parser::check(TokenType expected) {
         skipTerminators(false);
         return (current().type == expected);
     }
 
-    const Token &Parser::advance() noexcept {
+    const Token &Parser::advance() {
         const Token &retVal = current();
         if (!isAtEnd()) m_current++;
         return retVal;
@@ -383,9 +383,5 @@ namespace ferrit {
 
     bool Parser::isAtEnd() const noexcept {
         return current().type == TokenType::EndOfFile;
-    }
-
-    Error Parser::makeError(const std::vector<std::string> &fmtArgs) const noexcept {
-        return Error(current(), ErrorCode::SyntaxParseError, fmtArgs);
     }
 }

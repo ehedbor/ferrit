@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 project(ferrit VERSION "0.0.0" LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 
 # Update submodules if Git is installed
 find_package(Git QUIET)

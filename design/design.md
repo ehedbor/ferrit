@@ -116,12 +116,12 @@ Integer and float literals default to the types `Int` and `Double` respectively.
 | `Float`  | `42.0f`         |
 | `Double` | `42.0`, `42.0d` |
 
-Alternatively, you may explicitly specify the literal's type or  use the `to` operator.
+Alternatively, you may explicitly specify the literal's type or use a conversion function.
 
 ```
 val myByte = 0b11001001b 
 val myByte: Byte = 0b11001001
-val myByte = 0b11001001 to Byte 
+val myByte = 0b11001001.toByte() 
 // Illegal: Byte is not a subclass or superclass of Int
 //val myByte = 2b11001001 as Byte 
 
@@ -130,8 +130,8 @@ val myByte = 0b11001001 to Byte
 //val myInt: Int = 32.0 
 //val myDouble: Double = 259 
 // Allowed
-val myInt = 32.0 to Int
-val myDouble = 259 to Double
+val myInt = 32.0.toInt()
+val myDouble = 259.toDouble()
 ```
 
 Implicit widening conversions are allowed, but implicit narrowing conversions are permitted.
@@ -163,8 +163,8 @@ val someNumbers = [1, 1, 2, 3, 5, 8, 13, 21]
 // explicit version of the above
 val someNumbers: Array<Int> = Array[1, 1, 2, 3, 5, 8, 13, 21]
 
-val myRange = 1..10
-val myExclusiveRange = 1 until 10
+val myRange = 1..10          
+val myInclusiveRange = 1...10 
 ```
 
 ## Operators
@@ -174,7 +174,7 @@ Ferrit supports the following operators:
 - Bitwise operators: `~ & | << >>`
 - Comparison operators: `== != > < >= <=`
 - Assignment operators: `= += -= *= /= %= &&= ||= &= |= <<= >>=`
-- Type operators: `is` `!is` `as` `as?` `to` `to?`
+- Type operators: `is` `!is` `as` `as?` 
 - Contains operator: `in` `!in`
 - Range operator: exclusive (`..`) and inclusive (`...`)
  
@@ -198,9 +198,6 @@ val isInteger = answer is Int // true
 val asDouble = answer as Double // panics
 val asDouble = answer as? Double // None
 val toDouble = answer to? Double // Some(42.0)
-
-val toBoolean = answer to Bool // panics
-val toBoolean = answer to? Bool // None
 
 val containsA = 'A' in "Hello, world!" // = false
 ```
@@ -253,12 +250,12 @@ if (guess == 69) println("nice")
 
 // Used as an expression:
 val message = if (guess > answer) { 
-        "Too high!" 
-    } else if (guess < answer) { 
-        "Too low!" 
-    } else { 
-        "You got it!"
-    }
+    "Too high!" 
+} else if (guess < answer) { 
+    "Too low!" 
+} else { 
+    "You got it!"
+}
 println(message)
 ```
 
@@ -363,7 +360,7 @@ and the return type can be inferred.
 fun returnsTen() = 10
 
 // This syntax works with blocks too
-// Note that this does NOT return a closure!
+// Note that this does NOT return a lambda!
 fun doSomeMath(n: Int) = {
     println("This is a block!")
     if (n % 2 == 0) {
@@ -373,6 +370,8 @@ fun doSomeMath(n: Int) = {
     } 
 }
 ```
+
+### Named Arguments
 
 Functions may specify default values for their parameters. The parameter's type is still required.
 
@@ -390,6 +389,8 @@ fun huh(a: Int = 4, b: Int = 93, c: Int = -1) { ... }
 huh(c = 30, a = 10, b = 57)
 huh(b = 49) 
 ```
+
+### Vararg Functions
 
 You can pass a variable number of arguments by adding `...` to the argument's type.
 
@@ -418,14 +419,21 @@ val doSum: (Int, Int) -> Int = sum
 println(doSum(3, 4)) 
 ```
 
-Ferrit provides a concise syntax to create anonymous functions. 
+Ferrit provides a concise syntax to create lambda functions (anonymous functions). 
+
+```
+// type is (Double, Double, Double) -> Double
+val slopeFormula = { x: Double, y: Double, b: Double -> 
+    (y - b) / x 
+}
 
 ```
 
-```
+When passed to a function, the lambda's argument types can be omitted.  
 
-If the last argument to a function is a lambda, it may be written outside the argument list.
-In addition, if there are no other arguments to the function, the parenthesis may be omitted.
+If the lambda is the last argument then it may be written outside the argument 
+list. In addition, if there are no other arguments to the function, the 
+parentheses may be omitted.
 
 ```
 fun fooBar(foo: Int = 39, bar: (Int) -> Unit) { 
@@ -438,8 +446,122 @@ fooBar(20, { f -> println("Foo is " + f) })
 fooBar(30) { f -> println("Foo is " + f) }
 
 // Even shorter:
-fooBar { println("i did it") }
+fooBar { f -> println("Foo is " + f) }
 ```
+
+### Extensions
+
+Ferrit allows you to mimic extension functions with the `::` operator.
+Using it simply passes the value on the left as the first argument 
+to the function on the right.
+
+```
+fun printMe(obj: Any) { println(obj) }
+
+10::printMe() // printMe(10)
+"Hello, extensions!"::printMe() // printMe("Hello, extensions!")
+
+```
+
+### Operator Overloading
+
+Ferrit allows you to provide custom implementations for operators 
+with the `operator` modifier. Operators may either be methods or
+free functions.
+
+```
+class MyClass {
+    primary init(var value: Int)
+    
+    operator fun increment() = { 
+        println("This is a custom operator!")
+        value++
+        this
+    }
+}
+
+operator fun decrement(instance: MyClass) = {
+    println("Also a custom operator"!)
+    instance.value--
+    instance
+}
+
+val instance = MyClass()
+instance++     // calls instance.increment()
+instance--     // calls instance::decrement() AKA decrement(instance)
+```
+
+Here's a list of all overloadable operators:
+
+#### Unary operators
+| Expression | Translated to    |
+|------------|------------------|
+| `+a`       | `a.unaryPlus()`  |
+| `-a`       | `a.unaryMinus()` |
+| `!a`       | `a.not()`        |
+| `~a`       | `a.bitNot()`     |
+
+#### Arithmetic operators
+| Expression | Translated to     |
+|------------|-------------------|
+| `a + b`    | `a.plus(b)`       |
+| `a - b`    | `a.minus(b)`      |
+| `a * b`    | `a.times(b)`      |
+| `a / b`    | `a.divide(b)`     |
+| `a % b`    | `a.modulo(b)`     |
+
+#### Bitwise operators
+| Expression | Translated to     |
+|------------|-------------------|
+| `a << b`   | `a.shiftLeft(b)`  |
+| `a >> b`   | `a.shiftRight(b)` |
+| `a & b`    | `a.bitAnd(b)`     |
+| `a | b`    | `a.bitOr(b)`      |
+
+#### Compound assignment operators
+| Expression  | Translated to           |
+|-------------|-------------------------|
+| `a += b`    | `a.plusAssign(b)`       |
+| `a -= b`    | `a.minusAssign(b)`      |
+| `a *= b`    | `a.timesAssign(b)`      |
+| `a /= b`    | `a.divideAssign(b)`     |
+| `a %= b`    | `a.moduloAssign(b)`     |
+| `a <<= b`   | `a.shiftLeftAssign(b)`  |
+| `a >>= b`   | `a.shiftRightAssign(b)` |
+| `a &= b`    | `a.bitAndAssign(b)`     |
+| `a |= b`    | `a.bitOrAssign(b)`      |
+
+Implementing a binary arithmetic/bitwise operator will also create
+a default implementation for the compound assignment operators.
+
+If both a binary and assignment operator are valid,
+the assignment will be preferred.
+
+#### Index operators
+| Expression       | Translated to       |
+|------------------|---------------------|
+| `a[i]`           | `a.get(i)`          |
+| `a[i, j, j]`     | `a.get(i, j, k)`    |
+| `a[i] = b`       | `a.set(i, b)`       |
+| `a[i, j, k] = b` | `a.set(i, j, k, b)` |
+
+#### Comparison operators
+| Expression | Translated to         |
+|------------|-----------------------|
+| `a > b`    | `a.compareTo(b) > 0`  |
+| `a >= b`   | `a.compareTo(b) >= 0` |
+| `a < b`    | `a.compareTo(b) < 0`  |
+| `a <= b`   | `a.compareTo(b) <= 0` |
+| `a == b`   | `a.equals(b)`         |
+| `a != b`   | `!a.equals(b)`        |
+
+#### Other operators
+| Expression | Translated to     |
+|------------|-------------------|
+| `a in b`   | `a.contains(b)`   |
+| `a !in b`  | `!a.contains(b)`  |
+| `a..b`     | `a.rangeTo(b)`    |
+| `a...b`    | `a.rangeToInclusive(b)` |
 
 ### Native Support
 
@@ -546,7 +668,7 @@ val instance = MyClass()
 A more useful class would have state and behavior:
 
 ```
-class Address : Into<String> {
+class Address {
     private var street: String
     private var city: String
     private var state: String?
@@ -561,7 +683,7 @@ class Address : Into<String> {
         this.country = country
     }
     
-    override operator fun into() -> String {
+    override fun toString() = {
         return street + "\n" +
             city + (if (state == null) "" else ", " + state + " ") + 
             zip + "\n" +
@@ -587,7 +709,7 @@ class IntBox : Into<String> {
         var country: String,
     )
     
-    override operator fun into() -> String {
+    override fun toString() {
         return street + "\n" +
             city + (if (state == null) "" else ", " + state + " ") + 
             zip + "\n" +
@@ -600,10 +722,11 @@ I'm getting tired of writing stuff so here's how you do custom properties:
 
 ```
 class AHRRGRGGGDSFDFB {
-    var customBehavior: Int = 10 private get
-    var something: Double 
+    var customBehavior: Int { private get } = 10
+    var something: Double {
         module get() = random.next() 
         protected set(value) { panic("lol") }
+    }
 }
 ```
 
@@ -624,12 +747,12 @@ val firstList = CharList['T', 'e', 's', 't', '.', '\0']
 val secondList: CharList = ['N', 'e', 'a', 't', '\0']
 ```
 
-If a collection constructor takes a `Pair<T>...`, then you may use a special syntax to specify the pairs.
+Collection constructors can be combined with the `to` function to make map-like literals.
 ```
-class Map {
-    primary init[val data: Pair<String, String>...] 
+class CookieRatings {
+    primary init[val data: Pair<String, Int>...] 
 }
-val cookieRatings = Map["Peanut Butter": 10, "Chocolate chip": 8, "Oatmeal Raisin": 7] 
+val cookieRatings = CookieRatings["Peanut Butter"::to(10), "Chocolate Chip"::to(8), "Oatmeal Raisin"::to(7)] 
 ```
 
 ### Polymorphism
@@ -638,17 +761,13 @@ To make a class polymorphic, declare it and all overridable properties/methods w
 
 ```
 open class Base {
-    public val alpha: Int
-    module val beta: Int 
-    protected val gamma: Int
-    private val delta: Int
-    
-    init(alpha: Int, beta: Int, gamma, Int, delta: Int) {
+    primary init(
+        public val alpha: Int, 
+        module val beta: Int, 
+        protected val gamma: Int, 
+        private val delta: Int
+    ) {
         println("Base init")
-        this.alpha = alpha
-        this.beta = beta
-        this.gamma = gamma
-        this.delta = delta
     }
     
     fun foo() { 
@@ -726,166 +845,248 @@ sum += derived.beta
  */
 ```
 
-### Abstract Classes and Traits
+### Abstract Classes 
 
-You can use the `abstract` keyword to declare classes and methods that do not have an implementation.
+You can use the `abstract` keyword to declare classes and methods that do not have an implementation:
 
 ```
 abstract class Shape {
-    private val x: Double
-    private val y: Double
+    primary init(var x: Double, var y: Double)
     
-    init(x: Double, y: Double) {
-        this.x = x
-        this.y = y
-    }
-    
-    fun getX() -> Double = x
-    fun getY() -> Double = y
-    
-    abstract fun getPerimeter() -> Double
-    abstract fun getArea() -> Double
+    abstract val perimeter: Double
+    abstract val area: Double
 }
 ```
 
 This can be implemented like normal:
 ```
 class Rectangle : Shape {
-    private val length: Double
-    private val width: Double
+    primary init(
+        x: Double, 
+        y: Double, 
+        var length: Double, 
+        var width: Double,
+    ) : super(x, y)
     
-    init(x: Double, y: Double, l: Double, w: Double) : super(x, y) {
-        length = l
-        width = w
-    }
-    
-    fun getLength() = length 
-    fun getWidth() = width
-
-    override fun getPerimeter() = 2.0 * (length + width)
-    override fun getArea() = length * width
+    override val perimeter: Double 
+        get() = 2.0 * (length + width)
+    override val area: Double
+        get() = length * width
 }
-
 
 // Illegal - Shape is abstract
 //val shape = Shape(3.0, 4.0)
-//println("perimeter = " + shape.getPerimeter() to String)
+//println("perimeter = " + shape.perimeter)
 
 val shape: Shape = Rectangle(3.0, 4.0, 10.3, 3.7)
-println("perimeter = " + shape.getPerimeter() to String)
+println("perimeter = " + shape.perimeter)
 ```
 
-Classes can only have one superclass, however, so it might be preferable to use a trait instead.
-Traits define abstract members without providing an implementation. A class can implement any number of traits,
-but can only extend one class.
+### Traits
 
-Here's what the previous `Shape` class would look like as a trait:
+Abstract classes have a lot of uses, but they aren't without their limitations. 
+Classes can only have one superclass, so you can't use them in situations where 
+you want more than one "contract". In this situation, it might be preferable 
+to use a trait. 
+
+Traits define methods and properties without providing an implementation. 
+Their advantage is that classes can implement any number of traits.
+
+Here's what the previous example would look like with traits:
 
 ```
 trait Shape {
-    fun getX() -> Double 
-    fun getY() -> Double
+    var x: Double 
+    var y: Double
+    var perimeter: Double
+    var area: Double
+}
+
+class Rectangle : Shape {
+    primary init(
+        override var x: Double, 
+        override var y: Double, 
+        var length: Double, 
+        var width: Double,
+    )
     
-    fun getPerimeter() -> Double
-    fun getArea() -> Double
+    override val perimeter: Double
+        get() = 2.0 * (length + width) 
+    override val area: Double
+        get() = length * width
 }
 ```
 
+## Objects
 
-### Example - Point
-Here's an example of a class that implements the traits `Display`, `Equals` and `Hash`.
-```
-using ferrit.math.[sqrt, pow]
-
-class Point : Display, Equals, Hash {
-    private var x: Int 
-    private var y: Int
-    
-    static val Origin = Point(0, 0)
-    
-    init(x: Int, y: Int) {
-        this.x = x
-        this.y = y
-    }
-    
-    fun getDistanceFromOrigin() = {
-        sqrt(pow(x, 2) + pow(y, 2))  
-    }
-    
-    fun getX() = this.x 
-    fun setX(x: Int) = this.x = x
-    
-    fun getY() = this.y 
-    fun setY() = this.y = y
-    
-    override fun operator to() = {
-        "(" + x to String + ", " + y to String + ")"
-    }
-    
-    override fun operator equals(other: Any) = {
-        if (other !is Point) {
-            false
-        } else {
-            val other = other as Point
-            x == other.x && y == other.y
-        }
-    }
-    
-    override fun getHash() = x ^ 31 + y
-}
-```
-
-This class creates a simple data holder with two fields, appropriate getter and setter methods, 
-two constructors to initialize the fields, a computed property, and a basic implementation of the three traits.
-In version 1.0 of the language, this boilerplate will be required.
-
-In the future, additional features may be added to reduce this boilerplate.
-A future example might look like this:
+An object is a class with a single instance (a singleton). It is declared with 
+the `object` keyword in much the same way as a class.
 
 ```
-using ferrit.math.[sqrt, pow]
-
-class Point : default Into<String>, default Equals<Point>, default Hash {
-    static val Origin = Point(0, 0)
-    
-    primary init(var x: Int, var y: Int)
-    
-    val distanceFromOrigin: Double {  
-        get() = sqrt(pow(x, 2) + pow(y, 2)) 
+object Logger {
+    fun info(msg: String) {
+        println("[INFO]: " + msg)
     }
 }
+
+val x = 1 + 2
+Logger.info("added one to two. result: " + x)
 ```
 
-Or perhaps:
+Like classes, objects can inherit from one class and any number of traits. 
+They may also define a no-argument constructor (but no other constructors).
+Objects cannot be `open` or `abstract`.
+
+Objects may also be declared as expressions. Aside from not having a name,
+anonymous objects work exactly like normal objects. 
 
 ```
-using ferrit.math.[sqrt, pow]
+val messagePrinter = object /* : Any */ {
+    var message = "Hello, world!"
 
-data class Point(var x: Int, var y: Int) {
+    fun display() {
+        println(message)
+    }
+}
+messagePrinter.display()
+```
+
+### Companion Objects
+
+All classes have a special object instance attached to them called a companion.
+These allow you to mimic static properties and methods in other languages.
+The advantage of objects is that they can implement traits and classes and 
+can be passed to functions.
+
+```
+class MyClass {
+    private primary init()
+ 
     companion object {
-        val Origin = Point(0, 0)
+        fun create() = MyClass()  
+    }
+}
+
+val instance = MyClass.create()
+val instance = MyClass.Companion.create()
+```
+
+It can be a hassle to try and fit all class-specific behavior into the 
+companion object declaration (for instance, if you want private api functions
+to be separate from public functions). To alleviate this, class-level properties
+and  methods can be annotated with the `friend` modifier. This treats them as if
+they were declared inside the companion instead.
+
+```
+class MyClass {
+    friend val Constant = 17
+    var myProperty = 23
+ 
+    primary init() { ... }
+
+    friend fun publicApi() { ... }
+    fun someInstanceSpecificBehavior() { ... }
+    
+    private friend fun privateApi() { ... }
+    private fun somePrivateStuff() { ... }
+}
+
+// Equivalent to:
+class MyClass {
+    companion object {
+        val Constant = 17
+        fun publicApi() { ... }
+        private fun privateApi() { ... }
     }
     
-    val distanceFromOrigin: Double   
-        get() = sqrt(pow(x, 2) + pow(y, 2)) 
+    var myProperty = 23
+    primary init() { ... }
+    fun someInstanceSpecificBehavior() { ... }
+    private fun somePrivateStuff() { ... }
 }
 ```
 
 ## Generics
-We got 'em.
+
+Classes and functions can have type parameters.
 
 ```
-class List<T> {
-    private val data = Array<T>()
-    var size = 0 private set
-    var capacity = 0 private set
+class Box<T> {
+    primary init(var value: T)
+}
+
+val box: Box<Int> = Box<Int>(1)
+```
+
+Just like with normal type specifiers, generic specifiers can be omitted if the type can be inferred:
+
+```
+val box = Box(1)
+```
+
+### Variance
+
+You can specify "producers" (covariance) and "consumers" (contravariance) of a
+type parameter with the `out` and `in` keywords.
+
+These keywords can appear at the declaration...
+
+```
+trait Comparable<in T> {
+    operator fun compareTo(other: T) -> Int
+}
+
+val a: Comparable<Number> = 7.0
+val b: Comparable<Int> = 3
+
+a.compareTo(b) // OK
+```
+
+or at the use site:
+
+```
+class Array<T> { ... }
+
+fun copy(from: Array<out Any>, into: Array<Any>) { ... }
+```
+
+If you know nothing about a type, you can specify that too with `*`.
+
+```
+val someList: List<*>
+```
+
+
+### Constraints
+
+You can constrain the set of types with an upper bound:
+
+```
+fun <T : Comparable<T>> sort(list: List<T>) { ... }
+```
+
+If you don't specify an upper bound, it is assumed to be `Any`.
+
+
+### Example - Point
+Here's an example of a generic class that implements the traits `Into<String>`, `Equate<Vector2<N>>` and `Hash`.
+
+```
+using ferrit.math.[sqrt, pow]
+
+class Vector2<N : Number> : Into<String>, Equate<Vector2<N>>, Hash {
+    primary init(val x: N, val y: N)
     
-    init[private val data: T...] {
-        size = data.size
-        capacity = size
+    val magnitude get() = sqrt(pow(x, 2) + pow(y, 2))  
+    
+    override operator fun to() -> String = {
+        "(" + x to String + ", " + y to String + ")"
     }
     
-    operator fun get(i: Int) = data[i]
-    operator fun set(i: Int, value: in T) { data[i] = value }  
+    override operator fun equals(other: Vector2<N>) = {
+        x == other.x && y == other.y
+    }
+    
+    override val hashCode = x ^ 31 + y
 }
 ```

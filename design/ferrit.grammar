@@ -1,24 +1,77 @@
 #Note: newlines are assumed to be ignored unless specifically called for.
 
 program
-    : declaration* EOF 
+    : moduleDeclaration topLevelDeclaration* EOF
+    ;
+
+moduleDeclaration
+    : "module" modulePath terminators
+    ;
+
+usingDeclaration
+    : "using" identifier modulePath ("."  ("*" | modulePaths) )? terminators
+    ;
+
+modulePath
+    : identifier ("." identifier)*
+    ;
+
+modulePaths
+    : "[" modulePath ("," modulePath)* ","? "]"
+    ;
+
+topLevelDeclaration
+    : declaration
+    | statements
     ;
 
 declaration 
-    : functionDeclaration
-    | functionDefinition
+    : usingDeclaration
+    | classDeclaration
+    | functionDeclaration
+    | propertyDeclaration
     ;
-    
+
+classDeclaration
+    : modifiers? ("class" | "object" | "trait")
+      identifier genericParameters?
+      superclasses?
+      classBody?
+    ;
+
+superclasses
+    : ":" type ("," type)* ","?
+    ;
+
+classBody
+    : "{" classMember* "}"
+    ;
+
+classMember
+    : usingDeclaration
+    | classDeclaration
+    | functionDeclaration
+    | propertyDeclaration
+    | constructorDeclaration
+    ;
+
+constructorDeclaration
+    : modifiers? "init" constructorParameters functionBody?
+    ;
+
+constructorParameters
+    : "(" constructorParameter ("," constructorParameter)* ","?)? ")"
+    | "[" constructorParameter ("," constructorParameter)* ","?)? "]"
+    ;
+
+constructorParameter
+    : ((modifiers? "var" | "val") functionParameter
+    ;
+
 functionDeclaration 
-    : functionPrototype terminators ~("=" | "{")
-    ;
-
-functionDefinition
-    : functionPrototype functionBody terminators?
-    ;
-
-functionPrototype
-    : modifiers? "fun" identifier parameters returnValue
+    : modifiers? "fun" identifier
+        functionParameters returnValue?
+        functionBody? terminators
     ;
 
 modifiers 
@@ -26,15 +79,18 @@ modifiers
     ;
 
 modifier  
-    : "native"
+    : "public" | "protected" | "module" | "private"
+    | "companion" | "friend"
+    | "open" | "closed" | "abstract" | "override"
+    | "operator" | "native"
     ;
 
-parameters
+functionParameters
     : "(" (parameter ("," parameter)* ","?)? ")"
     ;
 
-parameter
-    : identifier ":" type
+functionParameter
+    : identifier ":" type "..."? ("=" expression)?
     ;
 
 returnValue
@@ -43,14 +99,31 @@ returnValue
 
 functionBody 
     : block
-    | "=" expression
+    | "=" (block | expression)
     ;
-    
-type 
-    : "int" 
-    | "double"
-    | "void"
-    ;        
+
+propertyDeclaration
+    : modifiers? ("var" | "val") identifier (":" type)? propertyInitializer?
+    ;
+
+propertyInitializer
+    : "=" expression
+    ;
+
+type
+    : "(" type ")"
+    | type "?"
+    | (type ".")? "(" type ( "," type ","? )* ")" "->" type
+    | identifier genericParameters? ("." identifier genericParameters?)*
+    ;
+
+genericParameters
+    : "<" genericParameter ("," genericParameter)* ","? ">"
+    ;
+
+genericParameter
+    : identifier (":" type ("+" type)*)?
+    ;
 
 statements 
     : (statement (terminators statement)*)? terminators?
@@ -58,12 +131,53 @@ statements
     
 statement 
     : expression
+    | loop
+    | assignment
     ; 
 
-block 
-    : "{" statements "}"
+loop
+    : forLoop
+    | whileLoop
+    | doWhileLoop
     ;
-    
+
+forLoop
+    : "for" "(" identifier (":" type)? "in" expression ")" loopBody
+    ;
+
+whileLoop
+    : "while" "(" expression ")" loopBody
+    ;
+
+doWhileLoop
+    : "do" loopBody "while" "(" expression ")"
+
+loopBody
+    : block
+    | expression
+    ;
+
+block 
+    : "{" declaration* "}"
+    ;
+
+assignment
+    : assignableExpression assignmentOperator expression
+    ;
+
+assignableExpression
+    : "(" assignableExpression ")"
+    | callExpression
+    | identifier
+    ;
+
+assignmentOperator
+    : "="
+    | "+=" | "-=" | "*=" | "/=" | "%="
+    | "&=" | "|=" | "<<=" | ">>="
+    | "&&=" | "||="
+    ;
+
 terminators
     : terminator+
     ;    
@@ -85,7 +199,19 @@ disjunction
     ;
 
 conjunction
-    : bitwiseOr ("&&" bitwiseOr)*
+    : equality ("&&" equality)*
+    ;
+
+equality
+    : comparison (("==" | "!=") comparison)*
+    ;
+
+comparison
+    : bitwiseOr ((">" | "<" | ">=" | "<=") bitwiseOr)*
+    ;
+
+containsOp
+    : bitwiseOr (("in" | "!in") bitwiseOr)*
     ;
 
 bitwiseOr
@@ -97,23 +223,12 @@ bitwiseXor
     ;
 
 bitwiseAnd
-    : equality ("&" equality)*
-    ;
-
-equality
-    : comparison (("==" | "!=") comparison)*
-    ;
-
-comparison
-    : bitwiseShift ((">" | "<" | ">=" | "<=") bitwiseShift)*
+    : bitwiseShift ("&" bitwiseShift)*
     ;
 
 bitwiseShift
-    : additive (("<<" | ">>" | ">>>") additive)*
+    : additive (("<<" | ">>") additive)*
     ;
-
-# infix-like operators go here
-# infix function calls go here
 
 additive
     : multiplicative (("+" | "-") multiplicative)*
@@ -123,28 +238,37 @@ multiplicative
     : unary (("*" | "/" | "%") unary)*
     ;
 
-# casts go here
-
-unary
-    : ('+' | '-' | '!' | '~')* primary
+typeOp
+    : unaryPrefix (("is" | "!is" | "as" | "as?") type)?
     ;
 
-# unary postfix goes here
-
-primary
-    : parenthesizedExpression
-    | callExpression
-    | integerLiteral
-    | floatLiteral
-    | identifier
+unaryPrefix
+    : ("+" | "-" | "!" | "~" | "++" | "--")* unaryPrefix
+    | unaryPostfix
     ;
 
-parenthesizedExpression
-    : "(" expression ")"
+unaryPostfix
+    : primary unaryPostfixSuffix*
     ;
 
-callExpression
-    : identifier arguments
+unaryPostfixSuffix
+    : "++" | "--" | "??" | "!!"
+    | genericArguments
+    | callSuffix
+    | indexingSuffix
+    | accessSuffix
+    ;
+
+callSuffix
+    | genericArguments? ((arguments? | lambdaExpression) | lambdaExpression)
+    ;
+
+genericArguments
+    : "<" (genericArgument ("," genericArgument)* ","?)? ">"
+    ;
+
+genericArgument
+    : type
     ;
 
 arguments
@@ -155,12 +279,74 @@ argument
     : expression
     ;
 
-integerLiteral 
-    : digit+
+indexingSuffix
+    : "[" expression ("," expression)* ","? "]"
     ;
-    
+
+accessSuffix
+    : ("." | "?." | "::") (identifier | "class")
+    ;
+
+primary
+    : parenthesizedExpression
+    | controlFlowExpression
+    | lambdaExpression
+    | literal
+    | identifier
+    ;
+
+parenthesizedExpression
+    : "(" expression ")"
+    ;
+
+controlFlowExpression
+    : ifExpression
+    ;
+
+ifExpression
+    : "if" "(" expression ")" block | expression
+      ("else" block | expression)?
+    ;
+
+lambdaExpression
+    : "{" (lambdaParameters? "->")? statements "}"
+    ;
+
+lambdaParameters
+    : lambdaParameter ("," lambdaParameter)* ","?
+    ;
+
+lambdaParameter
+      identifier (":" type)?
+    ;
+
+literal
+    : integerLiteral
+    | floatLiteral
+    | charLiteral
+    | stringLiteral
+    | "true" | "false"
+    | "this" | "super"
+    | "null"
+    ;
+
+integerLiteral 
+    : (digit (digit | "_")*
+      | "0x" hexDigit (hexDigit | "_")*
+      | "0b" binDigit (binDigit | "_")*)
+      integerSuffix?
+    ;
+
+integerSuffix
+    : "sb" | "ub" | "b"
+    | "s" | "us"
+    | "i" | "ui"
+    | "L" | "uL"
+    ;
+
 floatLiteral
-    : digit+ "." digit+
+    : digit (digit | "_")* "." (digit | "_")
+      ([Ee])
     ;
 
 charLiteral
@@ -173,208 +359,16 @@ stringLiteral
 
 digit 
     : [0-9]
-    ;    
+    ;
+
+hexDigit
+    : [0-9A-F]
+    ;
+
+binDigit
+    : [01]
+    ;
 
 identifier
     : [a-zA-Z_][a-zA-Z0-9_]*
     ;
-    
-===================================== OLD =====================================    
-
-program 
-    : moduleHeader? importHeader* declaration* EOF
-    ;
-
-moduleHeader
-    : "module" IDENTIFIER ("." IDENTIFIER)* LINE_TERMINATOR
-    ;
-
-importHeader
-    : "using" IDENTIFIER ( ("." IDENTIFIER)* ("." "*")? ) ("as" IDENTIFIER)? LINE_TERMINATOR
-    ;
-    
-declaration  
-    : classDeclaration 
-    | functionDeclaration 
-    | propertyDeclaration 
-    ;
-
-classDeclaration
-    : "class" IDENTIFIER ( ":" IDENTIFIER )?
-      "{" classMemberDeclaration* "}"
-    ;
-    
-classMemberDeclaration
-    : propertyDeclaration 
-    | constructorDeclaration 
-    | functionDeclaration 
-    ;
-    
-parameters :
-    : "(" lambdaParameters ")" 
-    ;
-    
-lambdaParameters
-    : (IDENTIFIER ("," IDENTIFIER)*)?
-    ;
-   
-functionDeclaration
-    : "fun" IDENTIFIER parameters returnValue functionBody
-    ;
-    
-constructorDeclaration
-    : "init" parameters functionBody 
-    ;
-
-functionBody
-    : block 
-    | "=" expression LINE_TERMINATOR
-    ;
-    
-returnValue : ":" type    
-    
-propertyDeclaration
-    : ( "var" | "val" ) variableDeclaration ("=" expression)? LINE_TERMINATOR
-    ;
-  
-variableDeclaration 
-    : IDENTIFIER ":" type
-    ;  
-  
-parameter 
-    : IDENTIFIER ":" type 
-    ;
-    
-statement
-    : declaration
-    | assignment
-    | ifStatement
-    | loopStatement
-    | expression
-    ;
-
-controlStructureBody
-    : block
-    | statement
-    ;
-    
-block 
-    : "{" statement* "}"
-    ;
-    
-ifStatement
-    : "if" "(" expression ")" controlStructureBody
-      ( "else" controlStructureBody )?
-    ;    
-    
-loopStatement
-    : forStatement
-    | whileStatement
-    | doWhileStatement
-    ;
-
-forStatement
-    : "for" "(" variableDeclaration "in" expression ")"
-       controlStructureBody
-    ;
-    
-whileStatement
-    : "while" "(" expression ")" controlStructureBody
-    ;
-
-doWhileStatement
-    : "do" controlStructureBody "while" "(" expression ")" 
-    ;
-
-assignment
-    : IDENTIFIER assigmentOperator expression LINE_TERMINATOR
-    ;
-
-assigmentOperator
-    : "+=" | "-=" | "*=" | "/=" | "%=" | "=" 
-    ;
-
-expression
-    : disjunction
-    ;
-
-disjunction
-    : conjunction ("||" conjunction)* 
-    ;
-
-conjunction
-    : equality ("&&" equality)*
-    ;
-
-equality
-    : comparision (("==" | "!=") comparision)*
-    ;    
-    
-comparision
-    : infixOperation ((">" | "<" | ">=" | "<=") infixOperation)* 
-    ;
-
-infixOperation
-    : elvisExpression ((inOperator elvisExpression) | (("is" | "!is" | "as" | "as?") IDENTIFIER))*
-    ;
-
-elvisExpression
-    : infixFunctionCall ("?:" infixFunctionCall)*
-    ;
-    
-infixFunctionCall
-    : rangeExpression (IDENTIFIER rangeExpression)* 
-    ;
-
-additiveExpression
-    : multiplicativeExpression (("+" | "-") multiplicativeExpression)*
-    ;
-    
-multiplicativeExpression
-    : unaryExpression (("*" | "/" | "%") unaryExpression)*
-    ;
-    
-unaryExpression
-    : ("+" | "-" | "!") unaryExpression
-    | callExpression
-    ;
-
-callExpression
-    : functionCall | navigationExpression
-    | primaryExpression
-    ;    
-
-functionCall
-    : primaryExpression arguments lambdaExpression?
-    | primaryExpression lambdaExpression
-    ;
-
-navigationExpression 
-    : primaryExpression (("." | "?.") IDENTIFIER)*
-    ;    
-
-arguments 
-    : expression ( "," expression )* ;     
-    
-primaryExpression
-    : "(" primaryExpression ")"
-    | IDENTIFIER | STRING | NUMBER
-    | "this" | "super"
-    | "true" | "false" | "null"
-    | lambdaExpression
-    | jumpExpression
-    ;
-    
-lambdaExpression
-    : "{" statement* "}"
-    | "{" lambdaParameters? "->" statement* "}"
-    ;    
-
-jumpExpression
-    : "return" expression?
-    | "continue"
-    | "break"
-    ;    
-    
-LINE_TERMINATOR : "\r\n" | "\n" | ";"   
-   

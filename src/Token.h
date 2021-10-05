@@ -19,99 +19,151 @@ namespace ferrit {
         LeftBracket,        ///< '['
         RightBracket,       ///< ']'
 
-        //Nullable,           ///< '?'
-        //NullOrElse,         ///< '?:'
         Comma,              ///< ','
-        Period,             ///< '.'
-        //SafeAccess,         ///< '?.'
-        //RangeTo,            ///< '..'
-        Arrow,              ///< '->'
+        Dot,                ///< '.'
+        DotDot,             ///< '..'
+        DotDotDot,          ///< '...'
         Colon,              ///< ':'
+        ColonColon,         ///< '::'
+        Question,           ///< '?'
+        QuestionQuestion,   ///< '??'
+        QuestionDot,        ///< '?.'
+        QuestionColon,      ///< '?:'
+        Arrow,              ///< '->'
         Semicolon,          ///< ';'
         Newline,            ///< '\\n'. Defines a possible statement terminator.
 
         Plus,               ///< '+'
+        PlusPlus,           ///< '++'
         Minus,              ///< '-'
-        Times,              ///< '*'
-        Divide,             ///< '/'
-        Modulo,             ///< '%'
+        MinusMinus,         ///< '--'
+        Asterisk,           ///< '*'
+        Slash,              ///< '/'
+        Percent,            ///< '%'
+        Tilde,              ///< '~'
+        AndAnd,             ///< '&&'
+        OrOr,               ///< '||'
+        Bang,               ///< '!'
+        BangBang,           ///< '!!'
 
-        LogicalAnd,         ///< '&&'
-        LogicalOr,          ///< '||'
-        LogicalNot,         ///< '!'
+        Equal,              ///< '='
+        PlusEqual,          ///< '+='
+        MinusEqual,         ///< '-='
+        AsteriskEqual,      ///< '*='
+        SlashEqual,         ///< '/='
+        PercentEqual,       ///< '%='
+        TildeEqual,         ///< '~='
+        AndAndEqual,        ///< '&&='
+        OrOrEqual,          ///< '||='
 
-        BitwiseAnd,         ///< '&'
-        BitwiseOr,          ///< '|'
-        BitwiseXor,         ///< '^'
-        BitwiseNot,         ///< '~'
-        BitwiseLeftShift,           ///< '<<'
-        BitwiseRightShift,          ///< '>>'
-
-        Assign,             ///< '='
-        //PlusAssign,         ///< '+='
-        //MinusAssign,        ///< '-='
-        //TimesAssign,        ///< '*='
-        //DivideAssign,       ///< '/='
-        //ModuloAssign,       ///< '%='
-        //LogicalAndAssign,   ///< '&&='
-        //LogicalOrAssign,    ///< '||='
-        //BitwiseAndAssign,   ///< '&='
-        //BitwiseOrAssign,    ///< '|='
-        //BitwiseXorAssign,   ///< '^='
-        //BitwiseLeftShiftAssign, ///< '<<='
-        //BitwiseRightShiftAssign, ///< '>>='
-
-        Equal,              ///< '=='
-        NotEqual,           ///< '!='
+        EqualEqual,         ///< '=='
+        BangEqual,          ///< '!='
         Greater,            ///< '>'
         GreaterEqual,       ///< '>='
         Less,               ///< '<'
         LessEqual,          ///< '<='
 
-        //As,
-        //Is,
-        //In,
-        //Module,
-        //Using,
-        Native,
-        Var,
-        //Val,
-        //Class,
-        Fun,
-        //Init,
-        //This,
-        //Super,
-        //If,
-        //Else,
-        //For,
-        //While,
-        //Do,
-        Return,
-        //Continue,
-        //Break,
-        True,
-        False,
-        //Null,
+        As,                 ///< 'as'
+        AsQuestion,         ///< 'as?'
+        Is,                 ///< 'is'
+        BangIs,             ///< '!is'
+        In,                 ///< 'in'
+        BangIn,             ///< '!in'
 
-        //SByte,
-        //Byte,
-        //Short,
-        //UShort,
-        Int,
-        //UInt,
-        //Long,
-        //ULong,
-        //Float,
-        Double,
-        //Char,
-        //String,
-        //Bool,
-        Void,
+        Using,              ///< 'using'
+        Module,             ///< 'module'
+        Public,             ///< 'public'
+        Protected,          ///< 'protected'
+        Private,            ///< 'private'
+        Companion,          ///< 'companion'
+        Friend,             ///< 'friend'
+        Open,               ///< 'open'
+        Closed,             ///< 'closed'
+        Abstract,           ///< 'abstract'
+        Override,           ///< 'override'
+        Operator,           ///< 'operator'
+        Native,             ///< 'native'
 
+        Class,              ///< 'class'
+        Object,             ///< 'object'
+        Trait,              ///< 'trait'
+        Init,               ///< 'init'
+        This,               ///< 'this'
+        Super,              ///< 'super'
+        Fun,                ///< 'fun'
+        Var,                ///< 'var'
+        Val,                ///< 'val'
+
+        If,                 ///< 'if'
+        Else,               ///< 'else'
+        For,                ///< 'for'
+        While,              ///< 'while'
+        Do,                 ///< 'do'
+        Return,             ///< 'return'
+        Continue,           ///< 'continue'
+        Break,              ///< 'break'
+
+        True,               ///< 'true'
+        False,              ///< 'false'
+        Null,               ///< 'null'
+
+        /**
+         * \brief Identifiers represent the names of functions, types and variables.
+         *
+         * Identifiers begin with an ASCII letter or underscore and
+         * contain ASCII letters, numbers and underscores.
+         *
+         * Identifiers may not be single underscores.
+         */
         Identifier,
+
+        /**
+         * \brief String literals are a convenient way to create String objects.
+         *
+         * Strings begin and end with double quotes and contain 0 or more
+         * ASCII characters (excluding newlines) or escape sequences.
+         *
+         * Escape sequences consist of a backslash and an ASCII letter.
+         * Common examples are '\\n' for newline and '\\t' for tab.
+         */
         StringLiteral,
+
+        /**
+         * \brief Char literals are a convenient way to create Char objects.
+         *
+         * Char literals begin and end with single quotes and contain exactly
+         * one ASCII character (excluding newlines) or escape sequence.
+         */
         CharLiteral,
+
+        /**
+         * \brief Integer literals are the literal representations of the types
+         * Byte, Short, Int and Long.
+         *
+         * Integer literals begin with a digit, contain a mix of digits and
+         * underscores, and may end with a suffix representing the literal's
+         * type ('b' for Byte, 's' for Short, 'i' for Int, or 'L' for Long).
+         *
+         * For a decimal integer, a digit is one of the ten ASCII digits.
+         * Literals beginning with '0x' are hexadecimal and can additionally
+         * include A-F as digits (capital letters only), and those starting with
+         * '0b' are binary and can only include '0' and '1' as digits.
+         */
         IntegerLiteral,
+
+        /**
+         * \brief Float literals are the literal representations of the Float
+         * and Double types.
+         *
+         * Float literals begin with a digit, followed by a mix of digits and
+         * underscores. They are then followed by a '.' and another set of
+         * digits and underscores.
+         *
+         * Next, an optional exponent specifier may occur. This consists of an
+         * 'e' (lowercase) and a sequence of digits and underscores.
+         *
+         * Finally, an optional suffix may be present: 'f' for Float and 'd' for Double.
+         */
         FloatLiteral,
     };
 
@@ -122,17 +174,13 @@ namespace ferrit {
      */
     struct SourceLocation {
     public:
-        SourceLocation() noexcept = default;
-        SourceLocation(std::size_t line, std::size_t column) noexcept;
-
-        bool operator==(const SourceLocation &other) const noexcept;
-        bool operator!=(const SourceLocation &other) const noexcept;
+        bool operator==(const SourceLocation &other) const noexcept = default;
 
         friend std::ostream &operator<<(std::ostream &out, const SourceLocation &loc);
 
     public:
-        std::size_t line{1};
-        std::size_t column{1};
+        int line{1};
+        int column{1};
     };
 
     /**
@@ -140,11 +188,7 @@ namespace ferrit {
      */
     struct Token {
     public:
-        Token() noexcept = default;
-        Token(TokenType type, std::string lexeme, SourceLocation location) noexcept;
-
-        bool operator==(const Token &other) const noexcept;
-        bool operator!=(const Token &other) const noexcept;
+        bool operator==(const Token &other) const noexcept = default;
 
         friend std::ostream &operator<<(std::ostream &out, const Token &token);
 

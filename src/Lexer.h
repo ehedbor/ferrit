@@ -65,7 +65,7 @@ namespace ferrit {
 
         [[nodiscard]] LexResult lexNumber();
         [[nodiscard]] LexResult lexIdentifier();
-        [[nodiscard]] static TokenType getTokenTypeForIdent(const std::string &lexeme) noexcept;
+        [[nodiscard]] TokenType getTokenTypeForIdent(const std::string &lexeme) noexcept;
 
         [[nodiscard]] Token makeToken(TokenType type) const noexcept;
         template <typename... Args>
@@ -84,6 +84,14 @@ namespace ferrit {
          * @return the next \c char, or \c std::nullopt if no \c char is being pointed to.
          */
         [[nodiscard]] std::optional<char> peekNext() const noexcept;
+
+        /**
+         * Gets the nth next character without advancing the \c Lexer.
+         *
+         * @param n the amount of lookahead. 0 = current
+         * @return the nth \c char, or \c std::nullopt if no \c char is being pointed to.
+         */
+        [[nodiscard]] std::optional<char> peekN(int n) const noexcept;
 
         /**
          * Consumes and returns the currently-referenced character.
@@ -124,15 +132,15 @@ namespace ferrit {
 
     private:
         std::string m_code;
-        std::size_t m_start{0};
-        std::size_t m_current{0};
+        int m_start{0};
+        int m_current{0};
         SourceLocation m_location{1, 1};
     };
 
     template <typename... Args>
     Error Lexer::makeError(ErrorCode errorCode, const Args&... args) const {
-        std::size_t count = m_current - m_start;
-        std::size_t startColumn = m_location.column - count;
+        int count = m_current - m_start;
+        int startColumn = m_location.column - count;
         std::string lexeme = m_code.substr(m_start, count);
         Token cause{TokenType::Unknown, lexeme, {m_location.line, startColumn}};
         return {cause, errorCode, args...};

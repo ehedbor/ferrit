@@ -42,10 +42,10 @@ to `ferritc`.
 ## Basic Types
 
 Ferrit has the following basic types:
- * 8-bit integers: `SByte` and `Byte`
- * 16-bit integers: `Short` and `UShort` 
- * 32-bit integers: `Int` and `UInt`
- * 64-bit integers: `Long` and `ULong`
+ * 8-bit integers: `Byte`
+ * 16-bit integers: `Short`
+ * 32-bit integers: `Int`
+ * 64-bit integers: `Long`
  * 32-bit floats: `Float` 
  * 64-bit floats: `Double` 
  * booleans: `Bool`
@@ -105,14 +105,10 @@ Integer and float literals default to the types `Int` and `Double` respectively.
 
 | Type     | Suffix          |
 |:--------:|:---------------:|
-| `SByte`  | `42sb`          | 
 | `Byte`   | `42b`           | 
 | `Short`  | `42s`           | 
-| `UShort` | `42us`          |
 | `Int`    | `42`, `42i`     | 
-| `UInt`   | `42u`, `42ui`   |
 | `Long`   | `42L`           |
-| `ULong`  | `42uL`          |
 | `Float`  | `42.0f`         |
 | `Double` | `42.0`, `42.0d` |
 

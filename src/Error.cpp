@@ -2,16 +2,16 @@
 #include <iomanip>
 
 namespace ferrit {
-    const std::vector<Token> &Error::stackTrace() const noexcept {
-        return m_stackTrace;
-    }
-
     ErrorCode Error::errorCode() const noexcept {
         return m_errorCode;
     }
 
     std::string Error::msg() const noexcept {
         return m_msg;
+    }
+
+    const std::vector<Token> &Error::stackTrace() const noexcept {
+        return m_stackTrace;
     }
 
     void Error::addStackTrace(const Token &location) noexcept {
@@ -22,7 +22,7 @@ namespace ferrit {
         std::string fmtString;
         switch (m_errorCode) {
         case ErrorCode::Unknown:
-            return "error error: unknown error";
+            return "error: unknown";
         case ErrorCode::SyntaxUnexpectedChar:
             return "syntax error: unexpected symbol '{}'";
         case ErrorCode::SyntaxUnterminatedElement:
@@ -47,7 +47,7 @@ namespace ferrit {
     }
 
     std::ostream &operator<<(std::ostream &out, const Error &error) {
-        out << "Error E"
+        out << "error E"
             << std::setfill('0') << std::setw(3) << static_cast<int>(error.errorCode())
             << ": " << error.msg() << "\n";
 

@@ -1,6 +1,5 @@
 #include "Lexer.h"
 
-#include <sstream>
 #include <unordered_map>
 #include "ResultTry.h"
 
@@ -38,26 +37,86 @@ namespace ferrit {
         case '[': return makeToken(TokenType::LeftBracket);
         case ']': return makeToken(TokenType::RightBracket);
         case ',': return makeToken(TokenType::Comma);
-        case '.': return makeToken(TokenType::Period);
-        case ':': return makeToken(TokenType::Colon);
-        case ';': return makeToken(TokenType::Semicolon);
-        case '+': return makeToken(TokenType::Plus);
-        case '-': return makeToken(match('>') ? TokenType::Arrow : TokenType::Minus);
-        case '*': return makeToken(TokenType::Times);
-        case '/': return makeToken(TokenType::Divide);
-        case '%': return makeToken(TokenType::Modulo);
-        case '&': return makeToken(match('&') ? TokenType::LogicalAnd : TokenType::BitwiseAnd);
-        case '|': return makeToken(match('|') ? TokenType::LogicalOr : TokenType::BitwiseOr);
-        case '^': return makeToken(TokenType::BitwiseXor);
-        case '~': return makeToken(TokenType::BitwiseNot);
-        case '!': return makeToken(match('=') ? TokenType::NotEqual : TokenType::LogicalNot);
-        case '=': return makeToken(match('=') ? TokenType::Equal : TokenType::Assign);
+        case '.':
+            if (match('.')) {
+                if (match('.')) {
+                    return makeToken(TokenType::DotDotDot);
+                }
+                return makeToken(TokenType::DotDot);
+            }
+            return makeToken(TokenType::Dot);
+        case '?':
+            if (match('?')) return makeToken(TokenType::QuestionQuestion);
+            if (match(':')) return makeToken(TokenType::QuestionColon);
+            if (match('.')) return makeToken(TokenType::QuestionDot);
+            return makeToken(TokenType::Question);
+        case ':':
+            if (match(':')) return makeToken(TokenType::ColonColon);
+            return makeToken(TokenType::Colon);
+        case ';':
+            return makeToken(TokenType::Semicolon);
+        case '+':
+            if (match('+')) return makeToken(TokenType::PlusPlus);
+            if (match('=')) return makeToken(TokenType::PlusEqual);
+            return makeToken(TokenType::Plus);
+        case '-':
+            if (match('-')) return makeToken(TokenType::MinusMinus);
+            if (match('=')) return makeToken(TokenType::MinusEqual);
+            if (match('>')) return makeToken(TokenType::Arrow);
+            return makeToken(TokenType::Minus);
+        case '*':
+            if (match('=')) return makeToken(TokenType::AsteriskEqual);
+            return makeToken(TokenType::Asterisk);
+        case '/':
+            if (match('=')) return makeToken(TokenType::SlashEqual);
+            return makeToken(TokenType::Slash);
+        case '%':
+            if (match('=')) return makeToken(TokenType::PercentEqual);
+            return makeToken(TokenType::Percent);
+        case '~':
+            if (match('=')) return makeToken(TokenType::TildeEqual);
+            return makeToken(TokenType::Tilde);
+        case '&':
+            if (match('&')) {
+                if (match('=')) {
+                    return makeToken(TokenType::AndAndEqual);
+                }
+                return makeToken(TokenType::AndAnd);
+            }
+            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedChar, '&'));
+        case '|':
+            if (match('|')) {
+                if (match('=')) {
+                    return makeToken(TokenType::OrOrEqual);
+                }
+                return makeToken(TokenType::OrOr);
+            }
+            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedChar, '|'));
+        case '!':
+            if (match('!')) {
+                return makeToken(TokenType::BangBang);
+            } else if (match('=')) {
+                return makeToken(TokenType::BangEqual);
+            } else if (peek() && peekNext()) {
+                bool secondNextIsIdent = isIdentifier(peekN(2).value_or('\0'));
+                if (*peek() == 'i' && *peekNext() == 's' && !secondNextIsIdent) {
+                    advance();
+                    advance();
+                    return makeToken(TokenType::BangIs);
+                } else if (*peek() == 'i' && *peekNext() == 'n' && !secondNextIsIdent) {
+                    advance();
+                    advance();
+                    return makeToken(TokenType::BangIn);
+                }
+            }
+            return makeToken(TokenType::Bang);
+        case '=':
+            if (match('=')) return makeToken(TokenType::EqualEqual);
+            return makeToken(TokenType::Equal);
         case '>':
-            if (match('>')) return makeToken(TokenType::BitwiseRightShift);
             if (match('=')) return makeToken(TokenType::GreaterEqual);
             return makeToken(TokenType::Greater);
         case '<':
-            if (match('<')) return makeToken(TokenType::BitwiseLeftShift);
             if (match('=')) return makeToken(TokenType::LessEqual);
             return makeToken(TokenType::Less);
         default:
@@ -239,45 +298,77 @@ namespace ferrit {
 
     TokenType Lexer::getTokenTypeForIdent(const std::string &lexeme) noexcept {
         static const std::unordered_map<std::string, TokenType> IDENTIFIER_TYPES = {
+            {"as",          TokenType::As},
+            {"is",          TokenType::Is},
+            {"in",          TokenType::In},
+            {"using",       TokenType::Using},
+            {"module",      TokenType::Module},
+            {"public",      TokenType::Public},
+            {"protected",   TokenType::Protected},
+            {"private",     TokenType::Private},
+            {"companion",   TokenType::Companion},
+            {"friend",      TokenType::Friend},
+            {"open",        TokenType::Open},
+            {"closed",      TokenType::Closed},
+            {"abstract",    TokenType::Abstract},
+            {"override",    TokenType::Override},
+            {"operator",    TokenType::Operator},
             {"native",      TokenType::Native},
-            {"var",         TokenType::Var},
+            {"class",       TokenType::Class},
+            {"object",      TokenType::Object},
+            {"trait",       TokenType::Trait},
+            {"init",        TokenType::Init},
+            {"this",        TokenType::This},
+            {"super",       TokenType::Super},
             {"fun",         TokenType::Fun},
+            {"var",         TokenType::Var},
+            {"val",         TokenType::Val},
+            {"if",          TokenType::If},
+            {"else",        TokenType::Else},
+            {"for",         TokenType::For},
+            {"while",       TokenType::While},
+            {"do",          TokenType::Do},
             {"return",      TokenType::Return},
+            {"continue",    TokenType::Continue},
+            {"break",       TokenType::Break},
             {"true",        TokenType::True},
             {"false",       TokenType::False},
-            {"int",         TokenType::Int},
-            {"double",      TokenType::Double},
-            {"void",        TokenType::Void},
+            {"null",        TokenType::Null},
         };
 
         auto iter = IDENTIFIER_TYPES.find(lexeme);
         if (iter != IDENTIFIER_TYPES.cend()) {
-            return iter->second;
+            TokenType identType = iter->second;
+            if (identType == TokenType::As && match('?')) {
+                return TokenType::AsQuestion;
+            } else {
+                return identType;
+            }
         } else {
             return TokenType::Identifier;
         }
     }
 
     Token Lexer::makeToken(TokenType type) const noexcept {
-        std::size_t count = m_current - m_start;
-        std::size_t startColumn = m_location.column - count;
+        int count = m_current - m_start;
+        int startColumn = m_location.column - count;
         std::string lexeme = m_code.substr(m_start, count);
         return {type, std::move(lexeme), {m_location.line, startColumn}};
     }
 
     std::optional<char> Lexer::peek() const noexcept {
-        if (m_current >= m_code.length()) {
-            return {};
-        } else {
-            return m_code[m_current];
-        }
+        return peekN(0);
     }
 
     std::optional<char> Lexer::peekNext() const noexcept {
-        if (m_current + 1 >= m_code.length()) {
+        return peekN(1);
+    }
+
+    std::optional<char> Lexer::peekN(int n) const noexcept {
+        if (m_current + n >= m_code.length()) {
             return {};
         } else {
-            return m_code[m_current + 1];
+            return m_code[m_current + n];
         }
     }
 

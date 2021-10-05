@@ -49,12 +49,8 @@ namespace ferrit {
         [[nodiscard]] ExprResult parseExpression();
         [[nodiscard]] ExprResult parseDisjunction();
         [[nodiscard]] ExprResult parseConjunction();
-        [[nodiscard]] ExprResult parseBitwiseOr();
-        [[nodiscard]] ExprResult parseBitwiseXor();
-        [[nodiscard]] ExprResult parseBitwiseAnd();
         [[nodiscard]] ExprResult parseEquality();
         [[nodiscard]] ExprResult parseComparison();
-        [[nodiscard]] ExprResult parseBitwiseShift();
         [[nodiscard]] ExprResult parseAdditive();
         [[nodiscard]] ExprResult parseMultiplicative();
         [[nodiscard]] ExprResult parseUnary();

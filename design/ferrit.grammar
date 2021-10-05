@@ -174,7 +174,7 @@ assignableExpression
 assignmentOperator
     : "="
     | "+=" | "-=" | "*=" | "/=" | "%="
-    | "&=" | "|=" | "<<=" | ">>="
+    | "~="
     | "&&=" | "||="
     ;
 
@@ -207,27 +207,11 @@ equality
     ;
 
 comparison
-    : bitwiseOr ((">" | "<" | ">=" | "<=") bitwiseOr)*
+    : containsOp ((">" | "<" | ">=" | "<=") containsOp)*
     ;
 
 containsOp
-    : bitwiseOr (("in" | "!in") bitwiseOr)*
-    ;
-
-bitwiseOr
-    : bitwiseXor ("|" bitwiseXor)*
-    ;
-
-bitwiseXor
-    : bitwiseAnd ("^" bitwiseXor)*
-    ;
-
-bitwiseAnd
-    : bitwiseShift ("&" bitwiseShift)*
-    ;
-
-bitwiseShift
-    : additive (("<<" | ">>") additive)*
+    : additive (("in" | "!in") additive)*
     ;
 
 additive
@@ -235,7 +219,7 @@ additive
     ;
 
 multiplicative
-    : unary (("*" | "/" | "%") unary)*
+    : typeOp (("*" | "/" | "%") typeOp)*
     ;
 
 typeOp
@@ -331,22 +315,26 @@ literal
     ;
 
 integerLiteral 
-    : (digit (digit | "_")*
-      | "0x" hexDigit (hexDigit | "_")*
-      | "0b" binDigit (binDigit | "_")*)
+    : ( digit (digit | "_")*
+      | "0x" (hexDigit | "_")*
+      | "0b" (binDigit | "_")* )
       integerSuffix?
     ;
 
 integerSuffix
-    : "sb" | "ub" | "b"
-    | "s" | "us"
-    | "i" | "ui"
-    | "L" | "uL"
+    : "b" | "s" | "i" | "L"
     ;
 
 floatLiteral
-    : digit (digit | "_")* "." (digit | "_")
-      ([Ee])
+    : digit (digit | "_")* "." (digit | "_") floatExponent? floatSuffix?
+    ;
+
+floatExponent
+    : "e" (digit | "_")+
+    ;
+
+floatSuffix
+    : "f" | "d"
     ;
 
 charLiteral

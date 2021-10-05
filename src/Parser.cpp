@@ -70,11 +70,11 @@ namespace ferrit {
         // { }
         auto foundTerms = skipTerminators(true);
         bool isDecl = foundTerms.semicolon || foundTerms.eof ||
-            (foundTerms.newline && (check(TokenType::Assign) || check(TokenType::LeftBrace)));
+            (foundTerms.newline && (check(TokenType::Equal) || check(TokenType::LeftBrace)));
         if (isDecl) {
             return decl;
         } else {
-            if (match(TokenType::Assign)) {
+            if (match(TokenType::Equal)) {
                 TRY(expr, parseExpression());
                 body = std::make_unique<ExpressionStatement>(std::move(expr));
             } else if (match(TokenType::LeftBrace)) {
@@ -130,7 +130,7 @@ namespace ferrit {
         auto name = previous();
         EXPECT(consume(TokenType::Colon, "expected ':' after parameter name"));
         TRY(type, parseType());
-        if (type.name().type == TokenType::Void) {
+        if (type.name().type == TokenType::Identifier && type.name().lexeme == "Void") {
             return cpp::fail(makeError("cannot declare parameter of type void"));
         }
 
@@ -138,8 +138,13 @@ namespace ferrit {
     }
 
     cpp::result<Type, Error> Parser::parseType() {
-        if (match(TokenType::Int) || match(TokenType::Double) || match(TokenType::Void)) {
-            return Type(previous());
+        if (match(TokenType::Identifier)) {
+            const std::string &lexeme = previous().lexeme;
+            if (lexeme == "Int" || lexeme == "Double" || lexeme == "Void") {
+                return Type(previous());
+            } else {
+                return cpp::fail(makeError("expected type name"));
+            }
         }
         return cpp::fail(makeError("expected type name"));
     }
@@ -169,7 +174,7 @@ namespace ferrit {
 
     ExprResult Parser::parseDisjunction() {
         TRY(left, parseConjunction());
-        while (match(TokenType::LogicalOr)) {
+        while (match(TokenType::OrOr)) {
             Token op = previous();
             TRY(right, parseConjunction());
             left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
@@ -178,48 +183,18 @@ namespace ferrit {
     }
 
     ExprResult Parser::parseConjunction() {
-        TRY(left, parseBitwiseOr());
-        while (match(TokenType::LogicalAnd)) {
-            Token op = previous();
-            TRY(right, parseBitwiseOr());
-            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
-        }
-        return left;
-    }
-
-    ExprResult Parser::parseBitwiseOr() {
-        TRY(left, parseBitwiseXor());
-        while (match(TokenType::BitwiseOr)) {
-            Token op = previous();
-            TRY(right, parseBitwiseXor());
-            left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));
-        }
-        return left;
-    }
-
-    ExprResult Parser::parseBitwiseXor() {
-        TRY(left, parseBitwiseAnd());
-        while (match(TokenType::BitwiseXor)) {
-            Token op = previous();
-            TRY(right, parseBitwiseAnd());
-            left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));
-        }
-        return left;
-    }
-
-    ExprResult Parser::parseBitwiseAnd() {
         TRY(left, parseEquality());
-        while (match(TokenType::BitwiseAnd)) {
+        while (match(TokenType::AndAnd)) {
             Token op = previous();
             TRY(right, parseEquality());
-            left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));
+            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
     ExprResult Parser::parseEquality() {
         TRY(left, parseComparison());
-        while (match(TokenType::Equal) || match(TokenType::NotEqual)) {
+        while (match(TokenType::EqualEqual) || match(TokenType::BangEqual)) {
             Token op = previous();
             TRY(right, parseComparison());
             left = std::make_unique<ComparisonExpression>(op, std::move(left), std::move(right));
@@ -228,24 +203,14 @@ namespace ferrit {
     }
 
     ExprResult Parser::parseComparison() {
-        TRY(left, parseBitwiseShift());
+        TRY(left, parseAdditive());
         while (
             match(TokenType::Greater) || match(TokenType::GreaterEqual) ||
             match(TokenType::Less) || match(TokenType::LessEqual))
         {
             Token op = previous();
-            TRY(right, parseBitwiseShift());
-            left = std::make_unique<ComparisonExpression>(op, std::move(left), std::move(right));
-        }
-        return left;
-    }
-
-    ExprResult Parser::parseBitwiseShift() {
-        TRY(left, parseAdditive());
-        while (match(TokenType::BitwiseLeftShift) || match(TokenType::BitwiseRightShift)) {
-            Token op = previous();
             TRY(right, parseAdditive());
-            left = std::make_unique<BitwiseBinaryExpression>(op, std::move(left), std::move(right));
+            left = std::make_unique<ComparisonExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
@@ -262,7 +227,7 @@ namespace ferrit {
 
     ExprResult Parser::parseMultiplicative() {
         TRY(left, parseUnary());
-        while (match(TokenType::Times) || match(TokenType::Divide) || match(TokenType::Modulo)) {
+        while (match(TokenType::Asterisk) || match(TokenType::Slash) || match(TokenType::Percent)) {
             Token op = previous();
             TRY(right, parseUnary());
             left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
@@ -272,8 +237,7 @@ namespace ferrit {
 
     ExprResult Parser::parseUnary() {
         std::vector<Token> operators;
-        while (match(TokenType::Plus) || match(TokenType::Minus) ||
-            match(TokenType::LogicalNot) || match(TokenType::BitwiseNot)) {
+        while (match(TokenType::Plus) || match(TokenType::Minus) || match(TokenType::Bang)) {
             operators.push_back(previous());
         }
 

@@ -28,9 +28,9 @@ function(install_submodule submodule_name submodule_path)
     message(STATUS "Found submodule ${submodule_name} in \"${PROJECT_SOURCE_DIR}/${submodule_path}\"")
 endfunction()
 
-install_submodule(result extern/result)
 install_submodule(Catch2 extern/Catch2)
 install_submodule(cxxopts extern/cxxopts)
+install_submodule(termcolor extern/termcolor)
 
 find_package(LLVM 12 REQUIRED CONFIG)
 message(STATUS "Found LLVM version ${LLVM_PACKAGE_VERSION} in \"${LLVM_DIR}\"")
@@ -40,6 +40,11 @@ if (MSVC)
     add_compile_options(/W4 /WX)
 else()
     add_compile_options(-Wall -Wextra -Werror)
+endif()
+
+# Force using ANSI for console (needed in clion's terminal)
+if (${FERRIT_FORCE_ANSI})
+    add_compile_definitions(TERMCOLOR_USE_ANSI_ESCAPE_SEQUENCES)
 endif()
 
 add_subdirectory(src)

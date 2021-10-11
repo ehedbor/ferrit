@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include <iostream>
+#include "ErrorReporting.h"
 
 namespace ferrit {
     Parser::Parser(const CompileOptions &options) noexcept : m_options(options) {

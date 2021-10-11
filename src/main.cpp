@@ -1,16 +1,16 @@
-#include <iostream>
-#include <filesystem>
-#include <utility>
 #include <cstdlib>
+#include <filesystem>
+#include <iostream>
 
 #include <cxxopts.hpp>
 
-#include "Lexer.h"
-#include "Parser.h"
 #include "AstPrinter.h"
 #include "CompileOptions.h"
+#include "Lexer.h"
+#include "Parser.h"
 
 namespace fs = std::filesystem;
+
 
 ferrit::CompileOptions parseArguments(int argc, char *argv[]);
 auto lexLine(const ferrit::CompileOptions& options, const std::string &line) -> std::optional<std::vector<ferrit::Token>>;
@@ -21,12 +21,13 @@ int main(int argc, char *argv[]) {
         ferrit::CompileOptions compileOpts = parseArguments(argc, argv);
 
         std::cout << "Ferrit Interpreter 0.0.0" << std::endl;
-        std::cout << "Available commands: \"exit\"" << std::endl;
+        std::cout << "Available commands: \"exit\", \"quit\"" << std::endl;
+
         while (true) {
             std::cout << ">>> " << std::flush;
             std::string line;
             std::getline(std::cin, line);
-            if (line == "exit") {
+            if (line == "exit" || line == "quit") {
                 return EXIT_SUCCESS;
             }
 

@@ -47,8 +47,6 @@ namespace ferrit {
         std::string m_shortMessage;
     };
 
-    void logError(const Error &error);
-    void logWarning(const Error &error);
 
 #define PRETTY_NAME_IMPL(name)                                                 \
     [[nodiscard]] static constexpr const char *prettyName() noexcept {         \

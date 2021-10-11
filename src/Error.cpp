@@ -1,5 +1,4 @@
 #include "Error.h"
-#include <iostream>
 #include <format>
 #include <unordered_map>
 #include <typeinfo>
@@ -37,14 +36,6 @@ namespace ferrit {
             token.location.column,
             token.type,
             token.lexeme);
-    }
-
-    void logError(const Error &error) {
-        std::cout << "error: " << error.message() << std::endl;
-    }
-
-    void logWarning(const Error &error) {
-        std::cout << "warning: " << error.message() << std::endl;
     }
 
     Error::UnexpectedChar::UnexpectedChar(

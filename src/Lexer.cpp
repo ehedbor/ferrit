@@ -1,7 +1,6 @@
 #include "Lexer.h"
-
 #include <unordered_map>
-
+#include "ErrorReporting.h"
 
 namespace ferrit {
     Lexer::Lexer(const CompileOptions &options) noexcept : m_options(options) {

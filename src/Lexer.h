@@ -1,95 +1,168 @@
 #pragma once
 
-#include <ostream>
+#include <iostream>
 #include <optional>
 #include <string>
+#include <stdexcept>
+#include <utility>
 #include <vector>
-#include <result.hpp>
-#include "Token.h"
+
+#include "CompileOptions.h"
 #include "Error.h"
+#include "Token.h"
 
 
 namespace ferrit {
-    using LexResult = cpp::result<Token, Error>;
+    class LexException;
 
     /**
      * Converts source code into a list of tokens.
      */
     class Lexer {
     public:
-        explicit Lexer(std::string code) noexcept;
-
         /**
-         * Scans the next token from the source code.
+         * Constructs a lexer with the given compile options.
+         *
+         * @param options compile opts.
          */
-        [[nodiscard]] LexResult lex();
+        explicit Lexer(const CompileOptions &options) noexcept;
 
     private:
         /**
+         * Initializes the lexer with the given source code.
+         *
+         * @param code a lexically-valid source code snippet
+         */
+        void init(const std::string &code) noexcept;
+
+    public:
+        /**
+         * Scans all tokens from the given source code.
+         */
+        std::optional<std::vector<Token>> lex(const std::string &code);
+
+    private:
+        /**
+         * Scans the next token.
+         *
+         * @return the token
+         * @throws LexException if an error occurs
+         */
+        Token lexNext();
+
+        /**
          * Skips ASCII whitespace characters up until the next newline.
          *
-         * @return \c Error if something goes wrong, a newline \c Token if one is found, or \c std::nullopt otherwise.
+         * @return A newline token if one is found
+         * @throws LexException if a comment is ill-formed
          */
-        [[nodiscard]] cpp::result<std::optional<Token>, Error> skipWhitespace();
+        std::optional<Token> skipWhitespace();
 
         /**
-         * Ignores a line comment (starting with // and ending at the next newline).
+         * Ignores a line comment.
          */
-        void ignoreLineComment();
+        void ignoreLineComment() noexcept;
 
         /**
-         * Ignores a block comment (starting with \c /&#42; and ending at \c &#42;/)
+         * Ignores a block comment.
          *
-         * @return nothing on success, \c Error if the block comment is not terminated.
+         * @throws LexException if the block comment is not terminated
          */
-        [[nodiscard]] cpp::result<void, Error> ignoreBlockComment();
+        void ignoreBlockComment();
 
         /**
          * Scans and returns a string literal.
+         *
+         * @return a token representing a string literal
+         * @throws LexException if the string is ill-formed
          */
-        [[nodiscard]] LexResult lexString();
+        Token lexString();
 
         /**
          * Scans and returns a char literal.
+         *
+         * @return a token representing a char literal
+         * @throws LexException if the char is ill-formed
          */
-        [[nodiscard]] LexResult lexChar();
+        Token lexChar();
 
         /**
          * Advances the lexer, returning an error if the next char cannot
          * appear in a string-like literal (such as a \c char or \c string).
          *
          * @param literalType the type of literal (i.e. <tt>"string literal"</tt>)
-         * @return nothing on success, \c Error on failure.
+         * @throws LexException if the literal is ill-formed
          */
-        [[nodiscard]] cpp::result<void, Error> advanceStringChar(const std::string &literalType);
-
-        [[nodiscard]] LexResult lexNumber();
-        [[nodiscard]] LexResult lexIdentifier();
-        [[nodiscard]] TokenType getTokenTypeForIdent(const std::string &lexeme) noexcept;
-
-        [[nodiscard]] Token makeToken(TokenType type) const noexcept;
-        template <typename... Args>
-        [[nodiscard]] Error makeError(ErrorCode errorCode, const Args&... args) const;
+        void advanceStringChar(const std::string &literalType);
 
         /**
-         * Gets the current character without advancing the \c Lexer.
+         * Scans an integer or float literal.
          *
-         * @return the current \c char, or \c std::nullopt if no \c char is being pointed to.
+         * @return the literal
+         * @throws LexException if the literal is ill-formed
+         */
+        Token lexNumber();
+
+        /**
+         * Scans an identifier or a keyword.
+         *
+         * @return the ident/keyword
+         */
+        Token lexIdentifier() noexcept;
+
+        /**
+         * Checks if the current token is a keyword or an identifier.
+         *
+         * @return the type of keyword, or else <tt>TokenType::Identifier</t>
+         */
+        [[nodiscard]] TokenType getCurrentKeywordType() noexcept;
+
+        /**
+         * Constructs a \c Token from the current substring.
+         *
+         * @param type the token's type
+         * @return the token
+         */
+        [[nodiscard]] Token makeToken(TokenType type) const noexcept;
+
+        /**
+         * Constructs a \c LexException from the current substring, logging the error
+         * if permitted by the compile options.
+         *
+         * Note that the exception is not thrown. It is the caller's decision to throw.
+         *
+         * @tparam Err a type extending \c ferrit::Error
+         * @tparam Args the type of the arguments to be passed to <tt>Err</tt>'s constructor
+         * @param args the arguments to <tt>Err</tt>'s constructor
+         * @return the exception
+         * @see ferrit::Error
+         */
+        template <typename Err, typename... Args>
+        requires std::derived_from<Err, ferrit::Error> &&
+            requires(Token token, Args&&... args) {
+                Err(token, std::vector<Token>(), std::forward<Args>(args)...);
+            }
+        [[nodiscard]] LexException makeError(Args&&... args) const;
+
+        /**
+         * Gets the current character without advancing the lexer.
+         *
+         * @return the current char, or \c std::nullopt if no char is being pointed to.
          */
         [[nodiscard]] std::optional<char> peek() const noexcept;
 
         /**
-         * Gets the next character without advancing the \c Lexer.
+         * Gets the next character without advancing the lexer.
          *
-         * @return the next \c char, or \c std::nullopt if no \c char is being pointed to.
+         * @return the next char, or \c std::nullopt if no char is being pointed to.
          */
         [[nodiscard]] std::optional<char> peekNext() const noexcept;
 
         /**
-         * Gets the nth next character without advancing the \c Lexer.
+         * Gets the nth next character without advancing the lexer.
          *
          * @param n the amount of lookahead. 0 = current
-         * @return the nth \c char, or \c std::nullopt if no \c char is being pointed to.
+         * @return the nth char, or \c std::nullopt if no char is being pointed to.
          */
         [[nodiscard]] std::optional<char> peekN(int n) const noexcept;
 
@@ -100,49 +173,83 @@ namespace ferrit {
 
         /**
          * Checks to see if the current character is the same as the given character,
-         * and advances the \c Lexer if they are.
+         * and advances the lexer if they are.
          */
         [[nodiscard]] bool match(char expected) noexcept;
 
         /**
-         * Returns true if the \c Lexer has reached the end of the source code.
+         * Returns true if the lexer has reached the end of the source code.
          */
         [[nodiscard]] bool isAtEnd() const noexcept;
 
         /**
-         * Returns the type of newline located at \c current()
-         * @return 0 if no newline, 1 for \c '\\n', 2 for \c "\\r\\n"
+         * Returns the type of newline that is currently being pointed to.
+         *
+         * @return \c 0 if no newline, \c 1 for LF-style newlines (<tt>"\\n"</tt>),
+         * or \c 2 for CRLF-style newlines (<tt>"\\r\\n"</tt>).
          */
         [[nodiscard]] int getCurrentNewlineType() const noexcept;
 
         /**
-         * Returns \c true if the given character is an ASCII digit.
+         * Returns true if the given character is an ASCII digit.
          */
         [[nodiscard]] static bool isDigit(char ch) noexcept;
 
         /**
-         * Returns \c true if the given character is an ASCII letter or underscore.
+         * Returns true if the given character can appear in the middle of an identifier.
          */
         [[nodiscard]] static bool isIdentifier(char ch) noexcept;
 
         /**
-         * Returns \c true if the given character is an ASCII letter, ASCII digit or underscore.
+         * Returns true if the given character can start an identifier.
          */
         [[nodiscard]] static bool isIdentifierStart(char ch) noexcept;
 
     private:
-        std::string m_code;
+        const CompileOptions &m_options;
+        std::string m_code{};
         int m_start{0};
         int m_current{0};
         SourceLocation m_location{1, 1};
     };
 
-    template <typename... Args>
-    Error Lexer::makeError(ErrorCode errorCode, const Args&... args) const {
+    /**
+     * Represents an error that occurred while lexing the source code.
+     */
+    class LexException : public std::runtime_error {
+    public:
+        /**
+         * Constructs a \c LexException with the given error as its cause.
+         *
+         * @param cause the reason for the exception
+         */
+        explicit LexException(const Error &cause) noexcept;
+
+    public:
+        /**
+         * Returns the cause of the exception.
+         */
+        [[nodiscard]] const Error &cause() const;
+
+    private:
+        Error m_cause;
+    };
+
+
+    template <typename Err, typename... Args>
+    requires std::derived_from<Err, ferrit::Error> &&
+        requires(Token token, Args&&... args) {
+            Err(token, std::vector<Token>(), std::forward<Args>(args)...);
+        }
+    [[nodiscard]] LexException Lexer::makeError(Args&&... args) const {
         int count = m_current - m_start;
         int startColumn = m_location.column - count;
         std::string lexeme = m_code.substr(m_start, count);
-        Token cause{TokenType::Unknown, lexeme, {m_location.line, startColumn}};
-        return {cause, errorCode, args...};
+        Token token{TokenType::Error, std::move(lexeme), {m_location.line, startColumn}};
+
+        Err error(token, std::vector<Token>(), std::forward<Args>(args)...);
+        logError(error);
+
+        return LexException(error);
     }
 }

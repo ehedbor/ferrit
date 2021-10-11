@@ -23,27 +23,27 @@ namespace ferrit {
         m_depth++;
         for (auto &modifier: funDecl.modifiers()) {
             printIndent();
-            m_out << modifier << "\n";
+            m_out << modifier.lexeme << " " << "\n";
         }
         m_depth--;
 
         printIndent();
-        m_out << "-Keyword=" << funDecl.keyword() << "\n";
+        m_out << "-Keyword=" << funDecl.keyword().lexeme << "\n";
 
         printIndent();
-        m_out << "-Name=" << funDecl.name() << "\n";
+        m_out << "-Name=" << funDecl.name().lexeme << "\n";
 
         printIndent();
         m_out << "-Params:\n";
         m_depth++;
         for (auto &param : funDecl.params()) {
             printIndent();
-            m_out << "Parameter{Name=" << param.name() << ", Type=" << param.type().name() << "}\n";
+            m_out << "Parameter{Name=" << param.name().lexeme << ", Type=" << param.type().name().lexeme << "}\n";
         }
         m_depth--;
 
         printIndent();
-        m_out << "-Returns=" << funDecl.returnType().name() << "\n";
+        m_out << "-Returns=" << funDecl.returnType().name().lexeme << "\n";
 
         m_depth--;
 
@@ -113,7 +113,7 @@ namespace ferrit {
 
     VisitResult AstPrinter::visitUnary(const UnaryExpression &unaryExpr) {
         printIndent();
-        m_out << "Unary: " << unaryExpr.op() << "\n";
+        m_out << "Unary: " << unaryExpr.op().lexeme << "\n";
         m_depth++;
         unaryExpr.operand().accept(*this);
         m_depth--;
@@ -123,7 +123,7 @@ namespace ferrit {
 
     VisitResult AstPrinter::visitVariable(const VariableExpression &varExpr) {
         printIndent();
-        m_out << "Variable: " << varExpr.name() << "\n";
+        m_out << "Variable: " << varExpr.name().lexeme << "\n";
 
         return {};
     }
@@ -135,7 +135,7 @@ namespace ferrit {
         } else {
             m_out << "Float Literal: ";
         }
-        m_out << numExpr.value() << "\n";
+        m_out << numExpr.value().lexeme << "\n";
 
         return {};
     }
@@ -146,7 +146,7 @@ namespace ferrit {
         m_depth++;
 
         printIndent();
-        m_out << "-Op=" << op << "\n";
+        m_out << "-Op=" << op.lexeme << "\n";
 
         printIndent();
         m_out << "-Left:\n";

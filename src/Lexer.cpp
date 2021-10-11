@@ -1,17 +1,52 @@
 #include "Lexer.h"
 
 #include <unordered_map>
-#include "ResultTry.h"
 
 
 namespace ferrit {
-    Lexer::Lexer(std::string code) noexcept : m_code(std::move(code)) {
+    Lexer::Lexer(const CompileOptions &options) noexcept : m_options(options) {
     }
 
-    LexResult Lexer::lex() {
-        TRY(optWhitespaceToken, skipWhitespace());
-        if (optWhitespaceToken) {
-            return *optWhitespaceToken;
+    void Lexer::init(const std::string &code) noexcept {
+        m_code = code;
+        m_start = 0;
+        m_current = 0;
+        m_location = {1, 1};
+    }
+
+    std::optional<std::vector<Token>> Lexer::lex(const std::string &code) {
+        init(code);
+
+        try {
+            if (m_options.showLexerOutput()) {
+                std::cout << "Lexer:" << std::endl;
+            }
+
+            std::vector<Token> result;
+            while (true) {
+                result.emplace_back(lexNext());
+                const Token &token = result.back();
+
+                if (m_options.showLexerOutput()) {
+                    std::cout << std::format("  -Token {} \"{}\" at {}:{}",
+                        token.type, token.lexeme, token.location.line, token.location.column);
+                    std::cout << std::endl;
+                }
+                if (token.type == TokenType::EndOfFile) {
+                    return result;
+                }
+            }
+        } catch (const LexException &e) {
+            if (m_options.showLexerOutput()) {
+                std::cout << "  -Lex Error:" << e.what() << std::endl;
+            }
+            return {};
+        }
+    }
+
+    Token Lexer::lexNext() {
+        if (auto whitespace = skipWhitespace()) {
+            return *whitespace;
         }
 
         m_start = m_current;
@@ -83,7 +118,7 @@ namespace ferrit {
                 }
                 return makeToken(TokenType::AndAnd);
             }
-            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedChar, '&'));
+            throw makeError<Error::UnexpectedChar>('&');
         case '|':
             if (match('|')) {
                 if (match('=')) {
@@ -91,7 +126,7 @@ namespace ferrit {
                 }
                 return makeToken(TokenType::OrOr);
             }
-            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedChar, '|'));
+            throw makeError<Error::UnexpectedChar>('|');
         case '!':
             if (match('!')) {
                 return makeToken(TokenType::BangBang);
@@ -120,11 +155,11 @@ namespace ferrit {
             if (match('=')) return makeToken(TokenType::LessEqual);
             return makeToken(TokenType::Less);
         default:
-            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedChar, *ch));
+            throw makeError<Error::UnexpectedChar>(*ch);
         }
     }
 
-    cpp::result<std::optional<Token>, Error> Lexer::skipWhitespace() {
+    std::optional<Token> Lexer::skipWhitespace() {
         // ignore whitespace until the next token is found
         // if all whitespace is consumed, return {}
         while (true) {
@@ -154,7 +189,7 @@ namespace ferrit {
                 if (*nextChar == '/') {
                     ignoreLineComment();
                 } else if (*nextChar == '*') {
-                    EXPECT(ignoreBlockComment());
+                    ignoreBlockComment();
                 } else {
                     return {};
                 }
@@ -164,7 +199,7 @@ namespace ferrit {
         }
     }
 
-    void Lexer::ignoreLineComment() {
+    void Lexer::ignoreLineComment() noexcept {
         // consume the '//'
         advance();
         advance();
@@ -176,7 +211,7 @@ namespace ferrit {
         }
     }
 
-    cpp::result<void, Error> Lexer::ignoreBlockComment() {
+    void Lexer::ignoreBlockComment() {
         // consume '/*'
         advance();
         advance();
@@ -185,9 +220,9 @@ namespace ferrit {
         while (true) {
             auto next = advance();
             if (!next) {
-                return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, "block comment"));
+                throw makeError<Error::UnterminatedElement>("block comment");
             } else if (*next == '*' && match('/')) {
-                return {};
+                return;
             } else if (*next == '\n') {
                 // since this newline is inside a block comment,
                 // it does not contribute to possible statement terminators
@@ -197,65 +232,64 @@ namespace ferrit {
         }
     }
 
-    LexResult Lexer::lexString() {
+    Token Lexer::lexString() {
         while (peek() && *peek() != '"') {
-            EXPECT(advanceStringChar("string literal"));
+            advanceStringChar("string literal");
         }
 
         // consume closing quote
         if (match('"')) {
             return makeToken(TokenType::StringLiteral);
         } else {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, "string literal"));
+            throw makeError<Error::UnterminatedElement>("string literal");
         }
     }
 
-    LexResult Lexer::lexChar() {
+    Token Lexer::lexChar() {
         if (peek() && *peek() == '\'') {
-            return cpp::fail(makeError(ErrorCode::SyntaxEmptyElement, "char literal"));
+            throw makeError<Error::EmptyElement>("char literal");
         }
-        EXPECT(advanceStringChar("char literal"));
+        advanceStringChar("char literal");
 
         if (match('\'')) {
             return makeToken(TokenType::CharLiteral);
         } else if (!peek()) {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, "string literal"));
+            throw makeError<Error::UnterminatedElement>("string literal");
         } else {
-            return cpp::fail(makeError(ErrorCode::SyntaxCharLiteralTooBig));
+            throw makeError<Error::CharLiteralTooBig>();
         }
     }
 
-    cpp::result<void, Error> Lexer::advanceStringChar(const std::string &literalType) {
+    void Lexer::advanceStringChar(const std::string &literalType) {
         auto nextChar = peek();
         if (!nextChar) {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, literalType));
+            throw makeError<Error::UnterminatedElement>(literalType);
         }
 
         switch (*nextChar) {
-        case '\n': {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnexpectedNewlineInElement, literalType));
-        }
+        case '\n':
+            throw makeError<Error::UnexpectedNewline>(literalType);
         case '\\': {
             // consume the backslash, then the escape sequence.
             advance();
             auto escapeSeq = peek();
             if (!escapeSeq) {
-                return cpp::fail(makeError(ErrorCode::SyntaxUnterminatedElement, literalType));
+                throw makeError<Error::UnterminatedElement>(literalType);
             } else if (*escapeSeq == '0' || *escapeSeq == 't' || *escapeSeq == 'n' || *escapeSeq == 'r' ||
                 *escapeSeq == '\'' || *escapeSeq == '"' || *escapeSeq == '\\') {
                 advance();
-                return {};
+                return;
             } else {
-                return cpp::fail(makeError(ErrorCode::SyntaxIllegalEscapeSequence, *escapeSeq, literalType));
+                throw makeError<Error::IllegalEscapeSequence>(*escapeSeq, literalType);
             }
         }
         default:
             advance();
-            return {};
+            return;
         }
     }
 
-    LexResult Lexer::lexNumber() {
+    Token Lexer::lexNumber() {
         TokenType numberType = TokenType::IntegerLiteral;
         while (peek() && isDigit(*peek())) {
             advance();
@@ -272,15 +306,26 @@ namespace ferrit {
             }
         }
         // prevent numbers from being immediately followed by an identifier
-        char nextChar = peek().value_or('\0');
-        if (isIdentifierStart(nextChar)) {
-            return cpp::fail(makeError(ErrorCode::SyntaxUnknownLiteralSuffix, nextChar));
+        if (peek() && isIdentifier(*peek())) {
+            int start = m_current;
+            advance();
+            while (peek().has_value() && isIdentifier(*peek())) {
+                advance();
+            }
+
+            int count = m_current - start;
+            std::string lexeme = m_code.substr(start, count);
+
+            auto literalType = (numberType == TokenType::IntegerLiteral)
+                ? "integer literal" : "float literal";
+
+            throw makeError<Error::UnknownLiteralSuffix>(literalType, lexeme);
         }
 
         return makeToken(numberType);
     }
 
-    LexResult Lexer::lexIdentifier() {
+    Token Lexer::lexIdentifier() noexcept {
         while (true) {
             auto next = peek();
             if (next && isIdentifier(*next)) {
@@ -289,14 +334,10 @@ namespace ferrit {
                 break;
             }
         }
-
-        std::size_t count = m_current - m_start;
-        std::string lexeme = m_code.substr(m_start, count);
-        TokenType type = getTokenTypeForIdent(lexeme);
-        return makeToken(type);
+        return makeToken(getCurrentKeywordType());
     }
 
-    TokenType Lexer::getTokenTypeForIdent(const std::string &lexeme) noexcept {
+    TokenType Lexer::getCurrentKeywordType() noexcept {
         static const std::unordered_map<std::string, TokenType> IDENTIFIER_TYPES = {
             {"as",          TokenType::As},
             {"is",          TokenType::Is},
@@ -335,6 +376,9 @@ namespace ferrit {
             {"false",       TokenType::False},
             {"null",        TokenType::Null},
         };
+
+        int count = m_current - m_start;
+        std::string lexeme = m_code.substr(m_start, count);
 
         auto iter = IDENTIFIER_TYPES.find(lexeme);
         if (iter != IDENTIFIER_TYPES.cend()) {
@@ -383,8 +427,7 @@ namespace ferrit {
     }
 
     bool Lexer::match(char expected) noexcept {
-        auto ch = peek();
-        if (ch && *ch == expected) {
+        if (peek() == expected) {
             advance();
             return true;
         } else {
@@ -397,9 +440,9 @@ namespace ferrit {
     }
 
     int Lexer::getCurrentNewlineType() const noexcept {
-        if (peek() && *peek() == '\n') {
+        if (peek() == '\n') {
             return 1;
-        } else if (peek() && *peek() == '\r' && peekNext() && *peekNext() == '\n') {
+        } else if (peek() == '\r' && peekNext() == '\n') {
             return 2;
         }
         return 0;
@@ -415,5 +458,13 @@ namespace ferrit {
 
     bool Lexer::isIdentifierStart(char ch) noexcept {
         return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+    }
+
+    LexException::LexException(const Error &cause) noexcept :
+        std::runtime_error(cause.shortMessage()), m_cause(cause) {
+    }
+
+    const Error &LexException::cause() const {
+        return m_cause;
     }
 }

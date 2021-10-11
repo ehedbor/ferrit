@@ -1,54 +1,62 @@
 #include "Parser.h"
-#include "ResultTry.h"
-
+#include <iostream>
 
 namespace ferrit {
-    Parser::Parser(std::vector<Token> tokens) noexcept : m_tokens(std::move(tokens)) {
+    Parser::Parser(const CompileOptions &options) noexcept : m_options(options) {
     }
 
-    ParseResult Parser::parse() {
+    void Parser::init(const std::vector<Token> &tokens) noexcept {
+        m_tokens = tokens;
+        m_current = 0;
+        m_stackTrace.clear();
+    }
+
+    std::optional<std::vector<StatementPtr>> Parser::parse(const std::vector<Token> &tokens) {
+        init(tokens);
+
         std::vector<StatementPtr> program;
-        std::vector<Error> errors;
+        bool hadError = false;
 
         skipTerminators(true);
         while (!isAtEnd()) {
-            auto nextDecl = parseDeclaration();
-            if (nextDecl) {
-                program.push_back(std::move(nextDecl.value()));
+            try {
+                StatementPtr nextDecl = parseDeclaration();
+                program.push_back(std::move(nextDecl));
                 skipTerminators(true);
-            } else {
-                errors.push_back(std::move(nextDecl.error()));
+            } catch (const ParseException &) {
+                hadError = true;
                 synchronize();
             }
         }
-        if (!errors.empty()) {
-            return cpp::fail(errors);
+        if (hadError) {
+            return {};
         } else {
             return program;
         }
     }
 
-    StmtResult Parser::parseDeclaration() {
+    StatementPtr Parser::parseDeclaration() {
         auto mods = parseModifiers();
+        m_stackTrace.push_back(current());
         if (match(TokenType::Fun)) {
             return parseFunctionDeclaration(mods);
         }
-        return cpp::fail(makeError("expected declaration"));
+        throw makeError("expected declaration");
     }
 
-    StmtResult Parser::parseFunctionDeclaration(const std::vector<Token> &modifiers) {
+    StatementPtr Parser::parseFunctionDeclaration(const std::vector<Token> &modifiers) {
         // remember the keyword
-        Token keyword = previous();
+        const Token &keyword = previous();
+        const Token &name = consume(TokenType::Identifier, "expected function name");
 
-        TRY(name, consume(TokenType::Identifier, "expected function name"));
+        consume(TokenType::LeftParen, "expected '(' after function name");
+        auto params = parseParameters();
 
-        EXPECT(consume(TokenType::LeftParen, "expected '(' after function name"));
-        TRY(params, parseParameters());
+        consume(TokenType::Arrow, "expected return type after function parameters");
+        Type returnType = parseType();
 
-        EXPECT(consume(TokenType::Arrow, "expected return type after function parameters"));
-        TRY(returnType, parseType());
-
-        auto decl = std::make_unique<FunctionDeclaration>(modifiers, keyword, name, std::move(params), returnType);
+        auto decl = std::make_unique<FunctionDeclaration>(
+            modifiers, keyword, name, std::move(params), returnType);
 
         std::unique_ptr<Statement> body;
 
@@ -75,13 +83,13 @@ namespace ferrit {
             return decl;
         } else {
             if (match(TokenType::Equal)) {
-                TRY(expr, parseExpression());
+                auto expr = parseExpression();
                 body = std::make_unique<ExpressionStatement>(std::move(expr));
             } else if (match(TokenType::LeftBrace)) {
-                TRY(block, parseBlock());
+                auto block = parseBlock();
                 body = std::move(block);
             } else {
-                return cpp::fail(makeError("expected function body"));
+                throw makeError("expected function body");
             }
             return std::make_unique<FunctionDefinition>(std::move(decl), std::move(body));
         }
@@ -99,13 +107,13 @@ namespace ferrit {
         return result;
     }
 
-    cpp::result<std::vector<Parameter>, Error> Parser::parseParameters() {
+    std::vector<Parameter> Parser::parseParameters() {
         std::vector<Parameter> result;
         if (!check(TokenType::RightParen)) {
             // parameter list is not empty.
             // accept the first parameter and then check for additional parameters.
-            EXPECT(consume(TokenType::Identifier, "expected parameter name"));
-            TRY(firstParam, parseParameter());
+            consume(TokenType::Identifier, "expected parameter name");
+            Parameter firstParam = parseParameter();
             result.push_back(std::move(firstParam));
 
             while (match(TokenType::Comma)) {
@@ -114,134 +122,134 @@ namespace ferrit {
                     break;
                 } else {
                     // actual parameter
-                    EXPECT(consume(TokenType::Identifier, "expected parameter name"));
-                    TRY(param, parseParameter());
+                    consume(TokenType::Identifier, "expected parameter name");
+                    auto param = parseParameter();
                     result.push_back(std::move(param));
                 }
             }
         }
 
-        EXPECT(consume(TokenType::RightParen, "expected ')' after parameters"));
+        consume(TokenType::RightParen, "expected ')' after parameters");
 
         return result;
     }
 
-    cpp::result<Parameter, Error> Parser::parseParameter() {
-        auto name = previous();
-        EXPECT(consume(TokenType::Colon, "expected ':' after parameter name"));
-        TRY(type, parseType());
+    Parameter Parser::parseParameter() {
+        const Token &name = previous();
+        consume(TokenType::Colon, "expected ':' after parameter name");
+        Type type = parseType();
         if (type.name().type == TokenType::Identifier && type.name().lexeme == "Void") {
-            return cpp::fail(makeError("cannot declare parameter of type void"));
+            throw makeError("cannot declare parameter of type void");
         }
 
-        return Parameter(name, type);
+        return {name, type};
     }
 
-    cpp::result<Type, Error> Parser::parseType() {
+    Type Parser::parseType() {
         if (match(TokenType::Identifier)) {
             const std::string &lexeme = previous().lexeme;
             if (lexeme == "Int" || lexeme == "Double" || lexeme == "Void") {
                 return Type(previous());
             } else {
-                return cpp::fail(makeError("expected type name"));
+                throw makeError("expected type name");
             }
         }
-        return cpp::fail(makeError("expected type name"));
+        throw makeError("expected type name");
     }
 
-    StmtResult Parser::parseStatement() {
-        TRY(expr, parseExpression());
+    StatementPtr Parser::parseStatement() {
+        auto expr = parseExpression();
         return std::make_unique<ExpressionStatement>(std::move(expr));
     }
 
-    StmtResult Parser::parseBlock() {
+    StatementPtr Parser::parseBlock() {
         std::vector<StatementPtr> body;
         while (!check(TokenType::RightBrace) && !isAtEnd()) {
-            TRY(statement, parseStatement());
+            auto statement = parseStatement();
             body.push_back(std::move(statement));
 
             auto foundTerms = skipTerminators(true);
             if (!foundTerms.any()) break;
         }
-        EXPECT(consume(TokenType::RightBrace, "expected '}' after block"));
+        consume(TokenType::RightBrace, "expected '}' after block");
 
         return std::make_unique<Block>(std::move(body));
     }
 
-    ExprResult Parser::parseExpression() {
+    ExpressionPtr Parser::parseExpression() {
         return parseDisjunction();
     }
 
-    ExprResult Parser::parseDisjunction() {
-        TRY(left, parseConjunction());
+    ExpressionPtr Parser::parseDisjunction() {
+        auto left = parseConjunction();
         while (match(TokenType::OrOr)) {
             Token op = previous();
-            TRY(right, parseConjunction());
+            auto right = parseConjunction();
             left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
-    ExprResult Parser::parseConjunction() {
-        TRY(left, parseEquality());
+    ExpressionPtr Parser::parseConjunction() {
+        auto left = parseEquality();
         while (match(TokenType::AndAnd)) {
             Token op = previous();
-            TRY(right, parseEquality());
+            auto right = parseEquality();
             left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
-    ExprResult Parser::parseEquality() {
-        TRY(left, parseComparison());
+    ExpressionPtr Parser::parseEquality() {
+        auto left = parseComparison();
         while (match(TokenType::EqualEqual) || match(TokenType::BangEqual)) {
             Token op = previous();
-            TRY(right, parseComparison());
+            auto right = parseComparison();
             left = std::make_unique<ComparisonExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
-    ExprResult Parser::parseComparison() {
-        TRY(left, parseAdditive());
+    ExpressionPtr Parser::parseComparison() {
+        auto left = parseAdditive();
         while (
             match(TokenType::Greater) || match(TokenType::GreaterEqual) ||
             match(TokenType::Less) || match(TokenType::LessEqual))
         {
             Token op = previous();
-            TRY(right, parseAdditive());
+            auto right = parseAdditive();
             left = std::make_unique<ComparisonExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
-    ExprResult Parser::parseAdditive() {
-        TRY(left, parseMultiplicative());
+    ExpressionPtr Parser::parseAdditive() {
+        auto left = parseMultiplicative();
         while (match(TokenType::Plus) || match(TokenType::Minus)) {
             Token op = previous();
-            TRY(right, parseMultiplicative());
+            auto right = parseMultiplicative();
             left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
-    ExprResult Parser::parseMultiplicative() {
-        TRY(left, parseUnary());
+    ExpressionPtr Parser::parseMultiplicative() {
+        auto left = parseUnary();
         while (match(TokenType::Asterisk) || match(TokenType::Slash) || match(TokenType::Percent)) {
             Token op = previous();
-            TRY(right, parseUnary());
+            auto right = parseUnary();
             left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
-    ExprResult Parser::parseUnary() {
+    ExpressionPtr Parser::parseUnary() {
         std::vector<Token> operators;
         while (match(TokenType::Plus) || match(TokenType::Minus) || match(TokenType::Bang)) {
             operators.push_back(previous());
         }
 
-        TRY(operand, parsePrimary());
+        auto operand = parsePrimary();
         // apply unary operators in REVERSE order. closer to the expression => higher precedence
         for (auto iter = operators.rbegin(); iter != operators.rend(); iter++) {
             operand = std::make_unique<UnaryExpression>(std::move(*iter), std::move(operand));
@@ -249,27 +257,28 @@ namespace ferrit {
         return operand;
     }
 
-    ExprResult Parser::parsePrimary() {
+    ExpressionPtr Parser::parsePrimary() {
         if (match(TokenType::Identifier)) {
             return parseVariable();
         } else if (match(TokenType::FloatLiteral) || match(TokenType::IntegerLiteral)) {
             return parseNumber();
         } else {
-            return cpp::fail(makeError("expected primary expression"));
+            throw makeError("expected primary expression");
         }
     }
 
-    ExprResult Parser::parseVariable() {
+    ExpressionPtr Parser::parseVariable() {
         return std::make_unique<VariableExpression>(previous());
     }
 
-    ExprResult Parser::parseNumber() {
+    ExpressionPtr Parser::parseNumber() {
         Token number = previous();
         bool isInteger = (number.type == TokenType::IntegerLiteral);
         return std::make_unique<NumberExpression>(std::move(number), isInteger);
     }
 
-    void Parser::synchronize() {
+    void Parser::synchronize() noexcept {
+        m_stackTrace.clear();
         advance();
 
         while (!isAtEnd()) {
@@ -290,7 +299,7 @@ namespace ferrit {
         }
     }
 
-    Parser::FoundTerminators Parser::skipTerminators(bool allowSemicolons) {
+    Parser::FoundTerminators Parser::skipTerminators(bool allowSemicolons) noexcept {
         FoundTerminators result;
 
         while (true) {
@@ -309,15 +318,15 @@ namespace ferrit {
         return result;
     }
 
-    TokenResult Parser::consume(TokenType expected, const std::string &errMsg) {
+    const Token &Parser::consume(TokenType expected, const std::string &errMsg) {
         if (check(expected)) {
             return advance();
         } else {
-            return cpp::fail(makeError(errMsg));
+            throw makeError(errMsg);
         }
     }
 
-    bool Parser::match(TokenType expected) {
+    bool Parser::match(TokenType expected) noexcept {
         if (check(expected)) {
             advance();
             return true;
@@ -326,12 +335,12 @@ namespace ferrit {
         }
     }
 
-    bool Parser::check(TokenType expected) {
+    bool Parser::check(TokenType expected) noexcept {
         skipTerminators(false);
         return (current().type == expected);
     }
 
-    const Token &Parser::advance() {
+    const Token &Parser::advance() noexcept {
         const Token &retVal = current();
         if (!isAtEnd()) m_current++;
         return retVal;
@@ -347,5 +356,19 @@ namespace ferrit {
 
     bool Parser::isAtEnd() const noexcept {
         return current().type == TokenType::EndOfFile;
+    }
+
+    ParseException Parser::makeError(const std::string &expected) const {
+        Error::ParseError error(current(), m_stackTrace, expected);
+        logError(error);
+        return ParseException(error);
+    }
+
+    ParseException::ParseException(const Error &cause) noexcept :
+        std::runtime_error(cause.shortMessage()), m_cause(cause) {
+    }
+
+    const Error &ParseException::cause() const {
+        return m_cause;
     }
 }

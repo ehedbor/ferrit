@@ -1,59 +1,129 @@
 #pragma once
 
+#include <concepts>
 #include <string>
-#include <format>
-#include <ostream>
+#include <typeindex>
+#include <typeinfo>
 #include <vector>
 
 #include "Token.h"
 
 namespace ferrit {
-    enum class ErrorCode {
-        Unknown,
-        SyntaxUnexpectedChar,
-        SyntaxUnterminatedElement,
-        SyntaxEmptyElement,
-        SyntaxCharLiteralTooBig,
-        SyntaxUnexpectedNewlineInElement,
-        SyntaxIllegalEscapeSequence,
-        SyntaxUnknownLiteralSuffix,
-        SyntaxParseError,
+    enum class WarningLevel {
+        Ignored,
+        Warning,
+        Error
     };
 
-    /**
-     * Represents any error-type in this program.
-     */
-    class Error final {
+    class Error {
     public:
-        Error() noexcept = default;
+        class UnexpectedChar;
+        class UnterminatedElement;
+        class EmptyElement;
+        class CharLiteralTooBig;
+        class UnexpectedNewline;
+        class IllegalEscapeSequence;
+        class UnknownLiteralSuffix;
+        class ParseError;
 
-        template<typename... Args>
-        Error(const Token &cause, ErrorCode errorCode, const Args &... args);
+    protected:
+        Error(Token cause, std::vector<Token> stackTrace, std::string shortMessage) noexcept;
 
-        [[nodiscard]] ErrorCode errorCode() const noexcept;
+    public:
+        virtual ~Error() noexcept = default;
 
-        [[nodiscard]] std::string msg() const noexcept;
-
+    public:
+        [[nodiscard]] const Token &cause() const noexcept;
         [[nodiscard]] const std::vector<Token> &stackTrace() const noexcept;
-
-        void addStackTrace(const Token &location) noexcept;
-
-        friend std::ostream &operator<<(std::ostream &out, const Error &error);
+        [[nodiscard]] const std::string &shortMessage() const noexcept;
+        [[nodiscard]] std::string message() const;
 
     private:
-        [[nodiscard]] std::string formatString(int argc) const;
+        static std::string formatToken(const Token &token);
 
     private:
-        ErrorCode m_errorCode{ErrorCode::Unknown};
-        std::string m_msg{"unknown"};
-        std::vector<Token> m_stackTrace{};
+        Token m_cause;
+        std::vector<Token> m_stackTrace;
+        std::string m_shortMessage;
     };
 
+    void logError(const Error &error);
+    void logWarning(const Error &error);
 
-    template<typename... Args>
-    Error::Error(const Token &cause, ErrorCode errorCode, const Args &... args) :
-        m_errorCode(errorCode),
-        m_msg(std::format(formatString(sizeof...(args)), args...)) {
-        addStackTrace(cause);
-    }
+#define PRETTY_NAME_IMPL(name)                                                 \
+    [[nodiscard]] static constexpr const char *prettyName() noexcept {         \
+        return name;                                                           \
+    } static_assert(true)
+
+    class Error::UnexpectedChar final : public Error {
+    public:
+        UnexpectedChar(Token cause, std::vector<Token> stackTrace, char ch) noexcept;
+
+    public:
+        PRETTY_NAME_IMPL("unexpected-char");
+    };
+
+    class Error::UnterminatedElement final : public Error {
+    public:
+        UnterminatedElement(Token cause, std::vector<Token> stackTrace, const std::string &element) noexcept;
+
+    public:
+        PRETTY_NAME_IMPL("unterminated-element");
+    };
+
+    class Error::EmptyElement final : public Error {
+    public:
+        EmptyElement(Token cause, std::vector<Token> stackTrace, const std::string &element) noexcept;
+
+    public:
+        PRETTY_NAME_IMPL("empty-element");
+    };
+
+    class Error::CharLiteralTooBig final : public Error {
+    public:
+        CharLiteralTooBig(Token cause, std::vector<Token> stackTrace) noexcept;
+
+    public:
+        PRETTY_NAME_IMPL("char-literal-too-big");
+    };
+
+    class Error::UnexpectedNewline final : public Error {
+    public:
+        UnexpectedNewline(Token cause, std::vector<Token> stackTrace, const std::string &element) noexcept;
+
+    public:
+        PRETTY_NAME_IMPL("unexpected-newline");
+    };
+
+    class Error::IllegalEscapeSequence final : public Error {
+    public:
+        IllegalEscapeSequence(
+            Token cause, std::vector<Token> stackTrace,
+            char sequence,
+            const std::string &element) noexcept;
+
+    public:
+        PRETTY_NAME_IMPL("illegal-escape-sequence");
+    };
+
+    class Error::UnknownLiteralSuffix final : public Error {
+    public:
+        UnknownLiteralSuffix(
+            Token cause, std::vector<Token> stackTrace,
+            const std::string &element,
+            const std::string &suffix) noexcept;
+
+    public:
+        PRETTY_NAME_IMPL("unknown-literal-suffix");
+    };
+
+    class Error::ParseError final : public Error {
+    public:
+        ParseError(Token cause, std::vector<Token> stackTrace, const std::string &expected) noexcept;
+
+    public:
+        PRETTY_NAME_IMPL("parse-error");
+    };
+
+#undef PRETTY_NAME_IMPL
 }

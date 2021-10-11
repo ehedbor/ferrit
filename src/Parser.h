@@ -3,69 +3,76 @@
 #include <optional>
 #include <vector>
 
-#include <result.hpp>
-
+#include "CompileOptions.h"
 #include "Error.h"
 #include "Expression.h"
 #include "Statement.h"
 #include "Token.h"
 
 namespace ferrit {
-    using ParseResult = cpp::result<std::vector<StatementPtr>, std::vector<Error>>;
-    using StmtResult = cpp::result<StatementPtr, Error>;
-    using ExprResult = cpp::result<ExpressionPtr, Error>;
-    using TokenResult = cpp::result<const Token &, Error>;
+    class ParseException;
 
     /**
      * Converts a stream of tokens into an abstract syntax tree.
      */
     class Parser {
     public:
-        explicit Parser(std::vector<Token> tokens) noexcept;
+        /**
+         * Constructs a \c Parser with the given compile options.
+         *
+         * @param options compile flags
+         */
+        explicit Parser(const CompileOptions &options) noexcept;
+
+    private:
+        /**
+         * Initializes the parser with the given tokens.
+         */
+        void init(const std::vector<Token> &tokens) noexcept;
+
+    public:
 
         /**
          * Parses an entire stream of tokens, representing an entire file.
-         *
-         * @note Top-level expressions are currently not permitted.
          */
-        [[nodiscard]] ParseResult parse();
+        [[nodiscard]] std::optional<std::vector<StatementPtr>> parse(const std::vector<Token> &tokens);
 
     private:
         // Declarations
-        [[nodiscard]] StmtResult parseDeclaration();
-        [[nodiscard]] StmtResult parseFunctionDeclaration(const std::vector<Token>& modifiers);
+        [[nodiscard]] StatementPtr parseDeclaration();
+        [[nodiscard]] StatementPtr parseFunctionDeclaration(const std::vector<Token>& modifiers);
 
         // Supporting AST elements
         [[nodiscard]] std::vector<Token> parseModifiers();
-        [[nodiscard]] cpp::result<std::vector<Parameter>, Error> parseParameters();
-        [[nodiscard]] cpp::result<Parameter, Error> parseParameter();
-        [[nodiscard]] cpp::result<Type, Error> parseType();
+        [[nodiscard]] std::vector<Parameter> parseParameters();
+        [[nodiscard]] Parameter parseParameter();
+        [[nodiscard]] Type parseType();
 
         // Other statements
-        [[nodiscard]] StmtResult parseStatement();
-        [[nodiscard]] StmtResult parseBlock();
+        [[nodiscard]] StatementPtr parseStatement();
+        [[nodiscard]] StatementPtr parseBlock();
 
         // Operators
-        [[nodiscard]] ExprResult parseExpression();
-        [[nodiscard]] ExprResult parseDisjunction();
-        [[nodiscard]] ExprResult parseConjunction();
-        [[nodiscard]] ExprResult parseEquality();
-        [[nodiscard]] ExprResult parseComparison();
-        [[nodiscard]] ExprResult parseAdditive();
-        [[nodiscard]] ExprResult parseMultiplicative();
-        [[nodiscard]] ExprResult parseUnary();
+        [[nodiscard]] ExpressionPtr parseExpression();
+        [[nodiscard]] ExpressionPtr parseDisjunction();
+        [[nodiscard]] ExpressionPtr parseConjunction();
+        [[nodiscard]] ExpressionPtr parseEquality();
+        [[nodiscard]] ExpressionPtr parseComparison();
+        [[nodiscard]] ExpressionPtr parseAdditive();
+        [[nodiscard]] ExpressionPtr parseMultiplicative();
+        [[nodiscard]] ExpressionPtr parseUnary();
 
         // Simple expressions
-        [[nodiscard]] ExprResult parsePrimary();
-        [[nodiscard]] ExprResult parseVariable();
-        [[nodiscard]] ExprResult parseNumber();
+        [[nodiscard]] ExpressionPtr parsePrimary();
+        [[nodiscard]] ExpressionPtr parseVariable();
+        [[nodiscard]] ExpressionPtr parseNumber();
 
         /**
          * Attempts to recover from an error by skipping tokens until finding
          * one that is likely to start a new line. This is to allow for finding
          * multiple parse errors at once.
          */
-        void synchronize();
+        void synchronize() noexcept;
 
         struct FoundTerminators {
             bool newline = false;
@@ -76,56 +83,92 @@ namespace ferrit {
         };
         /**
          * Skips all line terminators encountered until the next
-         * non-line terminator \c Token is found.
+         * non-line terminator token is found.
          *
          * @param allowSemicolons if semicolons are permitted
          * @return which kinds of terminators were found
          */
-        FoundTerminators skipTerminators(bool allowSemicolons);
+        FoundTerminators skipTerminators(bool allowSemicolons) noexcept;
 
         /**
          * Skips all non-semicolon line terminators, then checks to see
-         * if the current \c Token matches the given \c TokenType. If it does,
-         * the \c Parser is advanced and the next \c Token is returned.
-         * Otherwise, a \c ParseError is returned.
-         */
-        [[nodiscard]] TokenResult consume(TokenType expected, const std::string &errMsg);
-
-        /**
-         * Skips all non-semicolon line terminators, then checks to see
-         * if the current \c Token matches the given \c TokenType. If it does,
-         * the \c Parser is advanced.
+         * if the current token matches the given <tt>TokenType</tt>. If it does,
+         * the parser is advanced and the next token is returned.
          *
-         * @return \c true if the current \c Token matches the expected \c TokenType
+         * @param expected token type to check for
+         * @param errMsg error message if the expected token type is not present
+         * @return the token, if it matches the expected type
+         * @throws ParseException if the current token does not match the expected type
          */
-        [[nodiscard]] bool match(TokenType expected);
+        const Token &consume(TokenType expected, const std::string &errMsg);
 
         /**
          * Skips all non-semicolon line terminators, then checks to see
-         * if the current \c Token's type matches the given \c TokenType.
+         * if the current token matches the given <tt>TokenType</tt>. If it does,
+         * the parser is advanced.
+         *
+         * @param expected the token type to check for
+         * @return true if the current token matches \c expected
          */
-        [[nodiscard]] bool check(TokenType expected);
+        [[nodiscard]] bool match(TokenType expected) noexcept;
 
         /**
-         * Advances the \c Parser (unless EOF is reached)
-         * and then returns the current \c Token.
+         * Skips all non-semicolon line terminators, then checks to see
+         * if the current token's type matches the given <tt>TokenType</tt>.
          */
-        const Token &advance();
+        [[nodiscard]] bool check(TokenType expected) noexcept;
 
+        /**
+         * Advances the parser (unless EOF is reached) and then returns
+         * the current token.
+         */
+        const Token &advance() noexcept;
+
+        /**
+         * Returns the current token.
+         */
         [[nodiscard]] const Token &current() const noexcept;
+
+        /**
+         * Returns the last token.
+         */
         [[nodiscard]] const Token &previous() const noexcept;
+
+        /**
+         * Returns true if there are no more tokens.
+         */
         [[nodiscard]] bool isAtEnd() const noexcept;
 
-        template <typename... Args>
-        [[nodiscard]] Error makeError(const Args&... args) const;
+        /**
+         * Constructs a \c ParseException with the given error message, logs
+         * the error, and returns.
+         *
+         * Note that the exception is not thrown; it is the user's decision to
+         * throw it.
+         *
+         * @param expected error message
+         * @return the exception
+         */
+        [[nodiscard]] ParseException makeError(const std::string &expected) const;
 
     private:
-        std::vector<Token> m_tokens;
-        std::size_t m_current{0};
+        const CompileOptions &m_options;
+        std::vector<Token> m_tokens{};
+        int m_current{0};
+        std::vector<Token> m_stackTrace{};
     };
 
-    template <typename... Args>
-    Error Parser::makeError(const Args&... args) const {
-        return Error(current(), ErrorCode::SyntaxParseError, args...);
-    }
+    /**
+     * Represents a parse error in the program.
+     */
+    class ParseException final : public std::runtime_error {
+    public:
+        explicit ParseException(const Error &cause) noexcept;
+
+    public:
+        [[nodiscard]] const Error &cause() const;
+
+    private:
+        Error m_cause;
+    };
 }

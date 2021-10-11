@@ -1,63 +1,108 @@
 #include "Error.h"
-#include <iomanip>
+#include <iostream>
+#include <format>
+#include <unordered_map>
+#include <typeinfo>
 
 namespace ferrit {
-    ErrorCode Error::errorCode() const noexcept {
-        return m_errorCode;
+    Error::Error(Token cause, std::vector<Token> stackTrace, std::string shortMessage) noexcept :
+        m_cause(std::move(cause)), m_stackTrace(std::move(stackTrace)), m_shortMessage(std::move(shortMessage)) {
+
     }
 
-    std::string Error::msg() const noexcept {
-        return m_msg;
+    const Token &Error::cause() const noexcept {
+        return m_cause;
     }
 
     const std::vector<Token> &Error::stackTrace() const noexcept {
         return m_stackTrace;
     }
 
-    void Error::addStackTrace(const Token &location) noexcept {
-        m_stackTrace.push_back(location);
+    const std::string &Error::shortMessage() const noexcept {
+        return m_shortMessage;
     }
 
-    std::string Error::formatString(int argc) const {
-        std::string fmtString;
-        switch (m_errorCode) {
-        case ErrorCode::Unknown:
-            return "error: unknown";
-        case ErrorCode::SyntaxUnexpectedChar:
-            return "syntax error: unexpected symbol '{}'";
-        case ErrorCode::SyntaxUnterminatedElement:
-            return "syntax error: unterminated {}";
-        case ErrorCode::SyntaxEmptyElement:
-            return "syntax error: empty {}";
-        case ErrorCode::SyntaxCharLiteralTooBig:
-            return "syntax error: too many characters in char literal";
-        case ErrorCode::SyntaxUnexpectedNewlineInElement:
-            return "syntax error: unexpected newline in {}";
-        case ErrorCode::SyntaxIllegalEscapeSequence:
-            return "syntax error: illegal escape sequence '\\{}' in {}";
-        case ErrorCode::SyntaxUnknownLiteralSuffix:
-            return "syntax error: unknown literal suffix '{}'";
-        case ErrorCode::SyntaxParseError:
-            if (argc <= 1)
-                return "syntax error: {}";
-            else
-                return "syntax error: {} after {}";
+    std::string Error::message() const {
+        std::string result = shortMessage() + "\n";
+        result += std::format("    at {}\n", formatToken(cause()));
+        for (const auto &token : stackTrace()) {
+            result += std::format("    at {}\n", formatToken(token));
         }
-        throw std::invalid_argument(std::format("Unknown enum case '{}'", static_cast<int>(m_errorCode)));
+        return result;
     }
 
-    std::ostream &operator<<(std::ostream &out, const Error &error) {
-        out << "error E"
-            << std::setfill('0') << std::setw(3) << static_cast<int>(error.errorCode())
-            << ": " << error.msg() << "\n";
+    std::string Error::formatToken(const Token &token) {
+        return std::format("{}:{}: {} \"{}\"",
+            token.location.line,
+            token.location.column,
+            token.type,
+            token.lexeme);
+    }
 
-        for (const auto &entry : error.stackTrace()) {
-            out << "    at " << entry.location << ": ";
-            if (entry.type != TokenType::Unknown) {
-                out << entry.type << " ";
-            }
-            out << "\"" << entry.lexeme << "\"" << "\n";
-        }
-        return out;
+    void logError(const Error &error) {
+        std::cout << "error: " << error.message() << std::endl;
+    }
+
+    void logWarning(const Error &error) {
+        std::cout << "warning: " << error.message() << std::endl;
+    }
+
+    Error::UnexpectedChar::UnexpectedChar(
+        Token cause, std::vector<Token> stackTrace, char ch) noexcept :
+        Error(std::move(cause), std::move(stackTrace),
+            std::format("syntax error: unexpected character '{}'", ch)) {
+    }
+
+    Error::UnterminatedElement::UnterminatedElement(
+        Token cause, std::vector<Token> stackTrace, const std::string &element) noexcept :
+        Error(std::move(cause), std::move(stackTrace),
+            std::format("syntax error: unterminated {}", element)) {
+    }
+
+    Error::EmptyElement::EmptyElement(
+        Token cause, std::vector<Token> stackTrace, const std::string &element) noexcept :
+        Error(std::move(cause), std::move(stackTrace), std::format("syntax error: empty {}", element)) {
+    }
+
+    Error::CharLiteralTooBig::CharLiteralTooBig(
+        Token cause,
+        std::vector<Token> stackTrace) noexcept :
+        Error(std::move(cause),
+            std::move(stackTrace),
+            "syntax error: too many characters in char literal") {
+    }
+
+    Error::UnexpectedNewline::UnexpectedNewline(
+        Token cause,
+        std::vector<Token> stackTrace,
+        const std::string &element) noexcept :
+        Error(std::move(cause), std::move(stackTrace),
+            std::format("syntax error: unexpected newline in {}", element)) {
+    }
+
+    Error::IllegalEscapeSequence::IllegalEscapeSequence(
+        Token cause,
+        std::vector<Token> stackTrace,
+        char sequence,
+        const std::string &element) noexcept :
+        Error(std::move(cause), std::move(stackTrace),
+            std::format("syntax error: illegal escape sequence '\\{}' in {}", sequence, element)) {
+    }
+
+    Error::UnknownLiteralSuffix::UnknownLiteralSuffix(
+        Token cause,
+        std::vector<Token> stackTrace,
+        const std::string &element,
+        const std::string &suffix) noexcept :
+        Error(std::move(cause), std::move(stackTrace),
+            std::format("syntax error: unknown suffix '{1}' for {0}", element, suffix)) {
+    }
+
+    Error::ParseError::ParseError(
+        Token cause,
+        std::vector<Token> stackTrace,
+        const std::string &expected) noexcept :
+        Error(std::move(cause), std::move(stackTrace),
+            std::format("syntax error: {}", expected)) {
     }
 }

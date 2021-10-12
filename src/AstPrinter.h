@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <iosfwd>
 #include "Statement.h"
 #include "Expression.h"
@@ -7,35 +8,42 @@
 
 namespace ferrit {
     /**
-     * Prints a text-based representation of the ast to an output stream.
+     * Prints a text-based representation of a Ferrit program to an output stream.
      */
     class AstPrinter : public StatementVisitor, public ExpressionVisitor {
     public:
         explicit AstPrinter(std::ostream &out) noexcept;
 
-        void print(const std::vector<StatementPtr> &ast);
+        void print(const std::vector<StatementPtr> &program);
 
     public:
-        VisitResult visitFunDeclaration(const FunctionDeclaration &funDecl) override;
-        VisitResult visitFunDefinition(const FunctionDefinition &funDef) override;
-        VisitResult visitBlock(const Block &block) override;
-        VisitResult visitExprStmt(const ExpressionStatement &exprStmt) override;
+        VisitResult visitFunctionDecl(const FunctionDeclaration &funDecl) override;
+        VisitResult visitBlockStmt(const BlockStatement &blockStmt) override;
+        VisitResult visitExpressionStmt(const ExpressionStatement &exprStmt) override;
 
-        VisitResult visitSimpleBinary(const SimpleBinaryExpression &binExpr) override;
-        VisitResult visitBitwiseBinary(const BitwiseBinaryExpression &bitBinExpr) override;
-        VisitResult visitComparison(const ComparisonExpression &cmpExpr) override;
-        VisitResult visitUnary(const UnaryExpression &unaryExpr) override;
-        VisitResult visitVariable(const VariableExpression &varExpr) override;
-        VisitResult visitNumber(const NumberExpression &numExpr) override;
-
-        void handleBinary(
-            const std::string &name, const Token &op,
-            const Expression &left, const Expression &right);
-
-        void printIndent() noexcept;
+        VisitResult visitBinaryExpr(const BinaryExpression &binExpr) override;
+        VisitResult visitComparisonExpr(const ComparisonExpression &cmpExpr) override;
+        VisitResult visitUnaryExpr(const UnaryExpression &unaryExpr) override;
+        VisitResult visitVariableExpr(const VariableExpression &varExpr) override;
+        VisitResult visitNumberExpr(const NumberExpression &numExpr) override;
 
     private:
+        void printLine(const std::string &line);
+
+        template <typename F> requires std::invocable<F>
+        inline void indent(F &&block);
+
+    private:
+        static constexpr int INDENTATION_LEVEL = 2;
+
         std::ostream &m_out;
         unsigned int m_depth{0};
     };
+
+    template <typename F> requires std::invocable<F>
+    void AstPrinter::indent(F &&block) {
+        m_depth++;
+        std::invoke(block);
+        m_depth--;
+    }
 }

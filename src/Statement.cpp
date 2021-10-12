@@ -4,15 +4,29 @@
 
 
 namespace ferrit {
-    bool Statement::operator!=(const Statement &other) const noexcept {
-        return !(*this == other);
+    bool Statement::operator==(const Statement &other) const noexcept {
+        if (this == &other) {
+            return true;
+        } else if (typeid(*this) != typeid(other)) {
+            return false;
+        } else {
+            return this->equals(other);
+        }
     }
-
+    
     FunctionDeclaration::FunctionDeclaration(
-        std::vector<Token> modifiers, Token keyword, Token name,
-        std::vector<Parameter> params, Type returnType) noexcept :
-        m_modifiers(std::move(modifiers)), m_keyword(std::move(keyword)), m_name(std::move(name)),
-        m_params(std::move(params)), m_returnType(std::move(returnType)) {
+        std::vector<Token> modifiers,
+        Token keyword,
+        Token name,
+        std::vector<Parameter> params,
+        Type returnType,
+        std::optional<StatementPtr> body) noexcept :
+        m_modifiers(std::move(modifiers)),
+        m_keyword(std::move(keyword)),
+        m_name(std::move(name)),
+        m_params(std::move(params)),
+        m_returnType(std::move(returnType)),
+        m_body(body.has_value() ? std::move(body.value()) : nullptr) {
     }
 
     const std::vector<Token> &FunctionDeclaration::modifiers() const noexcept {
@@ -35,49 +49,31 @@ namespace ferrit {
         return m_returnType;
     }
 
-    bool FunctionDeclaration::operator==(const Statement &other) const noexcept {
-        if (this == &other) return true;
-        if (auto decl = dynamic_cast<const FunctionDeclaration *>(&other)) {
-            return modifiers() == decl->modifiers() && keyword() == decl->keyword() &&
-                name() == decl->name() && params() == decl->params() && returnType() == decl->returnType();
-        }
-        return false;
+    const Statement *FunctionDeclaration::body() const noexcept {
+        return m_body ? &*m_body : nullptr;
     }
 
-    FunctionDefinition::FunctionDefinition(std::unique_ptr<FunctionDeclaration> declaration, StatementPtr body) :
-        m_declaration(std::move(declaration)), m_body(std::move(body)) {
+    bool FunctionDeclaration::equals(const Statement &other) const noexcept {
+        const auto &otherFun = static_cast<const FunctionDeclaration &>(other); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        return name() == otherFun.name() &&
+            params() == otherFun.params() &&
+            returnType() == otherFun.returnType() &&
+            keyword() == otherFun.keyword() &&
+            modifiers() == otherFun.modifiers() &&
+            *body() == *otherFun.body();
     }
 
-    const FunctionDeclaration &FunctionDefinition::declaration() const noexcept {
-        return *m_declaration;
-    }
-
-    const Statement &FunctionDefinition::body() const noexcept {
-        return *m_body;
-    }
-
-    bool FunctionDefinition::operator==(const Statement &other) const noexcept {
-        if (this == &other) return true;
-        if (auto def = dynamic_cast<const FunctionDefinition *>(&other)) {
-            return declaration() == def->declaration() && body() == def->body();
-        }
-        return false;
-    }
-
-    Block::Block(std::vector<StatementPtr> body) noexcept :
+    BlockStatement::BlockStatement(std::vector<StatementPtr> body) noexcept :
         m_body(std::move(body)) {
     }
 
-    const std::vector<StatementPtr> &Block::body() const noexcept {
+    const std::vector<StatementPtr> &BlockStatement::body() const noexcept {
         return m_body;
     }
 
-    bool Block::operator==(const Statement &other) const noexcept {
-        if (this == &other) return true;
-        if (auto blockStmt = dynamic_cast<const Block *>(&other)) {
-            return body() == blockStmt->body();
-        }
-        return false;
+    bool BlockStatement::equals(const Statement &other) const noexcept {
+        const auto &otherBlock = static_cast<const BlockStatement &>(other);  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        return body() == otherBlock.body();
     }
 
     ExpressionStatement::ExpressionStatement(ExpressionPtr expr) noexcept :
@@ -88,11 +84,8 @@ namespace ferrit {
         return *m_expr;
     }
 
-    bool ExpressionStatement::operator==(const Statement &other) const noexcept {
-        if (this == &other) return true;
-        if (auto exprStmt = dynamic_cast<const ExpressionStatement *>(&other)) {
-            return expr() == exprStmt->expr();
-        }
-        return false;
+    bool ExpressionStatement::equals(const Statement &other) const noexcept {
+        const auto &otherStmt = static_cast<const ExpressionStatement &>(other); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        return expr() == otherStmt.expr();
     }
 }

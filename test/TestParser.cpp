@@ -3,181 +3,106 @@
 #include "Parser.h"
 
 namespace ferrit::tests {
-    class TokenGenerator : public ExpressionVisitor, public StatementVisitor {
-    public:
-        TokenGenerator() = default;
-
-        std::vector<Token> takeTokens() noexcept {
-            auto ret = std::move(m_tokens);
-            m_tokens.clear();
-            return ret;
-        }
-
-    public:
-        VisitResult visitNumber(const NumberExpression &expr) noexcept override {
-            m_tokens.push_back(expr.value());
-            return {};
-        }
-
-        VisitResult visitVariable(const VariableExpression &expr) noexcept override {
-            m_tokens.push_back(expr.name());
-            return {};
-        }
-
-        VisitResult visitBinary(const SimpleBinaryExpression &expr) noexcept override {
-            expr.left().accept(*this);
-            m_tokens.push_back(expr.op());
-            expr.right().accept(*this);
-            return {};
-        }
-
-        VisitResult visitBinary(const BitwiseBinaryExpression &expr) noexcept override {
-            expr.left().accept(*this);
-            m_tokens.push_back(expr.op());
-            expr.right().accept(*this);
-            return {};
-        }
-
-        VisitResult visitBinary(const CompareBinaryExpression &expr) noexcept override {
-            expr.left().accept(*this);
-            m_tokens.push_back(expr.op());
-            expr.right().accept(*this);
-            return {};
-        }
-
-        VisitResult visitUnary(const UnaryExpression &expr) noexcept override {
-            m_tokens.push_back(expr.op());
-            expr.operand().accept(*this);
-            return {};
-        }
-
-        VisitResult visitExprStmt(const ExpressionStatement &stmt) noexcept override {
-            stmt.expr().accept(*this);
-            return {};
-        }
-
-        VisitResult visitBlock(const Block &stmt) noexcept override {
-            m_tokens.emplace_back(TokenType::LeftBrace, "{", SourceLocation());
-            for (const auto &statement : stmt.body()) {
-                statement->accept(*this);
-                m_tokens.emplace_back(TokenType::Semicolon, ";", SourceLocation());
-            }
-            m_tokens.emplace_back(TokenType::RightBrace, "}", SourceLocation());
-
-            return {};
-        }
-
-        VisitResult visitFunDeclaration(const FunctionDeclaration &stmt) noexcept override {
-            for (const auto &modifier : stmt.modifiers()) {
-                m_tokens.push_back(modifier);
-            }
-
-            m_tokens.push_back(stmt.keyword());
-            m_tokens.push_back(stmt.name());
-
-            m_tokens.emplace_back(TokenType::LeftParen, "(", SourceLocation());
-            for (const auto &param : stmt.params()) {
-                m_tokens.push_back(param.name());
-                m_tokens.emplace_back(TokenType::Colon, ":", SourceLocation());
-                m_tokens.push_back(param.type().name());
-                m_tokens.emplace_back(TokenType::Comma, ",", SourceLocation());
-            }
-            m_tokens.emplace_back(TokenType::RightParen, ")", SourceLocation());
-
-            m_tokens.emplace_back(TokenType::Arrow, "->", SourceLocation());
-            m_tokens.push_back(stmt.returnType().name());
-
-            return {};
-        }
-
-        VisitResult visitFunDefinition(const FunctionDefinition &def) noexcept override {
-            def.declaration().accept(*this);
-
-            if (dynamic_cast<const ExpressionStatement *>(&def.body())) {
-                m_tokens.emplace_back(TokenType::Assign, "=", SourceLocation());
-            }
-            def.body().accept(*this);
-
-            return {};
-        }
-
-    private:
-        std::vector<Token> m_tokens{};
-    };
-
-    static bool checkResultErr(const ParseResult &result) {
-        if (result.has_error()) {
-            for (auto &err : result.error()) std::cerr << err << std::endl;
-        }
-        return result.has_value();
-    }
-
-    static void addEof(std::vector<Token> &tokens) {
-        tokens.emplace_back(TokenType::EndOfFile, "", SourceLocation());
-    }
-
     TEST_CASE("function declarations can be parsed", "[parser]") {
-        TokenGenerator tokenGen;
+        CompileOptions opts;
+        Parser parser(opts);
 
         SECTION("parsing simple no-op function") {
-            FunctionDefinition expected(
-                std::make_unique<FunctionDeclaration>(
-                    std::vector<Token>(),
-                    Token(TokenType::Fun, "fun", {}),
-                    Token({TokenType::Identifier, "my_function", {}}),
-                    std::vector<Parameter>(),
-                    Type(Token(TokenType::Int, "int", {}))),
+            std::vector<Token> tokens {
+                {TokenType::Fun, "fun", {}},
+                {TokenType::Identifier, "my_function", {}},
+                {TokenType::LeftParen, "(", {}},
+                {TokenType::RightParen, ")", {}},
+                {TokenType::Arrow, "->", {}},
+                {TokenType::Identifier, "Int", {}},
+                {TokenType::Equal, "=", {}},
+                {TokenType::IntegerLiteral, "0", {}},
+                {TokenType::EndOfFile, "", {}}
+            };
+
+            FunctionDeclaration expected(
+                std::vector<Token>(),
+                Token{TokenType::Fun, "fun", {}},
+                Token{TokenType::Identifier, "my_function", {}},
+                std::vector<Parameter>(),
+                Type(Token(TokenType::Identifier, "Int", {})),
                 std::make_unique<ExpressionStatement>(
                     std::make_unique<NumberExpression>(
                         Token(TokenType::IntegerLiteral, "0", {}), true)));
 
-            tokenGen.visitFunDefinition(expected);
-            auto tokens = tokenGen.takeTokens();
-            addEof(tokens);
+            auto result = parser.parse(tokens);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
 
-            Parser parser(std::move(tokens));
-            ParseResult result = parser.parse();
-            REQUIRE(checkResultErr(result));
-            REQUIRE(result->size() == 1);
-
-            Statement *decl = result.value()[0].get();
-            auto *funcDef = dynamic_cast<FunctionDefinition *>(decl);
+            const Statement *decl = result.value()[0].get();
+            const auto *funcDef = dynamic_cast<const FunctionDeclaration *>(decl);
             REQUIRE(funcDef != nullptr);
             REQUIRE(*funcDef == expected);
         }
 
         SECTION("parsing simple function with 2 parameters") {
-            FunctionDefinition expected{
-                std::make_unique<FunctionDeclaration>(
-                    std::vector<Token>{
-                        Token{TokenType::Native, "native", {}}
-                    },
-                    Token{TokenType::Fun, "fun", {}},
-                    Token{TokenType::Identifier, "my_func", {}},
-                    std::vector<Parameter>{
-                    Parameter{
-                        Token{TokenType::Identifier, "a", {}},
-                        Type{Token{TokenType::Double, "double", {}}}},
-                        Parameter{
-                            Token{TokenType::Identifier, "b", {}},
-                            Type{Token{TokenType::Int, "int", {}}}}
-                    },
-                    Type(Token{TokenType::Double, "double", {}})),
+            // private friend fun doUnholyMagic(
+            //     taxes: Double,
+            //     age: Int,
+            // ) -> Double = taxes;
+            std::vector<Token> tokens {
+                //{TokenType::Private, "private", {1, 1}},
+                //{TokenType::Friend, "friend", {1, 9}},
+                {TokenType::Native, "native", {1, 1}},
+                {TokenType::Fun, "fun", {1, 16}},
+                {TokenType::Identifier, "doUnholyMagic", {1, 20}},
+                {TokenType::LeftParen, "(", {1, 33}},
+                {TokenType::Newline, "\r\n", {1, 34}},
+
+                {TokenType::Identifier, "taxes", {2, 5}},
+                {TokenType::Colon, ":", {2, 10}},
+                {TokenType::Identifier, "Double", {2, 12}},
+                {TokenType::Comma, ",", {2, 18}},
+                {TokenType::Newline, "\r\n", {2, 19}},
+
+                {TokenType::Identifier, "age", {3, 5}},
+                {TokenType::Colon, ":", {3, 8}},
+                {TokenType::Identifier, "Int", {3, 10}},
+                {TokenType::Comma, ",", {3, 13}},
+                {TokenType::Newline, "\r\n", {3, 14}},
+
+                {TokenType::RightParen, ")", {4, 1}},
+                {TokenType::Arrow, "->", {4, 3}},
+                {TokenType::Identifier, "Double", {4, 6}},
+                {TokenType::Equal, "=", {4, 13}},
+                {TokenType::Identifier, "taxes", {4, 15}},
+                {TokenType::Semicolon, ";", {4, 20}},
+                {TokenType::EndOfFile, "", {4, 21}},
+            };
+
+            FunctionDeclaration expected{
+                {
+                    //Token(TokenType::Private, "private", {1, 1}),
+                    //Token(TokenType::Friend, "friend", {1, 9}),
+                    Token(TokenType::Native, "native", {1, 1}),
+                },
+                Token(TokenType::Fun, "fun", {1, 16}),
+                Token(TokenType::Identifier, "doUnholyMagic", {1, 20}),
+                {
+                    Parameter(
+                        Token(TokenType::Identifier, "taxes", {2, 5}),
+                        Type(Token(TokenType::Identifier, "Double", {2, 12}))),
+                    Parameter(
+                        Token(TokenType::Identifier, "age", {3, 5}),
+                        Type(Token(TokenType::Identifier, "Int", {3, 10})))
+                },
+                Type(Token(TokenType::Identifier, "Double", {4, 6})),
                 std::make_unique<ExpressionStatement>(
                     std::make_unique<VariableExpression>(
-                        Token{TokenType::Identifier, "a", {}}))
+                        Token(TokenType::Identifier, "taxes", {4, 15})))
             };
-            tokenGen.visitFunDefinition(expected);
-            auto tokens = tokenGen.takeTokens();
-            addEof(tokens);
 
-            Parser parser(std::move(tokens));
-            ParseResult result = parser.parse();
-            REQUIRE(checkResultErr(result));
-            REQUIRE(result->size() == 1);
+            auto result = parser.parse(tokens);
+            REQUIRE(result.has_value());
+            REQUIRE(result.value().size() == 1);
 
             Statement *decl = result.value()[0].get();
-            auto *funcDecl = dynamic_cast<FunctionDefinition *>(decl);
+            auto *funcDecl = dynamic_cast<FunctionDeclaration *>(decl);
             REQUIRE(funcDecl != nullptr);
             REQUIRE(*funcDecl == expected);
         }

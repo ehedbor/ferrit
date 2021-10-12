@@ -4,5 +4,6 @@
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/extern/Catch2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/extern/cxxopts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/extern/termcolor" vcs="Git" />
   </component>
 </project>

@@ -1,4 +1,4 @@
-add_executable(ferrit_tests TestLexer.cpp TestParser.cpp)
+add_executable(ferrit_tests testmain.cpp TestLexer.cpp TestParser.cpp)
 target_include_directories(ferrit_tests PUBLIC ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(ferrit_tests PUBLIC ferrit PRIVATE Catch2::Catch2)
 

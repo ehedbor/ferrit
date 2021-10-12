@@ -1,171 +1,120 @@
 #include "AstPrinter.h"
+#include <format>
 
 
 namespace ferrit {
     AstPrinter::AstPrinter(std::ostream &out) noexcept : m_out(out) {
     }
 
-    void AstPrinter::print(const std::vector<StatementPtr> &ast) {
-        for (const auto &declaration : ast) {
+    void AstPrinter::print(const std::vector<StatementPtr> &program) {
+        for (const auto &declaration : program) {
             declaration->accept(*this);
         }
     }
 
+    VisitResult AstPrinter::visitFunctionDecl(const FunctionDeclaration &funDecl) {
+        printLine("FunctionDeclaration:");
+        indent([&] {
+            printLine("-Modifiers:");
+            indent([&] {
+                for (auto &modifier: funDecl.modifiers()) {
+                    printLine(modifier.lexeme);
+                }
+            });
+            printLine(std::format("-Keyword={}", funDecl.keyword().lexeme));
+            printLine(std::format("-Name={}", funDecl.name().lexeme));
 
-    VisitResult AstPrinter::visitFunDeclaration(const FunctionDeclaration &funDecl) {
-        printIndent();
-        m_out << "Function Declaration:\n";
+            printLine("-Params:");
+            indent([&] {
+                for (const auto &param : funDecl.params()) {
+                    printLine(std::format("Parameter(Name={}, Type={})",
+                        param.name().lexeme, param.type().name().lexeme));
+                }
+            });
+            printLine(std::format("-Returns={}", funDecl.returnType().name().lexeme));
 
-        m_depth++;
+            if (funDecl.body()) {
+                printLine("-Body:");
+                indent([&] {
+                    funDecl.body()->accept(*this);
+                });
+            }
+        });
+        return {};
+    }
 
-        printIndent();
-        m_out << "-Modifiers:\n";
-        m_depth++;
-        for (auto &modifier: funDecl.modifiers()) {
-            printIndent();
-            m_out << modifier.lexeme << " " << "\n";
-        }
-        m_depth--;
+    VisitResult AstPrinter::visitBlockStmt(const BlockStatement &blockStmt) {
+        printLine("BlockStatement:");
+        indent([&] {
+            for (const auto &line : blockStmt.body()) {
+                line->accept(*this);
+            }
+        });
+        return {};
+    }
 
-        printIndent();
-        m_out << "-Keyword=" << funDecl.keyword().lexeme << "\n";
+    VisitResult AstPrinter::visitExpressionStmt(const ExpressionStatement &exprStmt) {
+        printLine("ExpressionStatement:");
+        indent([&] {
+            exprStmt.expr().accept(*this);
+        });
+        return {};
+    }
 
-        printIndent();
-        m_out << "-Name=" << funDecl.name().lexeme << "\n";
+    VisitResult AstPrinter::visitBinaryExpr(const BinaryExpression &binExpr) {
+        printLine("BinaryExpression:");
+        indent([&] {
+            printLine(std::format("-Op={}", binExpr.op().lexeme));
+            printLine("-Left:");
+            indent([&] {
+                binExpr.left().accept(*this);
+            });
+            printLine("-Right:");
+            indent([&] {
+                binExpr.right().accept(*this);
+            });
+        });
+        return {};
+    }
 
-        printIndent();
-        m_out << "-Params:\n";
-        m_depth++;
-        for (auto &param : funDecl.params()) {
-            printIndent();
-            m_out << "Parameter{Name=" << param.name().lexeme << ", Type=" << param.type().name().lexeme << "}\n";
-        }
-        m_depth--;
+    VisitResult AstPrinter::visitComparisonExpr(const ComparisonExpression &cmpExpr) {
+        printLine("ComparisonExpression:");
+        indent([&] {
+            printLine(std::format("-Op={}", cmpExpr.op().lexeme));
+            printLine("-Left:");
+            indent([&] {
+                cmpExpr.left().accept(*this);
+            });
+            printLine("-Right:");
+            indent([&] {
+                cmpExpr.right().accept(*this);
+            });
+        });
+        return {};
+    }
 
-        printIndent();
-        m_out << "-Returns=" << funDecl.returnType().name().lexeme << "\n";
-
-        m_depth--;
+    VisitResult AstPrinter::visitUnaryExpr(const UnaryExpression &unaryExpr) {
+        printLine(std::format("UnaryExpression: {}", unaryExpr.op().lexeme));
+        indent([&] {
+            unaryExpr.operand().accept(*this);
+        });
 
         return {};
     }
 
-    VisitResult AstPrinter::visitFunDefinition(const FunctionDefinition &funDef) {
-        printIndent();
-        m_out << "Function Definition:\n";
-
-        m_depth++;
-
-        printIndent();
-        m_out << "-Declaration:\n";
-        m_depth++;
-        funDef.declaration().accept(*this);
-        m_depth--;
-
-        printIndent();
-        m_out << "-Body:\n";
-        m_depth++;
-        funDef.body().accept(*this);
-        m_depth--;
-
-        m_depth--;
-
+    VisitResult AstPrinter::visitVariableExpr(const VariableExpression &varExpr) {
+        printLine(std::format("VariableExpression: {}", varExpr.name().lexeme));
         return {};
     }
 
-    VisitResult AstPrinter::visitBlock(const Block &block) {
-        printIndent();
-        m_out << "Block:\n";
-
-        m_depth++;
-        for (auto &line : block.body()) {
-            line->accept(*this);
-        }
-        m_depth--;
-
+    VisitResult AstPrinter::visitNumberExpr(const NumberExpression &numExpr) {
+        printLine(std::format("NumberExpression: {} {}",
+            numExpr.isIntLiteral() ? "Int" : "Double",
+            numExpr.value().lexeme));
         return {};
     }
 
-    VisitResult AstPrinter::visitExprStmt(const ExpressionStatement &exprStmt) {
-        printIndent();
-        m_out << "Expression Statement:\n";
-        m_depth++;
-        exprStmt.expr().accept(*this);
-        m_depth--;
-
-        return {};
-    }
-
-    VisitResult AstPrinter::visitSimpleBinary(const SimpleBinaryExpression &binExpr) {
-        handleBinary("Simple Binary", binExpr.op(), binExpr.left(), binExpr.right());
-        return {};
-    }
-
-    VisitResult AstPrinter::visitBitwiseBinary(const BitwiseBinaryExpression &bitBinExpr) {
-        handleBinary("Bitwise Binary", bitBinExpr.op(), bitBinExpr.left(), bitBinExpr.right());
-        return {};
-    }
-
-    VisitResult AstPrinter::visitComparison(const ComparisonExpression &cmpExpr) {
-        handleBinary("Comparison", cmpExpr.op(), cmpExpr.left(), cmpExpr.right());
-        return {};
-    }
-
-    VisitResult AstPrinter::visitUnary(const UnaryExpression &unaryExpr) {
-        printIndent();
-        m_out << "Unary: " << unaryExpr.op().lexeme << "\n";
-        m_depth++;
-        unaryExpr.operand().accept(*this);
-        m_depth--;
-
-        return {};
-    }
-
-    VisitResult AstPrinter::visitVariable(const VariableExpression &varExpr) {
-        printIndent();
-        m_out << "Variable: " << varExpr.name().lexeme << "\n";
-
-        return {};
-    }
-
-    VisitResult AstPrinter::visitNumber(const NumberExpression &numExpr) {
-        printIndent();
-        if (numExpr.isIntLiteral()) {
-            m_out << "Integer Literal: ";
-        } else {
-            m_out << "Float Literal: ";
-        }
-        m_out << numExpr.value().lexeme << "\n";
-
-        return {};
-    }
-
-    void AstPrinter::handleBinary(const std::string &name, const Token &op, const Expression &left, const Expression &right) {
-        printIndent();
-        m_out << name << ":\n";
-        m_depth++;
-
-        printIndent();
-        m_out << "-Op=" << op.lexeme << "\n";
-
-        printIndent();
-        m_out << "-Left:\n";
-        m_depth++;
-        left.accept(*this);
-        m_depth--;
-
-        printIndent();
-        m_out << "-Right:\n";
-        m_depth++;
-        right.accept(*this);
-        m_depth--;
-
-        m_depth--;
-    }
-
-    void AstPrinter::printIndent() noexcept {
-        for (unsigned int i = 0; i < m_depth; i++) {
-            m_out << "  ";
-        }
+    void AstPrinter::printLine(const std::string &line) {
+        m_out << std::format("{:{}} {}\n", ' ', m_depth * INDENTATION_LEVEL, line);
     }
 }

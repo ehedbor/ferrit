@@ -56,12 +56,7 @@ namespace ferrit {
         consume(TokenType::Arrow, "expected return type after function parameters");
         Type returnType = parseType();
 
-        auto decl = std::make_unique<FunctionDeclaration>(
-            modifiers, keyword, name, std::move(params), returnType);
-
-        std::unique_ptr<Statement> body;
-
-        // A function is a declaration if:
+        // A function has no body if:
         //   A. it ends with a semicolon, or
         //   B. it ends with eof, or
         //   C. it ends with a newline and is not followed by a '=' or '{'
@@ -78,11 +73,11 @@ namespace ferrit {
         // fun x() -> void
         // { }
         auto foundTerms = skipTerminators(true);
-        bool isDecl = foundTerms.semicolon || foundTerms.eof ||
+        bool hasNoBody = foundTerms.semicolon || foundTerms.eof ||
             (foundTerms.newline && (check(TokenType::Equal) || check(TokenType::LeftBrace)));
-        if (isDecl) {
-            return decl;
-        } else {
+
+        std::unique_ptr<Statement> body;
+        if (!hasNoBody) {
             if (match(TokenType::Equal)) {
                 auto expr = parseExpression();
                 body = std::make_unique<ExpressionStatement>(std::move(expr));
@@ -92,8 +87,10 @@ namespace ferrit {
             } else {
                 throw makeError("expected function body");
             }
-            return std::make_unique<FunctionDefinition>(std::move(decl), std::move(body));
         }
+
+        return std::make_unique<FunctionDeclaration>(
+            modifiers, keyword, name, std::move(params), returnType, std::move(body));
     }
 
     std::vector<Token> Parser::parseModifiers() {
@@ -174,7 +171,7 @@ namespace ferrit {
         }
         consume(TokenType::RightBrace, "expected '}' after block");
 
-        return std::make_unique<Block>(std::move(body));
+        return std::make_unique<BlockStatement>(std::move(body));
     }
 
     ExpressionPtr Parser::parseExpression() {
@@ -186,7 +183,7 @@ namespace ferrit {
         while (match(TokenType::OrOr)) {
             Token op = previous();
             auto right = parseConjunction();
-            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
+            left = std::make_unique<BinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
@@ -196,7 +193,7 @@ namespace ferrit {
         while (match(TokenType::AndAnd)) {
             Token op = previous();
             auto right = parseEquality();
-            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
+            left = std::make_unique<BinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
@@ -229,22 +226,22 @@ namespace ferrit {
         while (match(TokenType::Plus) || match(TokenType::Minus)) {
             Token op = previous();
             auto right = parseMultiplicative();
-            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
+            left = std::make_unique<BinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
     ExpressionPtr Parser::parseMultiplicative() {
-        auto left = parseUnary();
+        auto left = parseUnaryPrefix();
         while (match(TokenType::Asterisk) || match(TokenType::Slash) || match(TokenType::Percent)) {
             Token op = previous();
-            auto right = parseUnary();
-            left = std::make_unique<SimpleBinaryExpression>(op, std::move(left), std::move(right));
+            auto right = parseUnaryPrefix();
+            left = std::make_unique<BinaryExpression>(op, std::move(left), std::move(right));
         }
         return left;
     }
 
-    ExpressionPtr Parser::parseUnary() {
+    ExpressionPtr Parser::parseUnaryPrefix() {
         std::vector<Token> operators;
         while (match(TokenType::Plus) || match(TokenType::Minus) || match(TokenType::Bang)) {
             operators.push_back(previous());
@@ -253,7 +250,7 @@ namespace ferrit {
         auto operand = parsePrimary();
         // apply unary operators in REVERSE order. closer to the expression => higher precedence
         for (auto iter = operators.rbegin(); iter != operators.rend(); iter++) {
-            operand = std::make_unique<UnaryExpression>(std::move(*iter), std::move(operand));
+            operand = std::make_unique<UnaryExpression>(std::move(*iter), std::move(operand), true);
         }
         return operand;
     }

@@ -175,6 +175,9 @@ namespace ferrit {
      */
     struct SourceLocation {
     public:
+        SourceLocation() noexcept = default;
+        SourceLocation(int line, int column) noexcept;
+
         bool operator==(const SourceLocation &other) const noexcept = default;
 
     public:
@@ -187,6 +190,9 @@ namespace ferrit {
      */
     struct Token {
     public:
+        Token() noexcept = default;
+        Token(TokenType tokenType, std::string lexeme, SourceLocation location) noexcept;
+
         bool operator==(const Token &other) const noexcept = default;
 
     public:

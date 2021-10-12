@@ -6,8 +6,7 @@
 
 namespace ferrit {
     class Expression;
-    class SimpleBinaryExpression;
-    class BitwiseBinaryExpression;
+    class BinaryExpression;
     class ComparisonExpression;
     class UnaryExpression;
     class VariableExpression;
@@ -24,12 +23,11 @@ namespace ferrit {
     public:
         virtual ~ExpressionVisitor() noexcept = default;
 
-        virtual VisitResult visitSimpleBinary(const SimpleBinaryExpression &binExpr) = 0;
-        virtual VisitResult visitBitwiseBinary(const BitwiseBinaryExpression &bitBinExpr) = 0;
-        virtual VisitResult visitComparison(const ComparisonExpression &cmpExpr) = 0;
-        virtual VisitResult visitUnary(const UnaryExpression &expr) = 0;
-        virtual VisitResult visitVariable(const VariableExpression &varExpr) = 0;
-        virtual VisitResult visitNumber(const NumberExpression &numExpr) = 0;
+        virtual VisitResult visitBinaryExpr(const BinaryExpression &binExpr) = 0;
+        virtual VisitResult visitComparisonExpr(const ComparisonExpression &cmpExpr) = 0;
+        virtual VisitResult visitUnaryExpr(const UnaryExpression &unaryExpr) = 0;
+        virtual VisitResult visitVariableExpr(const VariableExpression &varExpr) = 0;
+        virtual VisitResult visitNumberExpr(const NumberExpression &numExpr) = 0;
     };
 
     /**
@@ -41,43 +39,27 @@ namespace ferrit {
 
         MAKE_BASE_VISITABLE(ExpressionVisitor);
 
-        virtual bool operator==(const Expression &other) const noexcept = 0;
-        virtual bool operator!=(const Expression &other) const noexcept;
+        [[nodiscard]] bool operator==(const Expression &other) const noexcept;
+
+    protected:
+        [[nodiscard]] virtual bool equals(const Expression &other) const noexcept = 0;
     };
 
     /**
-    * Represents the logical and/or operators as well as the additive and multiplicative operators.
+    * Represents logical operators, arithmetic operators and the concatenate operator.
     */
-    class SimpleBinaryExpression : public Expression {
+    class BinaryExpression final : public Expression {
     public:
-        SimpleBinaryExpression(Token op, ExpressionPtr left, ExpressionPtr right) noexcept;
+        BinaryExpression(Token op, ExpressionPtr left, ExpressionPtr right) noexcept;
 
         [[nodiscard]] const Token &op() const noexcept;
         [[nodiscard]] const Expression &left() const noexcept;
         [[nodiscard]] const Expression &right() const noexcept;
 
-        MAKE_VISITABLE(ExpressionVisitor, SimpleBinary);
-        bool operator==(const Expression &other) const noexcept override;
+        MAKE_VISITABLE(ExpressionVisitor, BinaryExpr);
 
-    private:
-        Token m_op;
-        ExpressionPtr m_left;
-        ExpressionPtr m_right;
-    };
-
-    /**
-     * Represents the binary bitwise operators, such as '&' and '<<'.
-     */
-    class BitwiseBinaryExpression : public Expression {
-    public:
-        BitwiseBinaryExpression(Token op, ExpressionPtr left, ExpressionPtr right) noexcept;
-
-        [[nodiscard]] const Token &op() const noexcept;
-        [[nodiscard]] const Expression &left() const noexcept;
-        [[nodiscard]] const Expression &right() const noexcept;
-
-        MAKE_VISITABLE(ExpressionVisitor, BitwiseBinary);
-        bool operator==(const Expression &other) const noexcept override;
+    protected:
+        [[nodiscard]] bool equals(const Expression &other) const noexcept override;
 
     private:
         Token m_op;
@@ -88,7 +70,7 @@ namespace ferrit {
     /**
      * Represents the two equality operators as well as the four comparison operators.
      */
-    class ComparisonExpression : public Expression {
+    class ComparisonExpression final : public Expression {
     public:
         ComparisonExpression(Token op, ExpressionPtr left, ExpressionPtr right) noexcept;
 
@@ -96,8 +78,10 @@ namespace ferrit {
         [[nodiscard]] const Expression &left() const noexcept;
         [[nodiscard]] const Expression &right() const noexcept;
 
-        MAKE_VISITABLE(ExpressionVisitor, Comparison);
-        bool operator==(const Expression &other) const noexcept override;
+        MAKE_VISITABLE(ExpressionVisitor, ComparisonExpr);
+
+    protected:
+        [[nodiscard]] bool equals(const Expression &other) const noexcept override;
 
     private:
         Token m_op;
@@ -108,32 +92,38 @@ namespace ferrit {
     /**
      * Represents the unary operators.
      */
-    class UnaryExpression : public Expression {
+    class UnaryExpression final : public Expression {
     public:
-        UnaryExpression(Token op, ExpressionPtr operand) noexcept;
+        UnaryExpression(Token op, ExpressionPtr operand, bool isPrefix) noexcept;
 
         [[nodiscard]] const Token &op() const noexcept;
         [[nodiscard]] const Expression &operand() const noexcept;
+        [[nodiscard]] bool isPrefix() const noexcept;
 
-        MAKE_VISITABLE(ExpressionVisitor, Unary);
-        bool operator==(const Expression &other) const noexcept override;
+        MAKE_VISITABLE(ExpressionVisitor, UnaryExpr);
+
+    protected:
+        [[nodiscard]] bool equals(const Expression &other) const noexcept override;
 
     private:
         Token m_op;
         ExpressionPtr m_operand;
+        bool m_isPrefix;
     };
 
     /**
      * Represents a direct variable access (ie just writing the variable's name in an expression).
      */
-    class VariableExpression : public Expression {
+    class VariableExpression final : public Expression {
     public:
         explicit VariableExpression(Token name) noexcept;
 
         [[nodiscard]] const Token &name() const noexcept;
 
-        MAKE_VISITABLE(ExpressionVisitor, Variable);
-        bool operator==(const Expression &other) const noexcept override;
+        MAKE_VISITABLE(ExpressionVisitor, VariableExpr);
+
+    protected:
+        [[nodiscard]] bool equals(const Expression &other) const noexcept override;
 
     private:
         Token m_name;
@@ -145,15 +135,17 @@ namespace ferrit {
      * respective number types that get coerced into a sized type when used in
      * an expression.
      */
-    class NumberExpression : public Expression {
+    class NumberExpression final : public Expression {
     public:
         NumberExpression(Token value, bool isIntLiteral) noexcept;
 
         [[nodiscard]] const Token &value() const noexcept;
         [[nodiscard]] bool isIntLiteral() const noexcept;
 
-        MAKE_VISITABLE(ExpressionVisitor, Number);
-        bool operator==(const Expression &other) const noexcept override;
+        MAKE_VISITABLE(ExpressionVisitor, NumberExpr);
+
+    protected:
+        [[nodiscard]] bool equals(const Expression &other) const noexcept override;
 
     private:
         Token m_value;

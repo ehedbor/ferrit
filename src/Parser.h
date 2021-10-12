@@ -60,7 +60,7 @@ namespace ferrit {
         [[nodiscard]] ExpressionPtr parseComparison();
         [[nodiscard]] ExpressionPtr parseAdditive();
         [[nodiscard]] ExpressionPtr parseMultiplicative();
-        [[nodiscard]] ExpressionPtr parseUnary();
+        [[nodiscard]] ExpressionPtr parseUnaryPrefix();
 
         // Simple expressions
         [[nodiscard]] ExpressionPtr parsePrimary();

@@ -12,8 +12,7 @@
 namespace ferrit {
     class Statement;
     class FunctionDeclaration;
-    class FunctionDefinition;
-    class Block;
+    class BlockStatement;
     class ExpressionStatement;
 
     using StatementPtr = std::unique_ptr<Statement>;
@@ -27,10 +26,9 @@ namespace ferrit {
     public:
         virtual ~StatementVisitor() noexcept = default;
 
-        virtual VisitResult visitFunDeclaration(const FunctionDeclaration &funDecl) = 0;
-        virtual VisitResult visitFunDefinition(const FunctionDefinition &funDef) = 0;
-        virtual VisitResult visitBlock(const Block &block) = 0;
-        virtual VisitResult visitExprStmt(const ExpressionStatement &exprStmt) = 0;
+        virtual VisitResult visitFunctionDecl(const FunctionDeclaration &funDecl) = 0;
+        virtual VisitResult visitBlockStmt(const BlockStatement &blockStmt) = 0;
+        virtual VisitResult visitExpressionStmt(const ExpressionStatement &exprStmt) = 0;
     };
 
     /**
@@ -42,29 +40,36 @@ namespace ferrit {
 
         MAKE_BASE_VISITABLE(StatementVisitor);
 
-        virtual bool operator==(const Statement &other) const noexcept = 0;
-        virtual bool operator!=(const Statement &other) const noexcept;
+        bool operator==(const Statement &other) const noexcept;
+
+    protected:
+        [[nodiscard]] virtual bool equals(const Statement &other) const noexcept = 0;
     };
 
     /**
-     * Represents a function's forward-declaration.
-     *
-     * @see FunctionDefinition
+     * Represents a function declaration.
      */
-    class FunctionDeclaration : public Statement {
+    class FunctionDeclaration final : public Statement {
     public:
         FunctionDeclaration(
-            std::vector<Token> modifiers, Token keyword, Token name,
-            std::vector<Parameter> params, Type returnType) noexcept;
+            std::vector<Token> modifiers,
+            Token keyword,
+            Token name,
+            std::vector<Parameter> params,
+            Type returnType,
+            std::optional<StatementPtr> body = {}) noexcept;
 
         [[nodiscard]] const std::vector<Token> &modifiers() const noexcept;
         [[nodiscard]] const Token &keyword() const noexcept;
         [[nodiscard]] const Token &name() const noexcept;
         [[nodiscard]] const std::vector<Parameter> &params() const noexcept;
         [[nodiscard]] const Type &returnType() const noexcept;
+        [[nodiscard]] const Statement *body() const noexcept;
 
-        MAKE_VISITABLE(StatementVisitor, FunDeclaration);
-        bool operator==(const Statement &other) const noexcept override;
+        MAKE_VISITABLE(StatementVisitor, FunctionDecl);
+
+    protected:
+        [[nodiscard]] bool equals(const Statement &other) const noexcept override;
 
     private:
         std::vector<Token> m_modifiers;
@@ -72,39 +77,22 @@ namespace ferrit {
         Token m_name;
         std::vector<Parameter> m_params;
         Type m_returnType;
-    };
-
-    /**
-     * Represents a function definition.
-     *
-     * @see FunctionDeclaration
-     */
-    class FunctionDefinition : public Statement {
-    public:
-        FunctionDefinition(std::unique_ptr<FunctionDeclaration> declaration, StatementPtr body);
-
-        [[nodiscard]] const FunctionDeclaration &declaration() const noexcept;
-        [[nodiscard]] const Statement &body() const noexcept;
-
-        MAKE_VISITABLE(StatementVisitor, FunDefinition);
-        bool operator==(const Statement &other) const noexcept override;
-
-    private:
-        std::unique_ptr<FunctionDeclaration> m_declaration;
         StatementPtr m_body;
     };
 
     /**
      * Represents a group of statements.
      */
-    class Block : public Statement {
+    class BlockStatement final : public Statement {
     public:
-        explicit Block(std::vector<StatementPtr> body) noexcept;
+        explicit BlockStatement(std::vector<StatementPtr> body) noexcept;
 
         [[nodiscard]] const std::vector<StatementPtr> &body() const noexcept;
 
-        MAKE_VISITABLE(StatementVisitor, Block);
-        bool operator==(const Statement &other) const noexcept override;
+        MAKE_VISITABLE(StatementVisitor, BlockStmt);
+
+    protected:
+        [[nodiscard]] bool equals(const Statement &other) const noexcept override;
 
     private:
         std::vector<StatementPtr> m_body;
@@ -113,14 +101,16 @@ namespace ferrit {
     /**
      * Represents an expression whose value is unused (for instance, a function call in a block).
      */
-    class ExpressionStatement : public Statement {
+    class ExpressionStatement final : public Statement {
     public:
         explicit ExpressionStatement(ExpressionPtr expr) noexcept;
 
         [[nodiscard]] const Expression &expr() const noexcept;
 
-        MAKE_VISITABLE(StatementVisitor, ExprStmt);
-        bool operator==(const Statement &other) const noexcept override;
+        MAKE_VISITABLE(StatementVisitor, ExpressionStmt);
+
+    protected:
+        [[nodiscard]] bool equals(const Statement &other) const noexcept override;
 
     private:
         ExpressionPtr m_expr;

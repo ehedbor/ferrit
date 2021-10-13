@@ -1,9 +1,12 @@
 #include "Parser.h"
 #include <iostream>
-#include "ErrorReporting.h"
+#include "AstPrinter.h"
 
 namespace ferrit {
-    Parser::Parser(const CompileOptions &options) noexcept : m_options(options) {
+    Parser::Parser(
+        std::shared_ptr<const CompileOptions> options,
+        std::shared_ptr<ErrorReporter> errorReporter) noexcept :
+        m_options(std::move(options)), m_errorReporter(std::move(errorReporter)) {
     }
 
     void Parser::init(const std::vector<Token> &tokens) noexcept {
@@ -29,6 +32,7 @@ namespace ferrit {
                 synchronize();
             }
         }
+
         if (hadError) {
             return {};
         } else {
@@ -38,7 +42,6 @@ namespace ferrit {
 
     StatementPtr Parser::parseDeclaration() {
         auto mods = parseModifiers();
-        m_stackTrace.push_back(current());
         if (match(TokenType::Fun)) {
             return parseFunctionDeclaration(mods);
         }
@@ -49,6 +52,7 @@ namespace ferrit {
         // remember the keyword
         const Token &keyword = previous();
         const Token &name = consume(TokenType::Identifier, "expected function name");
+        m_stackTrace.push_back(name);
 
         consume(TokenType::LeftParen, "expected '(' after function name");
         auto params = parseParameters();
@@ -89,6 +93,7 @@ namespace ferrit {
             }
         }
 
+        m_stackTrace.pop_back();
         return std::make_unique<FunctionDeclaration>(
             modifiers, keyword, name, std::move(params), returnType, std::move(body));
     }
@@ -358,7 +363,10 @@ namespace ferrit {
 
     ParseException Parser::makeError(const std::string &expected) const {
         Error::ParseError error(current(), m_stackTrace, expected);
-        logError(error);
+        if (!m_options->silentErrors()) {
+            m_errorReporter->logError(error);
+        }
+
         return ParseException(error);
     }
 

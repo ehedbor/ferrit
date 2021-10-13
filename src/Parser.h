@@ -1,10 +1,12 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <vector>
 
 #include "CompileOptions.h"
 #include "Error.h"
+#include "ErrorReporter.h"
 #include "Expression.h"
 #include "Statement.h"
 #include "Token.h"
@@ -21,8 +23,11 @@ namespace ferrit {
          * Constructs a \c Parser with the given compile options.
          *
          * @param options compile flags
+         * @param errorReporter logger for compile errors
          */
-        explicit Parser(const CompileOptions &options) noexcept;
+        explicit Parser(
+            std::shared_ptr<const CompileOptions> options,
+            std::shared_ptr<ErrorReporter> errorReporter) noexcept;
 
     private:
         /**
@@ -140,7 +145,7 @@ namespace ferrit {
         [[nodiscard]] bool isAtEnd() const noexcept;
 
         /**
-         * Constructs a \c ParseException with the given error message, logs
+         * Constructs a \c ParseException with the given logError message, logs
          * the error, and returns.
          *
          * Note that the exception is not thrown; it is the user's decision to
@@ -152,7 +157,8 @@ namespace ferrit {
         [[nodiscard]] ParseException makeError(const std::string &expected) const;
 
     private:
-        const CompileOptions &m_options;
+        std::shared_ptr<const CompileOptions> m_options;
+        std::shared_ptr<ErrorReporter> m_errorReporter;
         std::vector<Token> m_tokens{};
         int m_current{0};
         std::vector<Token> m_stackTrace{};

@@ -4,22 +4,30 @@
 #include "Error.h"
 
 namespace ferrit {
+    /**
+     * Container for compiler flags.
+     */
     class CompileOptions {
     public:
         CompileOptions() noexcept = default;
 
-        [[nodiscard]] bool showLexerOutput() const noexcept;
-        void setShowLexerOutput(bool showLexerOutput) noexcept;
+    public:
+        [[nodiscard]] bool printAst() const noexcept;
+        CompileOptions &setPrintAst(bool printAst) noexcept;
 
-        [[nodiscard]] bool showParserOutput() const noexcept;
-        void setShowParserOutput(bool showParserOutput) noexcept;
+        [[nodiscard]] bool silentErrors() const noexcept;
+        CompileOptions &setSilentErrors(bool silentErrors) noexcept;
+
+        [[nodiscard]] bool plainOutput() const noexcept;
+        CompileOptions &setPlainOutput(bool plainOutput) noexcept;
 
         [[nodiscard]] WarningLevel warningLevel(const std::string &errorName) const;
-        void setWarningLevel(const std::string &errorName, WarningLevel warningLevel);
+        CompileOptions &setWarningLevel(const std::string &errorName, WarningLevel warningLevel);
 
     private:
-        bool _showLexerOutput{false};
-        bool _showParserOutput{false};
-        std::unordered_map<std::string, WarningLevel> _warningLevels{};
+        bool m_printAst{false};
+        bool m_silentErrors{false};
+        bool m_plainOutput{false};
+        std::unordered_map<std::string, WarningLevel> m_warningLevels{};
     };
 }

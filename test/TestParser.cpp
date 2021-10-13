@@ -4,8 +4,10 @@
 
 namespace ferrit::tests {
     TEST_CASE("function declarations can be parsed", "[parser]") {
-        CompileOptions opts;
-        Parser parser(opts);
+        auto opts = std::make_shared<CompileOptions>();
+        opts->setPlainOutput(true);
+        auto logger = std::make_shared<ErrorReporter>(opts, std::cout);
+        Parser parser(opts, logger);
 
         SECTION("parsing simple no-op function") {
             std::vector<Token> tokens {

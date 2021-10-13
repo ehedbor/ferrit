@@ -3,6 +3,7 @@
 #include <iostream>
 
 #include <cxxopts.hpp>
+#include <utility>
 
 #include "AstPrinter.h"
 #include "CompileOptions.h"
@@ -12,16 +13,76 @@
 namespace fs = std::filesystem;
 
 
-ferrit::CompileOptions parseArguments(int argc, char *argv[]);
-auto lexLine(const ferrit::CompileOptions& options, const std::string &line) -> std::optional<std::vector<ferrit::Token>>;
-void parseLine(const ferrit::CompileOptions& options, const std::vector<ferrit::Token> &tokens);
+std::optional<std::vector<ferrit::Token>> lexLine(
+    std::shared_ptr<const ferrit::CompileOptions> options,
+    std::shared_ptr<ferrit::ErrorReporter> errorReporter,
+    const std::string &line
+) {
+    ferrit::Lexer lexer(std::move(options), std::move(errorReporter));
+    auto tokens = lexer.lex(line);
+    return tokens;
+}
+
+void parseLine(
+    const std::shared_ptr<const ferrit::CompileOptions> &options,
+    std::shared_ptr<ferrit::ErrorReporter> errorReporter,
+    const std::vector<ferrit::Token> &tokens
+) {
+    ferrit::Parser parser(options, std::move(errorReporter));
+
+    auto result = parser.parse(tokens);
+    if (!result) return;
+
+    if (options->printAst()) {
+        ferrit::AstPrinter astPrinter(std::cout);
+        astPrinter.print(result.value());
+    }
+}
+
+std::shared_ptr<ferrit::CompileOptions> parseArguments(int argc, char *argv[]) {
+    cxxopts::Options options("ferritc", "Compiler and interpreter for the Ferrit programming language.");
+
+    options.add_options()
+        ("h,help", "display this shortMessage")
+        ("print-ast", "show program AST")
+        ("silent", "disable error logging")
+        ("plain", "disable colors in output")
+        ("file", "files to compile", cxxopts::value<std::vector<std::string>>());
+
+    options.parse_positional("file");
+    options.positional_help("FILE...");
+
+    cxxopts::ParseResult result = options.parse(argc, argv);
+    if (result.count("help")) {
+        std::cout << options.help() << std::endl;
+        std::exit(EXIT_SUCCESS);
+    }
+
+    auto compileOpts = std::make_shared<ferrit::CompileOptions>();
+    compileOpts->setPrintAst(result.count("print-ast") > 1);
+    compileOpts->setSilentErrors(result.count("silent-errors") > 1);
+    compileOpts->setPlainOutput(result.count("plain-output") > 1);
+
+    if (result.count("file")) {
+        // TODO: add file support
+        std::vector<std::string> files = result["file"].as<std::vector<std::string>>();
+        std::cout << "Got a file argument: ";
+        for (const auto &file: files) {
+            std::cout << "'" << file << "' ";
+        }
+        std::cout << std::endl;
+    }
+
+    return compileOpts;
+}
 
 int main(int argc, char *argv[]) {
     try {
-        ferrit::CompileOptions compileOpts = parseArguments(argc, argv);
+        auto compileOpts = parseArguments(argc, argv);
+        auto errorReporter = std::make_shared<ferrit::ErrorReporter>(compileOpts, std::cout);
 
         std::cout << "Ferrit Interpreter 0.0.0" << std::endl;
-        std::cout << "Available commands: \"exit\", \"quit\"" << std::endl;
+        std::cout << R"(Available commands: "exit", "quit")" << std::endl;
 
         while (true) {
             std::cout << ">>> " << std::flush;
@@ -31,77 +92,13 @@ int main(int argc, char *argv[]) {
                 return EXIT_SUCCESS;
             }
 
-            auto tokens = lexLine(compileOpts, line);
+            auto tokens = lexLine(compileOpts, errorReporter, line);
             if (!tokens) continue;
 
-            parseLine(compileOpts, *tokens);
+            parseLine(compileOpts, errorReporter, *tokens);
         }
     } catch (const std::exception &e) {
-        std::cerr << "error: unhandled exception: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
-}
-
-std::optional<std::vector<ferrit::Token>> lexLine(const ferrit::CompileOptions& options, const std::string &line) {
-    ferrit::Lexer lexer(options);
-    auto tokens = lexer.lex(line);
-    return tokens;
-}
-
-void parseLine(const ferrit::CompileOptions& options, const std::vector<ferrit::Token> &tokens) {
-    ferrit::Parser parser(options);
-
-    auto result = parser.parse(tokens);
-    if (!result) {
-        return;
-    }
-
-    if (options.showParserOutput()) {
-        ferrit::AstPrinter astPrinter(std::cout);
-        for (const ferrit::StatementPtr &decl : result.value()) {
-            decl->accept(astPrinter);
-        }
-    }
-}
-
-ferrit::CompileOptions parseArguments(int argc, char *argv[]) {
-    try {
-        cxxopts::Options options("ferritc", "Compiler and interpreter for the Ferrit programming language.");
-
-        options.add_options()
-            ("h,help", "display this shortMessage")
-            ("l,lexer","show lexer output")
-            ("p,parser", "show parser output")
-            ("file", "files to compile", cxxopts::value<std::vector<std::string>>());
-
-        options.parse_positional("file");
-        options.positional_help("FILE...");
-
-        cxxopts::ParseResult result = options.parse(argc, argv);
-        if (result.count("help")) {
-            std::cout << options.help() << std::endl;
-            std::exit(EXIT_SUCCESS);
-        }
-
-        ferrit::CompileOptions compileOpts;
-        compileOpts.setShowLexerOutput(result.count("lexer") > 1);
-        compileOpts.setShowParserOutput(result.count("parser") > 1);
-        if (result.count("file")) {
-            // TOOD: add file support
-            std::vector<std::string> files = result["file"].as<std::vector<std::string>>();
-            std::cout << "Got a file argument: ";
-            for (const auto &file: files) {
-                std::cout << "'" << file << "' ";
-            }
-            std::cout << std::endl;
-        }
-
-        return compileOpts;
-    } catch (const cxxopts::OptionParseException &e) {
-        std::cerr << "error while parsing command line arguments: " << e.what() << std::endl;
-        std::exit(EXIT_FAILURE);
-    } catch (const cxxopts::OptionSpecException &e) {
-        std::cerr << "error while defining command line options: " << e.what() << std::endl;
-        std::exit(EXIT_FAILURE);
+        std::cerr << "internal compiler error: " << e.what() << std::endl;
+        throw;
     }
 }

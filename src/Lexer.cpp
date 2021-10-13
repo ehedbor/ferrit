@@ -1,9 +1,10 @@
 #include "Lexer.h"
 #include <unordered_map>
-#include "ErrorReporting.h"
 
 namespace ferrit {
-    Lexer::Lexer(const CompileOptions &options) noexcept : m_options(options) {
+    Lexer::Lexer(std::shared_ptr<const CompileOptions> options,
+        std::shared_ptr<ErrorReporter> errorReporter) noexcept :
+        m_options(std::move(options)), m_errorReporter(std::move(errorReporter)) {
     }
 
     void Lexer::init(const std::string &code) noexcept {
@@ -17,28 +18,15 @@ namespace ferrit {
         init(code);
 
         try {
-            if (m_options.showLexerOutput()) {
-                std::cout << "Lexer:" << std::endl;
-            }
-
             std::vector<Token> result;
             while (true) {
                 result.emplace_back(lexNext());
                 const Token &token = result.back();
-
-                if (m_options.showLexerOutput()) {
-                    std::cout << std::format("  -Token {} \"{}\" at {}:{}",
-                        token.type, token.lexeme, token.location.line, token.location.column);
-                    std::cout << std::endl;
-                }
                 if (token.type == TokenType::EndOfFile) {
                     return result;
                 }
             }
-        } catch (const LexException &e) {
-            if (m_options.showLexerOutput()) {
-                std::cout << "  -Lex Error:" << e.what() << std::endl;
-            }
+        }  catch (const LexException &) {
             return {};
         }
     }

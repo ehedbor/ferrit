@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include <memory>
 #include <optional>
 #include <string>
 #include <stdexcept>
@@ -9,6 +9,7 @@
 
 #include "CompileOptions.h"
 #include "Error.h"
+#include "ErrorReporter.h"
 #include "Token.h"
 
 
@@ -24,8 +25,11 @@ namespace ferrit {
          * Constructs a lexer with the given compile options.
          *
          * @param options compile opts.
+         * @param errorReporter logger for compile errors
          */
-        explicit Lexer(const CompileOptions &options) noexcept;
+        explicit Lexer(
+            std::shared_ptr<const CompileOptions> options,
+            std::shared_ptr<ErrorReporter> errorReporter) noexcept;
 
     private:
         /**
@@ -206,7 +210,8 @@ namespace ferrit {
         [[nodiscard]] static bool isIdentifierStart(char ch) noexcept;
 
     private:
-        const CompileOptions &m_options;
+        std::shared_ptr<const CompileOptions> m_options;
+        std::shared_ptr<ErrorReporter> m_errorReporter;
         std::string m_code{};
         int m_start{0};
         int m_current{0};
@@ -248,7 +253,9 @@ namespace ferrit {
         Token token{TokenType::Error, std::move(lexeme), {m_location.line, startColumn}};
 
         Err error(token, std::vector<Token>(), std::forward<Args>(args)...);
-        logError(error);
+        if (!m_options->silentErrors()) {
+            m_errorReporter->logError(error);
+        }
 
         return LexException(error);
     }

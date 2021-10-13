@@ -1,10 +1,13 @@
+#include <iostream>
 #include <catch2/catch.hpp>
 #include "Lexer.h"
 
 namespace ferrit::tests {
-    TEST_CASE("lex numeric literals", "[lexer]") {
-        CompileOptions options;
-        Lexer lexer(options);
+    TEST_CASE("lex literals", "[lexer]") {
+        auto options = std::make_shared<CompileOptions>();
+        options->setPlainOutput(true);
+        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
+        Lexer lexer(options, logger);
 
         SECTION("basic integer literals") {
             auto tokens = lexer.lex("10 20 386 -1382");
@@ -39,6 +42,25 @@ namespace ferrit::tests {
             REQUIRE(tokens.value()[4] == Token{TokenType::EndOfFile, "", {1, 9}});
         }
 
+        SECTION("valid string and char literals") {
+            auto tokens = lexer.lex(R"str("My String" "\0\t\n\r\'\"\\" 'a' '$')str");
+            REQUIRE(tokens.has_value());
+            REQUIRE(tokens.value().size() == 5);
+            REQUIRE(tokens.value()[0] == Token{TokenType::StringLiteral, "\"My String\"", {1, 1}});
+            REQUIRE(tokens.value()[1] == Token{TokenType::StringLiteral, R"("\0\t\n\r\'\"\\")", {1, 13}});
+            REQUIRE(tokens.value()[2] == Token{TokenType::CharLiteral, "'a'", {1, 30}});
+            REQUIRE(tokens.value()[3] == Token{TokenType::CharLiteral, "'$'", {1, 34}});
+            REQUIRE(tokens.value()[4] == Token{TokenType::EndOfFile, "", {1, 37}});
+        }
+    }
+
+    TEST_CASE("invalid numeric literals", "[lexer]") {
+        auto options = std::make_shared<CompileOptions>();
+        options->setPlainOutput(true);
+        options->setSilentErrors(true);
+        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
+        Lexer lexer(options, logger);
+
         SECTION("int literals with suffix") {
             auto tokens = lexer.lex("10i");
             REQUIRE(!tokens.has_value());
@@ -64,21 +86,6 @@ namespace ferrit::tests {
             tokens = lexer.lex("1.0e-10");
             REQUIRE(!tokens.has_value());
         }
-    }
-
-    TEST_CASE("lex string literals", "[lexer]") {
-        Lexer lexer{CompileOptions()};
-
-        SECTION("valid string and char literals") {
-            auto tokens = lexer.lex(R"str("My String" "\0\t\n\r\'\"\\" 'a' '$')str");
-            REQUIRE(tokens.has_value());
-            REQUIRE(tokens.value().size() == 5);
-            REQUIRE(tokens.value()[0] == Token{TokenType::StringLiteral, "\"My String\"", {1, 1}});
-            REQUIRE(tokens.value()[1] == Token{TokenType::StringLiteral, R"("\0\t\n\r\'\"\\")", {1, 13}});
-            REQUIRE(tokens.value()[2] == Token{TokenType::CharLiteral, "'a'", {1, 30}});
-            REQUIRE(tokens.value()[3] == Token{TokenType::CharLiteral, "'$'", {1, 34}});
-            REQUIRE(tokens.value()[4] == Token{TokenType::EndOfFile, "", {1, 37}});
-        }
 
         SECTION("invalid string and char literals") {
             std::string literals[] = {
@@ -97,7 +104,10 @@ namespace ferrit::tests {
     }
 
     TEST_CASE("lex operators", "[lexer]") {
-        Lexer lexer{CompileOptions{}};
+        auto options = std::make_shared<CompileOptions>();
+        options->setPlainOutput(true);
+        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
+        Lexer lexer(options, logger);
 
         SECTION("grouping operators") {
             auto tokens = lexer.lex("(){}[]");
@@ -196,7 +206,10 @@ namespace ferrit::tests {
     }
 
     TEST_CASE("lex identifiers and keywords", "[lexer]") {
-        Lexer lexer{CompileOptions()};
+        auto options = std::make_shared<CompileOptions>();
+        options->setPlainOutput(true);
+        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
+        Lexer lexer(options, logger);
 
         SECTION("modifiers") {
             std::pair<std::string, TokenType> modifiers[] = {
@@ -290,7 +303,10 @@ namespace ferrit::tests {
     }
 
     TEST_CASE("lex comments and whitespace", "[lexer]") {
-        Lexer lexer(CompileOptions{});
+        auto options = std::make_shared<CompileOptions>();
+        options->setPlainOutput(true);
+        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
+        Lexer lexer(options, logger);
 
         SECTION("a line comment") {
             auto tokens = lexer.lex("a//b\r\nc");

@@ -56,14 +56,14 @@ namespace ferrit {
             Token keyword,
             Token name,
             std::vector<Parameter> params,
-            Type returnType,
+            DeclaredType returnType,
             std::optional<StatementPtr> body = {}) noexcept;
 
         [[nodiscard]] const std::vector<Token> &modifiers() const noexcept;
         [[nodiscard]] const Token &keyword() const noexcept;
         [[nodiscard]] const Token &name() const noexcept;
         [[nodiscard]] const std::vector<Parameter> &params() const noexcept;
-        [[nodiscard]] const Type &returnType() const noexcept;
+        [[nodiscard]] const DeclaredType &returnType() const noexcept;
         [[nodiscard]] const Statement *body() const noexcept;
 
         MAKE_VISITABLE(StatementVisitor, FunctionDecl);
@@ -76,7 +76,7 @@ namespace ferrit {
         Token m_keyword;
         Token m_name;
         std::vector<Parameter> m_params;
-        Type m_returnType;
+        DeclaredType m_returnType;
         StatementPtr m_body;
     };
 

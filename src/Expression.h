@@ -1,6 +1,7 @@
 #pragma once
 
 #include <utility>
+#include <vector>
 #include "Token.h"
 #include "Visitor.h"
 
@@ -9,6 +10,7 @@ namespace ferrit {
     class BinaryExpression;
     class ComparisonExpression;
     class UnaryExpression;
+    class CallExpression;
     class VariableExpression;
     class NumberExpression;
 
@@ -26,6 +28,7 @@ namespace ferrit {
         virtual VisitResult visitBinaryExpr(const BinaryExpression &binExpr) = 0;
         virtual VisitResult visitComparisonExpr(const ComparisonExpression &cmpExpr) = 0;
         virtual VisitResult visitUnaryExpr(const UnaryExpression &unaryExpr) = 0;
+        virtual VisitResult visitCallExpr(const CallExpression &callExpr) = 0;
         virtual VisitResult visitVariableExpr(const VariableExpression &varExpr) = 0;
         virtual VisitResult visitNumberExpr(const NumberExpression &numExpr) = 0;
     };
@@ -109,6 +112,28 @@ namespace ferrit {
         Token m_op;
         ExpressionPtr m_operand;
         bool m_isPrefix;
+    };
+
+    /**
+     * Represents a function call or constructor.
+     */
+    class CallExpression final : public Expression {
+    public:
+        CallExpression(Token paren, ExpressionPtr callee, std::vector<ExpressionPtr> arguments) noexcept;
+
+        [[nodiscard]] const Token &paren() const noexcept;
+        [[nodiscard]] const Expression &callee() const noexcept;
+        [[nodiscard]] const std::vector<ExpressionPtr> &arguments() const noexcept;
+
+        MAKE_VISITABLE(ExpressionVisitor, CallExpr);
+
+    protected:
+        [[nodiscard]] bool equals(const Expression &other) const noexcept override;
+
+    private:
+        Token m_paren;
+        ExpressionPtr m_callee;
+        std::vector<ExpressionPtr> m_arguments;
     };
 
     /**

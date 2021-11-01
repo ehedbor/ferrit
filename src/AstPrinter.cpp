@@ -28,10 +28,10 @@ namespace ferrit {
             indent([&] {
                 for (const auto &param : funDecl.params()) {
                     printLine(std::format("Parameter(Name={}, Type={})",
-                        param.name().lexeme, param.type().name().lexeme));
+                        param.name().lexeme, param.type().errorToken().lexeme));
                 }
             });
-            printLine(std::format("-Returns={}", funDecl.returnType().name().lexeme));
+            printLine(std::format("-Returns={}", funDecl.returnType().errorToken().lexeme));
 
             if (funDecl.body()) {
                 printLine("-Body:");
@@ -97,6 +97,23 @@ namespace ferrit {
         printLine(std::format("UnaryExpression: {}", unaryExpr.op().lexeme));
         indent([&] {
             unaryExpr.operand().accept(*this);
+        });
+
+        return {};
+    }
+
+    VisitResult AstPrinter::visitCallExpr(const CallExpression &callExpr) {
+        printLine("CallExpression:");
+        indent([&] {
+            printLine("-Callee:");
+            callExpr.callee().accept(*this);
+
+            printLine("-Arguments:");
+            indent([&] {
+                for (const auto &arg: callExpr.arguments()) {
+                    arg->accept(*this);
+                }
+            });
         });
 
         return {};

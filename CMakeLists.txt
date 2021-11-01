@@ -37,7 +37,7 @@ message(STATUS "Found LLVM version ${LLVM_PACKAGE_VERSION} in \"${LLVM_DIR}\"")
 
 # Add extra warnings
 if (MSVC)
-    add_compile_options(/W4 /WX)
+    add_compile_options(/W4 /WX /D _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
 else()
     add_compile_options(-Wall -Wextra -Werror)
 endif()

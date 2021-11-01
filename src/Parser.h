@@ -51,7 +51,7 @@ namespace ferrit {
         [[nodiscard]] std::vector<Token> parseModifiers();
         [[nodiscard]] std::vector<Parameter> parseParameters();
         [[nodiscard]] Parameter parseParameter();
-        [[nodiscard]] Type parseType();
+        [[nodiscard]] DeclaredType parseType();
 
         // Other statements
         [[nodiscard]] StatementPtr parseStatement();
@@ -66,9 +66,12 @@ namespace ferrit {
         [[nodiscard]] ExpressionPtr parseAdditive();
         [[nodiscard]] ExpressionPtr parseMultiplicative();
         [[nodiscard]] ExpressionPtr parseUnaryPrefix();
+        [[nodiscard]] ExpressionPtr parseUnaryPostfix();
+        [[nodiscard]] std::vector<ExpressionPtr> parseArguments();
 
         // Simple expressions
         [[nodiscard]] ExpressionPtr parsePrimary();
+        [[nodiscard]] ExpressionPtr parseParenthesizedExpr();
         [[nodiscard]] ExpressionPtr parseVariable();
         [[nodiscard]] ExpressionPtr parseNumber();
 

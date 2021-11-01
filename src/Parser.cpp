@@ -45,6 +45,9 @@ namespace ferrit {
         if (match(TokenType::Fun)) {
             return parseFunctionDeclaration(mods);
         }
+        if (mods.empty()) {
+            return parseStatement();
+        }
         throw makeError("expected declaration");
     }
 
@@ -58,7 +61,7 @@ namespace ferrit {
         auto params = parseParameters();
 
         consume(TokenType::Arrow, "expected return type after function parameters");
-        Type returnType = parseType();
+        DeclaredType returnType = parseType();
 
         // A function has no body if:
         //   A. it ends with a semicolon, or
@@ -140,19 +143,19 @@ namespace ferrit {
     Parameter Parser::parseParameter() {
         const Token &name = previous();
         consume(TokenType::Colon, "expected ':' after parameter name");
-        Type type = parseType();
-        if (type.name().type == TokenType::Identifier && type.name().lexeme == "Void") {
+        DeclaredType type = parseType();
+        if (type.isSimple() && type.simple().name().lexeme == "Void") {
             throw makeError("cannot declare parameter of type void");
         }
 
         return {name, type};
     }
 
-    Type Parser::parseType() {
+    DeclaredType Parser::parseType() {
         if (match(TokenType::Identifier)) {
             const std::string &lexeme = previous().lexeme;
             if (lexeme == "Int" || lexeme == "Double" || lexeme == "Void") {
-                return Type(previous());
+                return DeclaredType(previous());
             } else {
                 throw makeError("expected type name");
             }
@@ -180,7 +183,8 @@ namespace ferrit {
     }
 
     ExpressionPtr Parser::parseExpression() {
-        return parseDisjunction();
+        //return parseDisjunction();
+        return parseAdditive();
     }
 
     ExpressionPtr Parser::parseDisjunction() {
@@ -248,11 +252,11 @@ namespace ferrit {
 
     ExpressionPtr Parser::parseUnaryPrefix() {
         std::vector<Token> operators;
-        while (match(TokenType::Plus) || match(TokenType::Minus) || match(TokenType::Bang)) {
+        while (match(TokenType::Plus) || match(TokenType::Minus)) {
             operators.push_back(previous());
         }
 
-        auto operand = parsePrimary();
+        auto operand = parseUnaryPostfix();
         // apply unary operators in REVERSE order. closer to the expression => higher precedence
         for (auto iter = operators.rbegin(); iter != operators.rend(); iter++) {
             operand = std::make_unique<UnaryExpression>(std::move(*iter), std::move(operand), true);
@@ -260,14 +264,55 @@ namespace ferrit {
         return operand;
     }
 
+    ExpressionPtr Parser::parseUnaryPostfix() {
+        ExpressionPtr operand = parsePrimary();
+
+        while (true) {
+            if (match(TokenType::LeftParen)) {
+                const Token &paren = previous();
+                auto args = parseArguments();
+                operand = std::make_unique<CallExpression>(paren, std::move(operand), std::move(args));
+            } else {
+                break;
+            }
+        }
+        return operand;
+    }
+
+    std::vector<ExpressionPtr> Parser::parseArguments() {
+        std::vector<ExpressionPtr> result;
+        if (!check(TokenType::RightParen)) {
+            // argument list is not empty.
+            result.push_back(parseExpression());
+            while (match(TokenType::Comma)) {
+                if (check(TokenType::RightParen)) {
+                    // trailing comma
+                    break;
+                } else {
+                    result.push_back(parseExpression());
+                }
+            }
+        }
+        consume(TokenType::RightParen, "expected ')' after function arguments");
+        return result;
+    }
+
     ExpressionPtr Parser::parsePrimary() {
-        if (match(TokenType::Identifier)) {
+        if (match(TokenType::LeftParen)) {
+            return parseParenthesizedExpr();
+        } else if (match(TokenType::Identifier)) {
             return parseVariable();
         } else if (match(TokenType::FloatLiteral) || match(TokenType::IntegerLiteral)) {
             return parseNumber();
         } else {
             throw makeError("expected primary expression");
         }
+    }
+
+    ExpressionPtr Parser::parseParenthesizedExpr() {
+        auto expr = parseExpression();
+        consume(TokenType::RightParen, "expected ')' after parenthesized expression");
+        return expr;
     }
 
     ExpressionPtr Parser::parseVariable() {
@@ -378,3 +423,4 @@ namespace ferrit {
         return m_cause;
     }
 }
+

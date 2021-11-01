@@ -81,6 +81,36 @@ namespace ferrit {
             isPrefix() == unaryOther.isPrefix();
     }
 
+    CallExpression::CallExpression(Token paren, ExpressionPtr callee, std::vector<ExpressionPtr> arguments) noexcept :
+        m_paren(std::move(paren)), m_callee(std::move(callee)), m_arguments(std::move(arguments)) {
+    }
+
+    const Token &CallExpression::paren() const noexcept {
+        return m_paren;
+    }
+
+    const Expression& CallExpression::callee() const noexcept {
+        return *m_callee;
+    }
+
+    const std::vector<ExpressionPtr> &CallExpression::arguments() const noexcept {
+        return m_arguments;
+    }
+
+    bool CallExpression::equals(const Expression &other) const noexcept {
+        const auto &callOther = static_cast<const CallExpression &>(other); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        if (paren() != callOther.paren()) return false;
+        if (callee() != callOther.callee()) return false;
+
+        if (arguments().size() != callOther.arguments().size()) return false;
+        for (int i = 0; i < arguments().size(); i++) {
+            if (*arguments()[i] != *callOther.arguments()[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     VariableExpression::VariableExpression(Token name) noexcept :
         m_name(std::move(name)) {
     }

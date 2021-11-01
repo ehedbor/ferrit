@@ -24,6 +24,7 @@ namespace ferrit {
         VisitResult visitBinaryExpr(const BinaryExpression &binExpr) override;
         VisitResult visitComparisonExpr(const ComparisonExpression &cmpExpr) override;
         VisitResult visitUnaryExpr(const UnaryExpression &unaryExpr) override;
+        VisitResult visitCallExpr(const CallExpression &callExpr) override;
         VisitResult visitVariableExpr(const VariableExpression &varExpr) override;
         VisitResult visitNumberExpr(const NumberExpression &numExpr) override;
 

@@ -19,7 +19,7 @@ namespace ferrit {
         Token keyword,
         Token name,
         std::vector<Parameter> params,
-        Type returnType,
+        DeclaredType returnType,
         std::optional<StatementPtr> body) noexcept :
         m_modifiers(std::move(modifiers)),
         m_keyword(std::move(keyword)),
@@ -45,7 +45,7 @@ namespace ferrit {
         return m_params;
     }
 
-    const Type &FunctionDeclaration::returnType() const noexcept {
+    const DeclaredType &FunctionDeclaration::returnType() const noexcept {
         return m_returnType;
     }
 

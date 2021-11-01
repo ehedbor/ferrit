@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "AstPrinter.h"
+#include "Compiler.h"
 #include "CompileOptions.h"
 #include "Lexer.h"
 #include "Parser.h"
@@ -23,7 +24,7 @@ std::optional<std::vector<ferrit::Token>> lexLine(
     return tokens;
 }
 
-void parseLine(
+std::optional<std::vector<ferrit::StatementPtr>> parseLine(
     const std::shared_ptr<const ferrit::CompileOptions> &options,
     std::shared_ptr<ferrit::ErrorReporter> errorReporter,
     const std::vector<ferrit::Token> &tokens
@@ -31,12 +32,13 @@ void parseLine(
     ferrit::Parser parser(options, std::move(errorReporter));
 
     auto result = parser.parse(tokens);
-    if (!result) return;
+    if (!result) return {};
 
     if (options->printAst()) {
         ferrit::AstPrinter astPrinter(std::cout);
         astPrinter.print(result.value());
     }
+    return result;
 }
 
 std::shared_ptr<ferrit::CompileOptions> parseArguments(int argc, char *argv[]) {

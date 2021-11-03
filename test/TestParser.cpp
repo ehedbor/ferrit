@@ -27,7 +27,7 @@ namespace ferrit::tests {
                 Token{TokenType::Fun, "fun", {}},
                 Token{TokenType::Identifier, "my_function", {}},
                 std::vector<Parameter>(),
-                Type(Token(TokenType::Identifier, "Int", {})),
+                DeclaredType(Token(TokenType::Identifier, "Int", {})),
                 std::make_unique<ExpressionStatement>(
                     std::make_unique<NumberExpression>(
                         Token(TokenType::IntegerLiteral, "0", {}), true)));
@@ -88,12 +88,12 @@ namespace ferrit::tests {
                 {
                     Parameter(
                         Token(TokenType::Identifier, "taxes", {2, 5}),
-                        Type(Token(TokenType::Identifier, "Double", {2, 12}))),
+                        DeclaredType(Token(TokenType::Identifier, "Double", {2, 12}))),
                     Parameter(
                         Token(TokenType::Identifier, "age", {3, 5}),
-                        Type(Token(TokenType::Identifier, "Int", {3, 10})))
+                        DeclaredType(Token(TokenType::Identifier, "Int", {3, 10})))
                 },
-                Type(Token(TokenType::Identifier, "Double", {4, 6})),
+                DeclaredType(Token(TokenType::Identifier, "Double", {4, 6})),
                 std::make_unique<ExpressionStatement>(
                     std::make_unique<VariableExpression>(
                         Token(TokenType::Identifier, "taxes", {4, 15})))

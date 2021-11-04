@@ -21,6 +21,9 @@ namespace ferrit {
         [[nodiscard]] bool plainOutput() const noexcept;
         CompileOptions &setPlainOutput(bool plainOutput) noexcept;
 
+        [[nodiscard]] bool vmTraceExecution() const noexcept;
+        CompileOptions &setVmTraceExecution(bool trace) noexcept;
+
         [[nodiscard]] WarningLevel warningLevel(const std::string &errorName) const;
         CompileOptions &setWarningLevel(const std::string &errorName, WarningLevel warningLevel);
 
@@ -28,6 +31,7 @@ namespace ferrit {
         bool m_printAst{false};
         bool m_silentErrors{false};
         bool m_plainOutput{false};
+        bool m_vmTraceExecution{false};
         std::unordered_map<std::string, WarningLevel> m_warningLevels{};
     };
 }

@@ -27,10 +27,20 @@ namespace ferrit {
         }
 
         std::uint8_t instruction = chunk.bytecode()[offset];
-        switch (instruction) {
-        case static_cast<std::uint8_t>(OpCode::Constant):
+        switch (static_cast<OpCode>(instruction)) {
+        case OpCode::Constant:
             return constantInstruction("loadconst", chunk, offset);
-        case static_cast<std::uint8_t>(OpCode::Return):
+        case OpCode::Add:
+            return simpleInstruction("add", offset);
+        case OpCode::Subtract:
+            return simpleInstruction("subtract", offset);
+        case OpCode::Multiply:
+            return simpleInstruction("multiply", offset);
+        case OpCode::Divide:
+            return simpleInstruction("divide", offset);
+        case OpCode::Negate:
+            return simpleInstruction("negate", offset);
+        case OpCode::Return:
             return simpleInstruction("return", offset);
         default:
             m_output << "Unknown opcode " << instruction << std::endl;

@@ -49,6 +49,7 @@ std::shared_ptr<ferrit::CompileOptions> parseArguments(int argc, char *argv[]) {
         ("print-ast", "show program AST")
         ("silent", "disable error logging")
         ("plain", "disable colors in output")
+        ("vm-trace", "trace virtual machine execution")
         ("file", "files to compile", cxxopts::value<std::vector<std::string>>());
 
     options.parse_positional("file");
@@ -61,9 +62,11 @@ std::shared_ptr<ferrit::CompileOptions> parseArguments(int argc, char *argv[]) {
     }
 
     auto compileOpts = std::make_shared<ferrit::CompileOptions>();
-    compileOpts->setPrintAst(result.count("print-ast") > 1);
-    compileOpts->setSilentErrors(result.count("silent-errors") > 1);
-    compileOpts->setPlainOutput(result.count("plain-output") > 1);
+    (*compileOpts)
+        .setPrintAst(result.count("print-ast") > 1)
+        .setSilentErrors(result.count("silent-errors") > 1)
+        .setPlainOutput(result.count("plain-output") > 1)
+        .setVmTraceExecution(result.count("vm-trace") > 1);
 
     if (result.count("file")) {
         // TODO: add file support

@@ -29,6 +29,15 @@ namespace ferrit {
         return *this;
     }
 
+    bool CompileOptions::vmTraceExecution() const noexcept {
+        return m_vmTraceExecution;
+    }
+
+    CompileOptions &CompileOptions::setVmTraceExecution(bool trace) noexcept {
+        m_vmTraceExecution = trace;
+        return *this;
+    }
+
     WarningLevel CompileOptions::warningLevel(const std::string &errorName) const {
         if (const auto it = m_warningLevels.find(errorName); it != m_warningLevels.cend()) {
             return it->second;

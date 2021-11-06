@@ -17,7 +17,7 @@ namespace ferrit {
         void run();
 
         void push(Value value);
-        Value pop() noexcept;
+        Value pop();
 
         std::uint8_t readByte();
         Value readConstant();

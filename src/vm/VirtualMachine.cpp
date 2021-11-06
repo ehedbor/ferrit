@@ -22,9 +22,9 @@ namespace ferrit {
         while (true) {
             if (m_compileOpts->vmTraceExecution()) {
                 // TODO: Do not directly use clog
+                int offset = static_cast<int>(m_ip - m_chunk.bytecode().begin());
                 Disassembler debug{std::clog};
-                debug.disassembleInstruction(m_chunk,
-                    static_cast<int>(m_ip - m_chunk.bytecode().begin()));
+                debug.disassembleInstruction(m_chunk, offset);
             }
 
             auto instruction = readByte();
@@ -86,17 +86,29 @@ namespace ferrit {
         m_stack.push_back(value);
     }
 
-    Value VirtualMachine::pop() noexcept {
+    Value VirtualMachine::pop() {
+        if (m_stack.empty()) {
+            throw std::runtime_error("attempted to pop value off empty stack");
+        }
+
         Value result = m_stack.back();
         m_stack.pop_back();
         return result;
     }
 
     std::uint8_t VirtualMachine::readByte() {
+        if (m_ip == m_chunk.bytecode().end()) {
+            throw std::runtime_error("attempted to read past end of bytecode");
+        }
+
         return *m_ip++;
     }
 
     Value VirtualMachine::readConstant() {
-        return m_chunk.constantPool()[readByte()];
+        std::uint8_t constantIdx = readByte();
+        if (constantIdx >= m_chunk.constantPool().size()) {
+            throw std::runtime_error(std::format("attempted to read invalid constant index '{}'", constantIdx));
+        }
+        return m_chunk.constantPool().at(constantIdx);
     }
 }

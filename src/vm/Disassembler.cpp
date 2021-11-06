@@ -8,7 +8,7 @@ namespace ferrit {
     }
 
     void Disassembler::disassembleChunk(const Chunk &chunk, const std::string &name) {
-        m_output << "=== " << name << " ===" << std::endl;
+        m_output << std::format("=== {} ===\n");
 
         int offset = 0;
         while (offset < chunk.bytecode().size()) {
@@ -43,20 +43,20 @@ namespace ferrit {
         case OpCode::Return:
             return simpleInstruction("return", offset);
         default:
-            m_output << "Unknown opcode " << instruction << std::endl;
+            m_output << std::format("Unknown opcode {}\n", instruction);
             return offset + 1;
         }
     }
 
     int Disassembler::simpleInstruction(const std::string &name, int offset) {
-        m_output << name << std::endl;
+        m_output << std::format("{}\n", name);
         return offset + 1;
     }
 
     int Disassembler::constantInstruction(const std::string &name, const Chunk &chunk, int offset) {
         std::uint8_t constantIdx = chunk.bytecode()[offset + 1];
         Value constant = chunk.constantPool()[constantIdx];
-        m_output << std::format("{:10} {:3}    // Constant {}", name, constantIdx, constant) << std::endl;
+        m_output << std::format("{:10} {:3}    // Constant {}\n", name, constantIdx, constant);
         return offset + 2;
     }
 

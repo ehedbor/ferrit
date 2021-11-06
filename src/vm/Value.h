@@ -10,7 +10,7 @@ namespace ferrit {
     class Value {
     public:
         /**
-         * Initialize the value to null.
+         * Initialize the value to 0.0.
          */
         Value() noexcept = default;
 
@@ -35,6 +35,8 @@ namespace ferrit {
          * @throws std::invalid_state if the value is not a real
          */
         [[nodiscard]] double asReal() const;
+
+        friend bool operator==(Value lhs, Value rhs) = default;
 
         friend std::ostream &operator<<(std::ostream &output, Value value);
 

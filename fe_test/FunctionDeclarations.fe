@@ -1,0 +1,31 @@
+;
+
+native fun a()
+
+;;
+
+fun /* this is testing if functions
+     * can be split across multiple lines
+     */ b
+(
+)
+->
+Real
+=
+10.0
+
+;
+
+fun
+c
+( // A comment here is no problem at all!
+x
+:Real
+,y
+:
+Real
+)->Real=
+    x
+    +y /
+// but can it handle EOF??
+    2.0

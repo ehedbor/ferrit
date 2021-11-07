@@ -11,7 +11,6 @@ namespace ferrit {
     void Parser::init(const std::vector<Token> &tokens) noexcept {
         m_tokens = tokens;
         m_current = 0;
-        m_stackTrace.clear();
     }
 
     std::optional<std::vector<StatementPtr>> Parser::parse(const std::vector<Token> &tokens) {
@@ -54,36 +53,25 @@ namespace ferrit {
         // remember the keyword
         const Token &keyword = previous();
         const Token &name = consume(TokenType::Identifier, "expected function name");
-        m_stackTrace.push_back(name);
 
         consume(TokenType::LeftParen, "expected '(' after function name");
         auto params = parseParameters();
 
-        consume(TokenType::Arrow, "expected return type after function parameters");
-        DeclaredType returnType = parseType();
+        DeclaredType returnType{Token{TokenType::Identifier, "Unit", m_tokens[m_current].location}};
+        if (match(TokenType::Arrow)) {
+            returnType = parseType();
+        }
 
         // A function has no body if:
         //   A. it ends with a semicolon, or
         //   B. it ends with eof, or
-        //   C. it ends with a newline and is not followed by a '=' or '{'
-        //
-        // These are declarations:
-        // fun x() -> void;
-        // fun x() -> void<EOF>
-        // fun x() -> void
-        // class ...
-        //
-        // These are definitions:
-        // fun x() -> int
-        //     = 10
-        // fun x() -> void
-        // { }
+        //   C. it is not followed by a '=' or '{'
         auto foundTerms = skipTerminators(true);
-        bool hasNoBody = foundTerms.semicolon || foundTerms.eof ||
-            (foundTerms.newline && (check(TokenType::Equal) || check(TokenType::LeftBrace)));
+        bool hasBody = !foundTerms.semicolon && !foundTerms.eof
+            && (check(TokenType::Equal) || check(TokenType::LeftBrace));
 
         std::unique_ptr<Statement> body;
-        if (!hasNoBody) {
+        if (hasBody) {
             if (match(TokenType::Equal)) {
                 auto expr = parseExpression();
                 body = std::make_unique<ExpressionStatement>(std::move(expr));
@@ -95,7 +83,6 @@ namespace ferrit {
             }
         }
 
-        m_stackTrace.pop_back();
         return std::make_unique<FunctionDeclaration>(
             modifiers, keyword, name, std::move(params), returnType, std::move(body));
     }
@@ -143,23 +130,16 @@ namespace ferrit {
         const Token &name = previous();
         consume(TokenType::Colon, "expected ':' after parameter name");
         DeclaredType type = parseType();
-        if (type.isSimple() && type.simple().name().lexeme == "Void") {
-            throw makeError("cannot declare parameter of type void");
-        }
 
         return {name, type};
     }
 
     DeclaredType Parser::parseType() {
         if (match(TokenType::Identifier)) {
-            const std::string &lexeme = previous().lexeme;
-            if (lexeme == "Int" || lexeme == "Double" || lexeme == "Void") {
-                return DeclaredType(previous());
-            } else {
-                throw makeError("expected type name");
-            }
+            return DeclaredType(previous());
+        } else {
+            throw makeError("expected type name");
         }
-        throw makeError("expected type name");
     }
 
     StatementPtr Parser::parseStatement() {
@@ -325,7 +305,6 @@ namespace ferrit {
     }
 
     void Parser::synchronize() noexcept {
-        m_stackTrace.clear();
         advance();
 
         while (!isAtEnd()) {

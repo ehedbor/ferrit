@@ -42,16 +42,13 @@ to `ferritc`.
 ## Basic Types
 
 Ferrit has the following basic types:
- * 8-bit integers: `Byte`
- * 16-bit integers: `Short`
- * 32-bit integers: `Int`
- * 64-bit integers: `Long`
- * 32-bit floats: `Float` 
- * 64-bit floats: `Double` 
+ * 64-bit integers: `Int`
+ * 64-bit floats: `Real` 
  * booleans: `Bool`
- * characters: `Char`. Note that `Char` is only 8 bits in size and does not necessarily represent a complete unicode character.
+ * characters: `Char`. 
  * strings: `String`
  * arrays: `Array<T>`
+ * optionals: `T?`
 
 ### Integers
 Integer literals are represented with whole number values.
@@ -83,13 +80,13 @@ Float literals are represented with decimal values.
 Note that both the whole-number component and fractional component must be specified.
 
 ```
-val myDouble = 23.985 
+val myReal = 23.985 
     
-//val notADouble = 32. 
-//val notADouble = .1463 
-//val notADouble = 64.abs()
-val aDouble = 39.0
-val aDouble = 932.0.abs()
+//val notAReal = 32. 
+//val notAReal = .1463 
+//val notAReal = 64.abs()
+val aReal = 39.0
+val aReal = 932.0.abs()
 ```
 
 Float literals support exponential notation.
@@ -101,45 +98,18 @@ val threeHalves = 15.0e-1
 
 ### Converting between literals
 
-Integer and float literals default to the types `Int` and `Double` respectively. To specify a different type, add a suffix to the literal.
-
-| Type     | Suffix          |
-|:--------:|:---------------:|
-| `Byte`   | `42b`           | 
-| `Short`  | `42s`           | 
-| `Int`    | `42`, `42i`     | 
-| `Long`   | `42L`           |
-| `Float`  | `42.0f`         |
-| `Double` | `42.0`, `42.0d` |
-
-Alternatively, you may explicitly specify the literal's type or use a conversion function.
+Conversions between integers/floats must be made explicit, as conversion between them is
+inherently lossy. You can use a conversion function to do this.
 
 ```
-val myByte = 0b11001001b 
-val myByte: Byte = 0b11001001
-val myByte = 0b11001001.toByte() 
-// Illegal: Byte is not a subclass or superclass of Int
-//val myByte = 2b11001001 as Byte 
-
 // Illegal: integer literals can only be assigned to integer types,
 // and floating-point literals can only be assigned to float types
-//val myInt: Int = 32.0 
-//val myDouble: Double = 259 
+val myInt: Int = 32.0 
+val myReal: Real = 259 
+
 // Allowed
 val myInt = 32.0.toInt()
-val myDouble = 259.toDouble()
-```
-
-Implicit widening conversions are allowed, but implicit narrowing conversions are permitted.
-Conversions between integers/floats must also be made explicit, as conversion between them is
-inherently lossy.
-
-```
-val myByte: Byte = 10 // illegal, narrowing conversion
-val myLong: Long = 10L // allowed, widening conversion 
-
-val myInt: Int = 10.0 // illegal
-val myDouble: Double = 10 // illegal
+val myReal = 259.toReal()
 ```
 
 ### Other literals
@@ -166,10 +136,10 @@ val myInclusiveRange = 1...10
 ## Operators
 Ferrit supports the following operators:
 - Basic operators: `+ - * / %` 
+- String concatenation: `~`. This operator can be used as both an unary and a binary operator.
 - Logical operators: `! && ||`
-- Bitwise operators: `~ & | << >>`
 - Comparison operators: `== != > < >= <=`
-- Assignment operators: `= += -= *= /= %= &&= ||= &= |= <<= >>=`
+- Assignment operators: `= += -= *= /= %= ~= &&= ||=`
 - Type operators: `is` `!is` `as` `as?` 
 - Contains operator: `in` `!in`
 - Range operator: exclusive (`..`) and inclusive (`...`)
@@ -180,9 +150,7 @@ var sum = 5.0 + 10.0
 sum /= 3.0
 sum *= 2.6              
 
-val bitPattern: Byte = (0b10101101 & 0b10) << 2 
-
-val isEven = bitPattern % 2 == 0
+val isEven = sum.toInt() % 2 == 0
 val isOdd = !isEven
 val condition = isOdd || !isEven
 
@@ -190,10 +158,10 @@ val hmmmm = false && true
 
 val answer = 42
 
-val isInteger = answer is Int // true
-val asDouble = answer as Double // panics
-val asDouble = answer as? Double // None
-val toDouble = answer to? Double // Some(42.0)
+val isInteger = answer is Int  // true
+val asReal = answer as Real    // panics at runtime
+val asReal2 = answer as? Real  // null
+val toReal = answer.toReal()   // 42.0
 
 val containsA = 'A' in "Hello, world!" // = false
 ```
@@ -333,7 +301,7 @@ for (x in 0..16) @outer:{
 Functions are declared with the `fun` keyword. They can be called by writing their name and arguments.
 
 ```
-fun pythagoras(x: Double, y: Double) -> Double {
+fun pythagoras(x: Real, y: Real) -> Real {
     return sqrt(x * x + y * y)
 }
 
@@ -418,8 +386,8 @@ println(doSum(3, 4))
 Ferrit provides a concise syntax to create lambda functions (anonymous functions). 
 
 ```
-// type is (Double, Double, Double) -> Double
-val slopeFormula = { x: Double, y: Double, b: Double -> 
+// type is (Real, Real, Real) -> Real
+val slopeFormula = { x: Real, y: Real, b: Real -> 
     (y - b) / x 
 }
 
@@ -571,7 +539,7 @@ module mycode
 native fun doSomeStuff(a: Int, b: Int)
 
 class MyClass {
-    native fun doMoreStuff(foo: String, bar: Int) -> Double
+    native fun doMoreStuff(foo: String, bar: Int) -> Real
 }
 
 // This would result in functions called "mycode_doSomeStuff" and "mycode_MyClass_doMoreStuff".
@@ -719,7 +687,7 @@ I'm getting tired of writing stuff so here's how you do custom properties:
 ```
 class AHRRGRGGGDSFDFB {
     var customBehavior: Int { private get } = 10
-    var something: Double {
+    var something: Real {
         module get() = random.next() 
         protected set(value) { panic("lol") }
     }
@@ -847,10 +815,10 @@ You can use the `abstract` keyword to declare classes and methods that do not ha
 
 ```
 abstract class Shape {
-    primary init(var x: Double, var y: Double)
+    primary init(var x: Real, var y: Real)
     
-    abstract val perimeter: Double
-    abstract val area: Double
+    abstract val perimeter: Real
+    abstract val area: Real
 }
 ```
 
@@ -858,15 +826,15 @@ This can be implemented like normal:
 ```
 class Rectangle : Shape {
     primary init(
-        x: Double, 
-        y: Double, 
-        var length: Double, 
-        var width: Double,
+        x: Real, 
+        y: Real, 
+        var length: Real, 
+        var width: Real,
     ) : super(x, y)
     
-    override val perimeter: Double 
+    override val perimeter: Real 
         get() = 2.0 * (length + width)
-    override val area: Double
+    override val area: Real
         get() = length * width
 }
 
@@ -892,23 +860,23 @@ Here's what the previous example would look like with traits:
 
 ```
 trait Shape {
-    var x: Double 
-    var y: Double
-    var perimeter: Double
-    var area: Double
+    var x: Real 
+    var y: Real
+    var perimeter: Real
+    var area: Real
 }
 
 class Rectangle : Shape {
     primary init(
-        override var x: Double, 
-        override var y: Double, 
-        var length: Double, 
-        var width: Double,
+        override var x: Real, 
+        override var y: Real, 
+        var length: Real, 
+        var width: Real,
     )
     
-    override val perimeter: Double
+    override val perimeter: Real
         get() = 2.0 * (length + width) 
-    override val area: Double
+    override val area: Real
         get() = length * width
 }
 ```

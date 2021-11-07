@@ -160,6 +160,5 @@ namespace ferrit {
         std::shared_ptr<const ErrorReporter> m_errorReporter{nullptr};
         std::vector<Token> m_tokens{};
         int m_current{0};
-        std::vector<Token> m_stackTrace{};
     };
 }

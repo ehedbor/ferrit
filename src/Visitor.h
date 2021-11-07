@@ -7,7 +7,7 @@
  * Generates an implementation for a visitor's accept method.
  *
  * @param visitorType name of the visitor class
- * @param methodCall name of the visit method, ommiting the initial "visit" portion
+ * @param methodCall name of the visit method, omitting the initial "visit" portion
  */
 #define MAKE_VISITABLE(visitorType, methodCall)                                \
     VisitResult accept(visitorType &visitor) const override {                  \

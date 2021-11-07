@@ -3,27 +3,30 @@
 
 #include <stdexcept>
 #include <format>
-#include <iostream>
 
 namespace ferrit {
-    VirtualMachine::VirtualMachine(std::shared_ptr<const CompileOptions> compileOpts) noexcept :
-        m_compileOpts(std::move(compileOpts)) {
+    VirtualMachine::VirtualMachine(std::ostream &traceLog) noexcept :
+        m_traceLog{&traceLog} {
     }
 
-    void VirtualMachine::interpret(const Chunk &chunk) {
+    bool VirtualMachine::interpret(const Chunk &chunk) noexcept {
         m_chunk = chunk;
         m_ip = m_chunk.bytecode().begin();
         m_stack.clear();
 
-        run();
+        try {
+            run();
+            return true;
+        } catch (std::runtime_error const&) {
+            return false;
+        }
     }
 
     void VirtualMachine::run() {
         while (true) {
-            if (m_compileOpts->vmTraceExecution()) {
-                // TODO: Do not directly use clog
+            if (m_traceLog) {
                 int offset = static_cast<int>(m_ip - m_chunk.bytecode().begin());
-                Disassembler debug{std::clog};
+                Disassembler debug{*m_traceLog};
                 debug.disassembleInstruction(m_chunk, offset);
             }
 
@@ -31,7 +34,6 @@ namespace ferrit {
             switch (static_cast<OpCode>(instruction)) {
             case OpCode::Constant: {
                 Value constant = readConstant();
-                // TODO: do not directly use cout in VM
                 push(constant);
                 break;
             }
@@ -68,16 +70,16 @@ namespace ferrit {
                 throw std::runtime_error(std::format("Unknown opcode '{}'", instruction));
             }
 
-            if (m_compileOpts->vmTraceExecution()) {
-                std::clog << "         |  -> [";
+            if (m_traceLog) {
+                *m_traceLog << "         |  -> [";
                 int index = static_cast<int>(m_stack.size()) - 1;
                 for (auto it = m_stack.crbegin(); it != m_stack.crend(); ++it) {
-                    std::clog << *it;
+                    *m_traceLog << *it;
                     if (index-- > 0) {
-                        std::clog << ", ";
+                        *m_traceLog << ", ";
                     }
                 }
-                std::clog << ']' << std::endl;
+                *m_traceLog << ']' << std::endl;
             }
         }
     }

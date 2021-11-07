@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <filesystem>
 #include <iostream>
 
@@ -6,8 +5,6 @@
 #include <utility>
 
 #include "AstPrinter.h"
-#include "Compiler.h"
-#include "CompileOptions.h"
 #include "Lexer.h"
 #include "Parser.h"
 
@@ -15,92 +12,77 @@ namespace fs = std::filesystem;
 
 
 std::optional<std::vector<ferrit::Token>> lexLine(
-    std::shared_ptr<const ferrit::CompileOptions> options,
     std::shared_ptr<ferrit::ErrorReporter> errorReporter,
     const std::string &line
 ) {
-    ferrit::Lexer lexer(std::move(options), std::move(errorReporter));
+    ferrit::Lexer lexer{std::move(errorReporter)};
     auto tokens = lexer.lex(line);
     return tokens;
 }
 
 std::optional<std::vector<ferrit::StatementPtr>> parseLine(
-    const std::shared_ptr<const ferrit::CompileOptions> &options,
+    const std::vector<ferrit::Token> &tokens,
     std::shared_ptr<ferrit::ErrorReporter> errorReporter,
-    const std::vector<ferrit::Token> &tokens
+    bool printAst
 ) {
-    ferrit::Parser parser(options, std::move(errorReporter));
+    ferrit::Parser parser{std::move(errorReporter)};
 
     auto result = parser.parse(tokens);
     if (!result) return {};
 
-    if (options->printAst()) {
+    if (printAst) {
         ferrit::AstPrinter astPrinter(std::cout);
         astPrinter.print(result.value());
     }
     return result;
 }
 
-std::shared_ptr<ferrit::CompileOptions> parseArguments(int argc, char *argv[]) {
+cxxopts::Options makeOptions() {
     cxxopts::Options options("ferritc", "Compiler and interpreter for the Ferrit programming language.");
 
     options.add_options()
-        ("h,help", "display this shortMessage")
-        ("print-ast", "show program AST")
-        ("silent", "disable error logging")
-        ("plain", "disable colors in output")
-        ("vm-trace", "trace virtual machine execution")
+        ("h,help", "display this message")
+        ("print-ast", "show program AST", cxxopts::value<bool>()->default_value("false"))
+        ("silent", "disable error logging", cxxopts::value<bool>()->default_value("false"))
+        ("plain", "disable colors in output", cxxopts::value<bool>()->default_value("false"))
+        ("trace-vm", "trace virtual machine execution", cxxopts::value<bool>()->default_value("false"))
         ("file", "files to compile", cxxopts::value<std::vector<std::string>>());
 
     options.parse_positional("file");
     options.positional_help("FILE...");
 
-    cxxopts::ParseResult result = options.parse(argc, argv);
-    if (result.count("help")) {
-        std::cout << options.help() << std::endl;
-        std::exit(EXIT_SUCCESS);
-    }
-
-    auto compileOpts = std::make_shared<ferrit::CompileOptions>();
-    (*compileOpts)
-        .setPrintAst(result.count("print-ast") > 1)
-        .setSilentErrors(result.count("silent-errors") > 1)
-        .setPlainOutput(result.count("plain-output") > 1)
-        .setVmTraceExecution(result.count("vm-trace") > 1);
-
-    if (result.count("file")) {
-        // TODO: add file support
-        std::vector<std::string> files = result["file"].as<std::vector<std::string>>();
-        std::cout << "Got a file argument: ";
-        for (const auto &file: files) {
-            std::cout << "'" << file << "' ";
-        }
-        std::cout << std::endl;
-    }
-
-    return compileOpts;
+    return options;
 }
 
 int main(int argc, char *argv[]) {
     try {
-        auto compileOpts = parseArguments(argc, argv);
-        auto errorReporter = std::make_shared<ferrit::ErrorReporter>(compileOpts, std::cout);
+        cxxopts::Options optionsSpec = makeOptions();
+        cxxopts::ParseResult flags = optionsSpec.parse(argc, argv);
+        if (flags.count("help")) {
+            std::cout << optionsSpec.help() << std::endl;
+            return 0;
+        }
+
+        std::shared_ptr<ferrit::ErrorReporter> errorReporter{nullptr};
+        if (!flags["silent"].as<bool>()) {
+            errorReporter = std::make_shared<ferrit::ErrorReporter>(std::cout, flags["plain"].as<bool>());
+        }
 
         std::cout << "Ferrit Interpreter 0.0.0" << std::endl;
         std::cout << R"(Available commands: "exit", "quit")" << std::endl;
 
         while (true) {
-            std::cout << ">>> " << std::flush;
+            std::cout << ">>> ";
             std::string line;
             std::getline(std::cin, line);
             if (line == "exit" || line == "quit") {
-                return EXIT_SUCCESS;
+                return 0;
             }
 
-            auto tokens = lexLine(compileOpts, errorReporter, line);
+            auto tokens = lexLine(errorReporter, line);
             if (!tokens) continue;
 
-            parseLine(compileOpts, errorReporter, *tokens);
+            parseLine(*tokens, errorReporter, flags["print-ast"].as<bool>());
         }
     } catch (const std::exception &e) {
         std::cerr << "internal compiler error: " << e.what() << std::endl;

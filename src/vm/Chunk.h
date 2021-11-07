@@ -22,7 +22,7 @@ namespace ferrit {
     /**
      * Represents a collection of VM operations.
      */
-    class Chunk {
+    class Chunk final {
     public:
         /**
          * Write the given instruction to the chunk.
@@ -75,14 +75,7 @@ namespace ferrit {
          * or create a new LineInfo struct.
          */
         struct LineInfo {
-            /**
-             * How many instructions in a row share this line.
-             */
             int run;
-
-            /**
-             * The line number.
-             */
             int line;
         };
 

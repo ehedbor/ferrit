@@ -9,7 +9,7 @@ namespace ferrit {
     /**
      * Class to view a disassembled version of compiled bytecode.
      */
-    class Disassembler {
+    class Disassembler final {
     public:
         /**
          * Constructs a new disassembler.
@@ -36,8 +36,23 @@ namespace ferrit {
         int disassembleInstruction(const Chunk &chunk, int offset);
 
     private:
+        /**
+         * Write an instruction taking no parameters.
+         *
+         * @param name the name to display for the instruction
+         * @param offset the instruction's offset in the chunk
+         * @return the next offset
+         */
         int simpleInstruction(const std::string &name, int offset);
 
+        /**
+         * Write an instruction that takes one parameter.
+         *
+         * @param name the name to display for the instruction
+         * @param chunk the instruction's chunk
+         * @param offset the instruction's offset in the chunk
+         * @return the next offset
+         */
         int constantInstruction(const std::string &name, const Chunk &chunk, int offset);
 
     private:

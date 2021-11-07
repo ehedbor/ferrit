@@ -10,10 +10,10 @@ namespace ferrit {
     }
 
     FunctionType::FunctionType(
-        Token paren,
+        Token errorToken,
         std::vector<DeclaredType> parameters,
         std::unique_ptr<DeclaredType> returnType) noexcept :
-        m_paren(std::move(paren)),
+        m_errorToken(std::move(errorToken)),
         m_parameters(std::move(parameters)),
         m_returnType(std::move(returnType)) {
     }
@@ -30,8 +30,8 @@ namespace ferrit {
         return *this;
     }
 
-    const Token &FunctionType::paren() const noexcept {
-        return m_paren;
+    const Token &FunctionType::errorToken() const noexcept {
+        return m_errorToken;
     }
 
     const std::vector<DeclaredType> &FunctionType::parameters() const noexcept {
@@ -42,20 +42,16 @@ namespace ferrit {
         return *m_returnType;
     }
 
-    DeclaredType::DeclaredType() noexcept :
-        DeclaredType(Token(TokenType::Error, "unknown type", {-1, -1})) {
-    }
-
     DeclaredType::DeclaredType(Token simpleName) noexcept :
         m_data(SimpleType(std::move(simpleName))) {
     }
 
     DeclaredType::DeclaredType(
-        Token paren,
+        Token errorToken,
         std::vector<DeclaredType> parameters,
         DeclaredType returnType) noexcept :
         m_data(FunctionType(
-            std::move(paren),
+            std::move(errorToken),
             std::move(parameters),
             std::make_unique<DeclaredType>(std::move(returnType)))) {
     }
@@ -80,7 +76,7 @@ namespace ferrit {
         if (isSimple()) {
             return simple().name();
         } else {
-            return function().paren();
+            return function().errorToken();
         }
     }
 
@@ -98,24 +94,13 @@ namespace ferrit {
         }
     }
 
-    std::string DeclaredType::toString() const noexcept { // NOLINT(misc-no-recursion)
-        if (isSimple()) {
-            return simple().name().lexeme;
-        } else {
-            const auto &func = function();
-            std::string result = "(";
-            for (int i = 0; i < func.parameters().size(); i++) {
-                const auto &param = func.parameters()[i];
-                result.append(param.toString());
-                if (i < func.parameters().size() - 1) {
-                    result.append(", ");
-                }
-            }
-            result.append(") -> ");
-            result.append(func.returnType().toString());
-
-            return result;
+    std::ostream &operator<<(std::ostream &output, const DeclaredType &declaredType) {
+        try {
+            output << std::format("{}", declaredType);
+        } catch (std::format_error &) {
+            output.setstate(std::ios::failbit);
         }
+        return output;
     }
 
     Parameter::Parameter(Token name, DeclaredType type) noexcept :

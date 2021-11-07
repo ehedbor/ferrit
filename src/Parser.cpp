@@ -3,10 +3,8 @@
 #include "AstPrinter.h"
 
 namespace ferrit {
-    Parser::Parser(
-        std::shared_ptr<const CompileOptions> options,
-        std::shared_ptr<ErrorReporter> errorReporter) noexcept :
-        m_options(std::move(options)), m_errorReporter(std::move(errorReporter)) {
+    Parser::Parser(std::shared_ptr<ErrorReporter> errorReporter) noexcept :
+        m_errorReporter(std::move(errorReporter)) {
     }
 
     void Parser::init(const std::vector<Token> &tokens) noexcept {
@@ -27,7 +25,7 @@ namespace ferrit {
                 StatementPtr nextDecl = parseDeclaration();
                 program.push_back(std::move(nextDecl));
                 skipTerminators(true);
-            } catch (const ParseException &) {
+            } catch (const Error::ParseError &) {
                 hadError = true;
                 synchronize();
             }
@@ -406,21 +404,12 @@ namespace ferrit {
         return current().type == TokenType::EndOfFile;
     }
 
-    ParseException Parser::makeError(const std::string &expected) const {
-        Error::ParseError error(current(), m_stackTrace, expected);
-        if (!m_options->silentErrors()) {
+    Error::ParseError Parser::makeError(const std::string &expected) const {
+        Error::ParseError error{current(), expected};
+        if (m_errorReporter) {
             m_errorReporter->logError(error);
         }
-
-        return ParseException(error);
-    }
-
-    ParseException::ParseException(const Error &cause) noexcept :
-        std::runtime_error(cause.shortMessage()), m_cause(cause) {
-    }
-
-    const Error &ParseException::cause() const {
-        return m_cause;
+        return error;
     }
 }
 

@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <ostream>
-#include "CompileOptions.h"
 #include "Error.h"
 
 namespace ferrit {
@@ -11,20 +10,26 @@ namespace ferrit {
      */
     class ErrorReporter {
     public:
-        ErrorReporter(std::shared_ptr<const CompileOptions> options, std::ostream &output);
+        /**
+         * Construct an ErrorReporter.
+         *
+         * @param output the ostream to output to.
+         * @param plainOutput true to not use colors.
+         */
+        ErrorReporter(std::ostream &output, bool plainOutput);
 
         /**
-         * Reports an error to the console.
+         * Reports an error to the ostream.
          */
         void logError(const Error &err) const;
 
         /**
-         * Reports a warning to the console.
+         * Reports a warning to the ostream.
          */
          void logWarning(const Error &warning) const;
 
     private:
-        std::shared_ptr<const CompileOptions> m_options;
         std::ostream &m_output;
+        bool m_plainOutput;
     };
 }

@@ -2,9 +2,8 @@
 #include <unordered_map>
 
 namespace ferrit {
-    Lexer::Lexer(std::shared_ptr<const CompileOptions> options,
-        std::shared_ptr<ErrorReporter> errorReporter) noexcept :
-        m_options(std::move(options)), m_errorReporter(std::move(errorReporter)) {
+    Lexer::Lexer(std::shared_ptr<ErrorReporter> errorReporter) noexcept :
+        m_errorReporter(std::move(errorReporter)) {
     }
 
     void Lexer::init(const std::string &code) noexcept {
@@ -26,7 +25,7 @@ namespace ferrit {
                     return result;
                 }
             }
-        }  catch (const LexException &) {
+        }  catch (const Error &) {
             return {};
         }
     }
@@ -445,13 +444,5 @@ namespace ferrit {
 
     bool Lexer::isIdentifierStart(char ch) noexcept {
         return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
-    }
-
-    LexException::LexException(const Error &cause) noexcept :
-        std::runtime_error(cause.shortMessage()), m_cause(cause) {
-    }
-
-    const Error &LexException::cause() const {
-        return m_cause;
     }
 }

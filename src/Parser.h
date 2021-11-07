@@ -4,7 +4,6 @@
 #include <optional>
 #include <vector>
 
-#include "CompileOptions.h"
 #include "Error.h"
 #include "ErrorReporter.h"
 #include "Expression.h"
@@ -12,22 +11,19 @@
 #include "Token.h"
 
 namespace ferrit {
-    class ParseException;
-
     /**
      * Converts a stream of tokens into an abstract syntax tree.
      */
-    class Parser {
+    class Parser final {
     public:
+        Parser() noexcept = default;
+
         /**
-         * Constructs a \c Parser with the given compile options.
+         * Constructs a \c Parser with the given error reporter.
          *
-         * @param options compile flags
          * @param errorReporter logger for compile errors
          */
-        explicit Parser(
-            std::shared_ptr<const CompileOptions> options,
-            std::shared_ptr<ErrorReporter> errorReporter) noexcept;
+        explicit Parser(std::shared_ptr<ErrorReporter> errorReporter) noexcept;
 
     private:
         /**
@@ -157,27 +153,12 @@ namespace ferrit {
          * @param expected error message
          * @return the exception
          */
-        [[nodiscard]] ParseException makeError(const std::string &expected) const;
+        [[nodiscard]] Error::ParseError makeError(const std::string &expected) const;
 
     private:
-        std::shared_ptr<const CompileOptions> m_options;
-        std::shared_ptr<ErrorReporter> m_errorReporter;
+        std::shared_ptr<ErrorReporter> m_errorReporter{nullptr};
         std::vector<Token> m_tokens{};
         int m_current{0};
         std::vector<Token> m_stackTrace{};
-    };
-
-    /**
-     * Represents a parse error in the program.
-     */
-    class ParseException final : public std::runtime_error {
-    public:
-        explicit ParseException(const Error &cause) noexcept;
-
-    public:
-        [[nodiscard]] const Error &cause() const;
-
-    private:
-        Error m_cause;
     };
 }

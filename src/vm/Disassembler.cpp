@@ -8,7 +8,7 @@ namespace ferrit {
     }
 
     void Disassembler::disassembleChunk(const Chunk &chunk, const std::string &name) {
-        m_output << std::format("=== {} ===\n");
+        m_output << std::format("=== {} ===\n", name);
 
         int offset = 0;
         while (offset < chunk.bytecode().size()) {

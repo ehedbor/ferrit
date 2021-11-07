@@ -4,29 +4,18 @@
 #include <typeinfo>
 
 namespace ferrit {
-    Error::Error(Token cause, std::vector<Token> stackTrace, std::string shortMessage) noexcept :
-        m_cause(std::move(cause)), m_stackTrace(std::move(stackTrace)), m_shortMessage(std::move(shortMessage)) {
-
+    Error::Error(Token cause, const std::string &what) noexcept :
+        std::runtime_error(what), m_cause(std::move(cause)) {
     }
 
     const Token &Error::cause() const noexcept {
         return m_cause;
     }
 
-    const std::vector<Token> &Error::stackTrace() const noexcept {
-        return m_stackTrace;
-    }
-
-    const std::string &Error::shortMessage() const noexcept {
-        return m_shortMessage;
-    }
-
-    std::string Error::message() const {
-        std::string result = shortMessage() + "\n";
+    std::string Error::longMessage() const {
+        std::string result{what()};
+        result += "\n";
         result += std::format("    at {}\n", formatToken(cause()));
-        for (const auto &token : stackTrace()) {
-            result += std::format("    at {}\n", formatToken(token));
-        }
         return result;
     }
 
@@ -38,62 +27,49 @@ namespace ferrit {
             token.lexeme);
     }
 
-    Error::UnexpectedChar::UnexpectedChar(
-        Token cause, std::vector<Token> stackTrace, char ch) noexcept :
-        Error(std::move(cause), std::move(stackTrace),
-            std::format("syntax error: unexpected character '{}'", ch)) {
+    Error::UnexpectedChar::UnexpectedChar(Token cause, char ch) noexcept :
+        Error(std::move(cause), std::format("syntax error: unexpected character '{}'", ch)) {
     }
 
-    Error::UnterminatedElement::UnterminatedElement(
-        Token cause, std::vector<Token> stackTrace, const std::string &element) noexcept :
-        Error(std::move(cause), std::move(stackTrace),
-            std::format("syntax error: unterminated {}", element)) {
+    Error::UnterminatedElement::UnterminatedElement(Token cause, const std::string &element) noexcept :
+        Error(std::move(cause), std::format("syntax error: unterminated {}", element)) {
     }
 
-    Error::EmptyElement::EmptyElement(
-        Token cause, std::vector<Token> stackTrace, const std::string &element) noexcept :
-        Error(std::move(cause), std::move(stackTrace), std::format("syntax error: empty {}", element)) {
+    Error::EmptyElement::EmptyElement(Token cause, const std::string &element) noexcept :
+        Error(std::move(cause), std::format("syntax error: empty {}", element)) {
     }
 
-    Error::CharLiteralTooBig::CharLiteralTooBig(
-        Token cause,
-        std::vector<Token> stackTrace) noexcept :
-        Error(std::move(cause),
-            std::move(stackTrace),
-            "syntax error: too many characters in char literal") {
+    Error::CharLiteralTooBig::CharLiteralTooBig(Token cause) noexcept :
+        Error(std::move(cause), "syntax error: too many characters in char literal") {
     }
 
     Error::UnexpectedNewline::UnexpectedNewline(
         Token cause,
-        std::vector<Token> stackTrace,
         const std::string &element) noexcept :
-        Error(std::move(cause), std::move(stackTrace),
+        Error(std::move(cause), 
             std::format("syntax error: unexpected newline in {}", element)) {
     }
 
     Error::IllegalEscapeSequence::IllegalEscapeSequence(
         Token cause,
-        std::vector<Token> stackTrace,
         char sequence,
         const std::string &element) noexcept :
-        Error(std::move(cause), std::move(stackTrace),
+        Error(std::move(cause), 
             std::format("syntax error: illegal escape sequence '\\{}' in {}", sequence, element)) {
     }
 
     Error::UnknownLiteralSuffix::UnknownLiteralSuffix(
         Token cause,
-        std::vector<Token> stackTrace,
         const std::string &element,
         const std::string &suffix) noexcept :
-        Error(std::move(cause), std::move(stackTrace),
+        Error(std::move(cause), 
             std::format("syntax error: unknown suffix '{1}' for {0}", element, suffix)) {
     }
 
     Error::ParseError::ParseError(
         Token cause,
-        std::vector<Token> stackTrace,
         const std::string &expected) noexcept :
-        Error(std::move(cause), std::move(stackTrace),
+        Error(std::move(cause), 
             std::format("syntax error: {}", expected)) {
     }
 }

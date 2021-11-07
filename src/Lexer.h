@@ -7,29 +7,25 @@
 #include <utility>
 #include <vector>
 
-#include "CompileOptions.h"
 #include "Error.h"
 #include "ErrorReporter.h"
 #include "Token.h"
 
 
 namespace ferrit {
-    class LexException;
-
     /**
      * Converts source code into a list of tokens.
      */
-    class Lexer {
+    class Lexer final {
     public:
+        Lexer() noexcept = default;
+
         /**
-         * Constructs a lexer with the given compile options.
+         * Constructs a lexer with the given error reporter.
          *
-         * @param options compile opts.
          * @param errorReporter logger for compile errors
          */
-        explicit Lexer(
-            std::shared_ptr<const CompileOptions> options,
-            std::shared_ptr<ErrorReporter> errorReporter) noexcept;
+        explicit Lexer(std::shared_ptr<ErrorReporter> errorReporter) noexcept;
 
     private:
         /**
@@ -135,18 +131,15 @@ namespace ferrit {
          *
          * Note that the exception is not thrown. It is the caller's decision to throw.
          *
-         * @tparam Err a type extending \c ferrit::Error
+         * @tparam E a type extending \c ferrit::Error
          * @tparam Args the type of the arguments to be passed to <tt>Err</tt>'s constructor
          * @param args the arguments to <tt>Err</tt>'s constructor
          * @return the exception
          * @see ferrit::Error
          */
-        template <typename Err, typename... Args>
-        requires std::derived_from<Err, ferrit::Error> &&
-            requires(Token token, Args&&... args) {
-                Err(token, std::vector<Token>(), std::forward<Args>(args)...);
-            }
-        [[nodiscard]] LexException makeError(Args&&... args) const;
+        template <typename E, typename... Args>
+        requires std::derived_from<E, Error> && std::constructible_from<E, Token, Args...>
+        [[nodiscard]] E makeError(Args&&... args) const;
 
         /**
          * Gets the current character without advancing the lexer.
@@ -210,53 +203,25 @@ namespace ferrit {
         [[nodiscard]] static bool isIdentifierStart(char ch) noexcept;
 
     private:
-        std::shared_ptr<const CompileOptions> m_options;
-        std::shared_ptr<ErrorReporter> m_errorReporter;
+        std::shared_ptr<ErrorReporter> m_errorReporter{nullptr};
         std::string m_code{};
         int m_start{0};
         int m_current{0};
         SourceLocation m_location{1, 1};
     };
 
-    /**
-     * Represents an error that occurred while lexing the source code.
-     */
-    class LexException : public std::runtime_error {
-    public:
-        /**
-         * Constructs a \c LexException with the given error as its cause.
-         *
-         * @param cause the reason for the exception
-         */
-        explicit LexException(const Error &cause) noexcept;
-
-    public:
-        /**
-         * Returns the cause of the exception.
-         */
-        [[nodiscard]] const Error &cause() const;
-
-    private:
-        Error m_cause;
-    };
-
-
-    template <typename Err, typename... Args>
-    requires std::derived_from<Err, ferrit::Error> &&
-        requires(Token token, Args&&... args) {
-            Err(token, std::vector<Token>(), std::forward<Args>(args)...);
-        }
-    [[nodiscard]] LexException Lexer::makeError(Args&&... args) const {
+    template <typename E, typename... Args>
+        requires std::derived_from<E, Error> && std::constructible_from<E, Token, Args...>
+    [[nodiscard]] E Lexer::makeError(Args&&... args) const {
         int count = m_current - m_start;
         int startColumn = m_location.column - count;
         std::string lexeme = m_code.substr(m_start, count);
         Token token{TokenType::Error, std::move(lexeme), {m_location.line, startColumn}};
 
-        Err error(token, std::vector<Token>(), std::forward<Args>(args)...);
-        if (!m_options->silentErrors()) {
+        E error{token, std::forward<Args>(args)...};
+        if (m_errorReporter) {
             m_errorReporter->logError(error);
         }
-
-        return LexException(error);
+        return error;
     }
 }

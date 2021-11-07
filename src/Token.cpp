@@ -2,7 +2,11 @@
 
 namespace ferrit {
     std::ostream &operator<<(std::ostream &output, TokenType tokenType) {
-        output << std::format("{}", tokenType);
+        try {
+            output << std::format("{}", tokenType);
+        } catch (std::format_error &) {
+            output.setstate(std::ios::failbit);
+        }
         return output;
     }
 
@@ -13,4 +17,5 @@ namespace ferrit {
     Token::Token(TokenType tokenType, std::string lexeme, SourceLocation location) noexcept :
         type(tokenType), lexeme(std::move(lexeme)), location(location) {
     }
+
 }

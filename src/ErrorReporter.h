@@ -10,7 +10,7 @@ namespace ferrit {
     /**
      * Utility class to output compiler errors to an <tt>std::ostream</tt>.
      */
-    class ErrorReporter {
+    class ErrorReporter final {
     public:
         /**
          * Construct an ErrorReporter.

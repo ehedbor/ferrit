@@ -21,9 +21,9 @@ namespace ferrit {
         /**
          * Constructs a lexer with the given error reporter.
          *
-         * @param errorReporter logger for compile errors
+         * @param errorReporter optional logger for compile errors
          */
-        explicit Lexer(std::shared_ptr<ErrorReporter> errorReporter) noexcept;
+        explicit Lexer(std::shared_ptr<const ErrorReporter> errorReporter) noexcept;
 
     private:
         /**
@@ -201,7 +201,7 @@ namespace ferrit {
         [[nodiscard]] static bool isIdentifierStart(char ch) noexcept;
 
     private:
-        std::shared_ptr<ErrorReporter> m_errorReporter{nullptr};
+        std::shared_ptr<const ErrorReporter> m_errorReporter{nullptr};
         std::string m_code{};
         int m_start{0};
         int m_current{0};

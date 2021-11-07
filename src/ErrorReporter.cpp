@@ -17,6 +17,8 @@ namespace ferrit {
         if (!m_plainOutput) {
             m_output << termcolor::reset;
         }
+
+        m_output.flush();
     }
 
     void ErrorReporter::logWarning(const Error &warning) const {
@@ -27,5 +29,7 @@ namespace ferrit {
         if (!m_plainOutput) {
             m_output << termcolor::reset;
         }
+
+        m_output.flush();
     }
 }

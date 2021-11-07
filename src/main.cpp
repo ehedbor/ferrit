@@ -1,41 +1,14 @@
-#include "AstPrinter.h"
-#include "Lexer.h"
-#include "Parser.h"
+#include "Interpreter.h"
 
 #include <cxxopts.hpp>
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <utility>
 
 namespace fs = std::filesystem;
 
-
-std::optional<std::vector<ferrit::Token>> lexLine(
-    std::shared_ptr<ferrit::ErrorReporter> errorReporter,
-    const std::string &line
-) {
-    ferrit::Lexer lexer{std::move(errorReporter)};
-    auto tokens = lexer.lex(line);
-    return tokens;
-}
-
-std::optional<std::vector<ferrit::StatementPtr>> parseLine(
-    const std::vector<ferrit::Token> &tokens,
-    std::shared_ptr<ferrit::ErrorReporter> errorReporter,
-    bool printAst
-) {
-    ferrit::Parser parser{std::move(errorReporter)};
-
-    auto result = parser.parse(tokens);
-    if (!result) return {};
-
-    if (printAst) {
-        ferrit::AstPrinter astPrinter(std::cout);
-        astPrinter.print(result.value());
-    }
-    return result;
-}
 
 cxxopts::Options makeOptions() {
     cxxopts::Options options("ferritc", "Compiler and interpreter for the Ferrit programming language.");
@@ -46,12 +19,61 @@ cxxopts::Options makeOptions() {
         ("silent", "disable error logging", cxxopts::value<bool>()->default_value("false"))
         ("plain", "disable colors in output", cxxopts::value<bool>()->default_value("false"))
         ("trace-vm", "trace virtual machine execution", cxxopts::value<bool>()->default_value("false"))
-        ("file", "files to compile", cxxopts::value<std::vector<std::string>>());
+        ("file", "file to interpret", cxxopts::value<std::string>());
 
     options.parse_positional("file");
-    options.positional_help("FILE...");
+    options.positional_help("FILE");
 
     return options;
+}
+
+int runRepl(ferrit::Interpreter &interpreter) {
+    std::cout << "Ferrit Interpreter 0.0.0" << std::endl;
+    std::cout << R"(Available commands: "exit", "quit")" << std::endl;
+
+    while (true) {
+        std::cout << ">>> " << std::flush;
+        std::string line;
+        std::getline(std::cin, line);
+        if (line == "exit" || line == "quit") {
+            return 0;
+        }
+
+        std::string code{line};
+        while (!line.empty()) {
+            std::cout << "... " << std::flush;
+            std::getline(std::cin, line);
+            code.append(line);
+        }
+
+        interpreter.run(code);
+    }
+}
+
+int runFile(ferrit::Interpreter &interpreter, const std::string &path) {
+    std::ifstream codeFile{path};
+    if (!codeFile.is_open()) {
+        std::cerr << "error: could not open file at \"" << path << "\"" << std::endl;
+        return -1;
+    }
+    std::string code{
+        std::istreambuf_iterator<char>(codeFile),
+        std::istreambuf_iterator<char>()};
+
+    ferrit::InterpretResult result = interpreter.run(code);
+    switch (result) {
+    case ferrit::InterpretResult::Ok:
+        return 0;
+    case ferrit::InterpretResult::ParseError:
+        return 1;
+    case ferrit::InterpretResult::CompileError:
+        return 2;
+    case ferrit::InterpretResult::RuntimeError:
+        return 3;
+    default:
+        // shouldn't happen
+        return -1;
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -63,26 +85,17 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        std::shared_ptr<ferrit::ErrorReporter> errorReporter{nullptr};
-        if (!flags["silent"].as<bool>()) {
-            errorReporter = std::make_shared<ferrit::ErrorReporter>(std::cout, flags["plain"].as<bool>());
-        }
+        ferrit::Interpreter interpreter{{
+            .printAst = flags["print-ast"].as<bool>(),
+            .silent = flags["silent"].as<bool>(),
+            .plain = flags["plain"].as<bool>(),
+            .traceVm = flags["trace-vm"].as<bool>()
+        }};
 
-        std::cout << "Ferrit Interpreter 0.0.0" << std::endl;
-        std::cout << R"(Available commands: "exit", "quit")" << std::endl;
-
-        while (true) {
-            std::cout << ">>> ";
-            std::string line;
-            std::getline(std::cin, line);
-            if (line == "exit" || line == "quit") {
-                return 0;
-            }
-
-            auto tokens = lexLine(errorReporter, line);
-            if (!tokens) continue;
-
-            parseLine(*tokens, errorReporter, flags["print-ast"].as<bool>());
+        if (flags.count("file")) {
+            return runFile(interpreter, flags["file"].as<std::string>());
+        } else {
+            return runRepl(interpreter);
         }
     } catch (const std::exception &e) {
         std::cerr << "internal compiler error: " << e.what() << std::endl;

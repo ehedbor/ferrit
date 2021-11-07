@@ -24,7 +24,7 @@ namespace ferrit {
          *
          * @param errorReporter logger for compile errors
          */
-        explicit Parser(std::shared_ptr<ErrorReporter> errorReporter) noexcept;
+        explicit Parser(std::shared_ptr<const ErrorReporter> errorReporter) noexcept;
 
     private:
         /**
@@ -157,7 +157,7 @@ namespace ferrit {
         [[nodiscard]] Error::ParseError makeError(const std::string &expected) const;
 
     private:
-        std::shared_ptr<ErrorReporter> m_errorReporter{nullptr};
+        std::shared_ptr<const ErrorReporter> m_errorReporter{nullptr};
         std::vector<Token> m_tokens{};
         int m_current{0};
         std::vector<Token> m_stackTrace{};

@@ -4,8 +4,8 @@
 #include <iostream>
 
 namespace ferrit {
-    Parser::Parser(std::shared_ptr<ErrorReporter> errorReporter) noexcept :
-        m_errorReporter(std::move(errorReporter)) {
+    Parser::Parser(std::shared_ptr<const ErrorReporter> errorReporter) noexcept :
+        m_errorReporter{std::move(errorReporter)} {
     }
 
     void Parser::init(const std::vector<Token> &tokens) noexcept {

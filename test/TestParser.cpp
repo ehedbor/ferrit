@@ -1,13 +1,14 @@
-#include <catch2/catch.hpp>
-#include <iostream>
 #include "Parser.h"
+
+#include <catch2/catch.hpp>
+
+#include <iostream>
+
 
 namespace ferrit::tests {
     TEST_CASE("function declarations can be parsed", "[parser]") {
-        auto opts = std::make_shared<CompileOptions>();
-        opts->setPlainOutput(true);
-        auto logger = std::make_shared<ErrorReporter>(opts, std::cout);
-        Parser parser(opts, logger);
+        auto logger = std::make_shared<ErrorReporter>(std::cerr, true);
+        Parser parser(logger);
 
         SECTION("parsing simple no-op function") {
             std::vector<Token> tokens {

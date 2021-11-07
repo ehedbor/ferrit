@@ -1,13 +1,14 @@
-#include <iostream>
-#include <catch2/catch.hpp>
 #include "Lexer.h"
+
+#include <catch2/catch.hpp>
+
+#include <iostream>
+
 
 namespace ferrit::tests {
     TEST_CASE("lex literals", "[lexer]") {
-        auto options = std::make_shared<CompileOptions>();
-        options->setPlainOutput(true);
-        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
-        Lexer lexer(options, logger);
+        auto logger = std::make_shared<ErrorReporter>(std::cerr, true);
+        Lexer lexer(logger);
 
         SECTION("basic integer literals") {
             auto tokens = lexer.lex("10 20 386 -1382");
@@ -55,11 +56,7 @@ namespace ferrit::tests {
     }
 
     TEST_CASE("invalid numeric literals", "[lexer]") {
-        auto options = std::make_shared<CompileOptions>();
-        options->setPlainOutput(true);
-        options->setSilentErrors(true);
-        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
-        Lexer lexer(options, logger);
+        Lexer lexer;
 
         SECTION("int literals with suffix") {
             auto tokens = lexer.lex("10i");
@@ -104,10 +101,8 @@ namespace ferrit::tests {
     }
 
     TEST_CASE("lex operators", "[lexer]") {
-        auto options = std::make_shared<CompileOptions>();
-        options->setPlainOutput(true);
-        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
-        Lexer lexer(options, logger);
+        auto logger = std::make_shared<ErrorReporter>(std::cerr, true);
+        Lexer lexer(logger);
 
         SECTION("grouping operators") {
             auto tokens = lexer.lex("(){}[]");
@@ -206,10 +201,8 @@ namespace ferrit::tests {
     }
 
     TEST_CASE("lex identifiers and keywords", "[lexer]") {
-        auto options = std::make_shared<CompileOptions>();
-        options->setPlainOutput(true);
-        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
-        Lexer lexer(options, logger);
+        auto logger = std::make_shared<ErrorReporter>(std::cerr, true);
+        Lexer lexer(logger);
 
         SECTION("modifiers") {
             std::pair<std::string, TokenType> modifiers[] = {
@@ -303,10 +296,8 @@ namespace ferrit::tests {
     }
 
     TEST_CASE("lex comments and whitespace", "[lexer]") {
-        auto options = std::make_shared<CompileOptions>();
-        options->setPlainOutput(true);
-        auto logger = std::make_shared<ErrorReporter>(options, std::cout);
-        Lexer lexer(options, logger);
+        auto logger = std::make_shared<ErrorReporter>(std::cerr, true);
+        Lexer lexer(logger);
 
         SECTION("a line comment") {
             auto tokens = lexer.lex("a//b\r\nc");

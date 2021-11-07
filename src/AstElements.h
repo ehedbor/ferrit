@@ -2,8 +2,8 @@
 
 #include "Token.h"
 
-#include <ostream>
 #include <format>
+#include <ostream>
 #include <variant>
 #include <vector>
 

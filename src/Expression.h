@@ -1,9 +1,10 @@
 #pragma once
 
-#include <utility>
-#include <vector>
 #include "Token.h"
 #include "Visitor.h"
+
+#include <utility>
+#include <vector>
 
 namespace ferrit {
     class Expression;

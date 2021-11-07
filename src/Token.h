@@ -1,8 +1,9 @@
 #pragma once
 
+#include <format>
 #include <ostream>
 #include <string>
-#include <format>
+
 
 namespace ferrit {
     /**

@@ -1,15 +1,16 @@
-#include <limits>
+#include "vm/VirtualMachine.h"
 
 #include <catch2/catch.hpp>
 
-#include "vm/VirtualMachine.h"
+#include <limits>
+#include <sstream>
+
 
 namespace ferrit::tests {
     SCENARIO("VM execution can fail", "[vm]") {
         GIVEN("an virtual machine") {
-            auto opts = std::make_shared<CompileOptions>();
-            opts->setVmTraceExecution(true);
-            VirtualMachine vm{std::move(opts)};
+            std::ostringstream traceLog{};
+            VirtualMachine vm{traceLog};
 
             WHEN("executing an empty chunk") {
                 Chunk chunk{};
@@ -53,11 +54,9 @@ namespace ferrit::tests {
     }
 
     SCENARIO("VM can execute simple instructions", "[vm]") {
-        // TODO: check that the result of the execution is the expected result
         GIVEN("a virtual machine") {
-            auto opts = std::make_shared<CompileOptions>();
-            opts->setVmTraceExecution(true);
-            VirtualMachine vm{std::move(opts)};
+            std::ostringstream traceLog{};
+            VirtualMachine vm{traceLog};
 
             WHEN("executing a valid chunk") {
                 Chunk chunk{};
@@ -69,6 +68,12 @@ namespace ferrit::tests {
                 THEN("the execution completes successfully") {
                     // TODO: check return value
                     REQUIRE_NOTHROW(vm.interpret(chunk));
+                    REQUIRE(traceLog.str() ==
+                        "$0000   14 loadconst    0    // Constant 1.2\n"
+                        "         |  -> [1.2]\n"
+                        "$0002    | negate\n"
+                        "         |  -> [-1.2]\n"
+                        "$0003    | return\n");
                 }
             }
 
@@ -95,6 +100,20 @@ namespace ferrit::tests {
                 THEN("the result is computed successfully") {
                     // TODO: check return value
                     REQUIRE_NOTHROW(vm.interpret(chunk));
+                    REQUIRE(traceLog.str() ==
+                        "$0000  123 loadconst    0    // Constant 1.2\n"
+                        "         |  -> [1.2]\n"
+                        "$0002    | loadconst    1    // Constant 3.4\n"
+                        "         |  -> [3.4, 1.2]\n"
+                        "$0004    | add\n"
+                        "         |  -> [4.6]\n"
+                        "$0005    | loadconst    2    // Constant 5.6\n"
+                        "         |  -> [5.6, 4.6]\n"
+                        "$0007    | divide\n"
+                        "         |  -> [1.2173913043478262]\n"
+                        "$0008    | negate\n"
+                        "         |  -> [-1.2173913043478262]\n"
+                        "$0009    | return\n");
                 }
             }
 
@@ -145,8 +164,51 @@ namespace ferrit::tests {
                 chunk.writeInstruction(OpCode::Return, 3);
 
                 THEN("the result is computed successfully") {
-                    // TODO: check result of comparison
                     REQUIRE_NOTHROW(vm.interpret(chunk));
+                    REQUIRE(traceLog.str() ==
+                        "$0000    1 loadconst    0    // Constant 381.14\n"
+                        "         |  -> [381.14]\n"
+                        "$0002    | loadconst    1    // Constant 146.0\n"
+                        "         |  -> [146.0, 381.14]\n"
+                        "$0004    | add\n"
+                        "         |  -> [527.14]\n"
+                        "$0005    | loadconst    0    // Constant 381.14\n"
+                        "         |  -> [381.14, 527.14]\n"
+                        "$0007    | loadconst    1    // Constant 146.0\n"
+                        "         |  -> [146.0, 381.14, 527.14]\n"
+                        "$0009    | add\n"
+                        "         |  -> [527.14, 527.14]\n"
+                        "$000A    | multiply\n"
+                        "         |  -> [277876.5796]\n"
+                        "$000B    2 loadconst    0    // Constant 381.14\n"
+                        "         |  -> [381.14, 277876.5796]\n"
+                        "$000D    | loadconst    0    // Constant 381.14\n"
+                        "         |  -> [381.14, 381.14, 277876.5796]\n"
+                        "$000F    | multiply\n"
+                        "         |  -> [145267.6996, 277876.5796]\n"
+                        "$0010    | loadconst    2    // Constant 2.0\n"
+                        "         |  -> [2.0, 145267.6996, 277876.5796]\n"
+                        "$0012    | loadconst    0    // Constant 381.14\n"
+                        "         |  -> [381.14, 2.0, 145267.6996, 277876.5796]\n"
+                        "$0014    | multiply\n"
+                        "         |  -> [762.28, 145267.6996, 277876.5796]\n"
+                        "$0015    | loadconst    1    // Constant 146.0\n"
+                        "         |  -> [146.0, 762.28, 145267.6996, 277876.5796]\n"
+                        "$0017    | multiply\n"
+                        "         |  -> [111292.87999999999, 145267.6996, 277876.5796]\n"
+                        "$0018    | add\n"
+                        "         |  -> [256560.5796, 277876.5796]\n"
+                        "$0019    | loadconst    1    // Constant 146.0\n"
+                        "         |  -> [146.0, 256560.5796, 277876.5796]\n"
+                        "$001B    | loadconst    1    // Constant 146.0\n"
+                        "         |  -> [146.0, 146.0, 256560.5796, 277876.5796]\n"
+                        "$001D    | multiply\n"
+                        "         |  -> [21316.0, 256560.5796, 277876.5796]\n"
+                        "$001E    | add\n"
+                        "         |  -> [277876.5796, 277876.5796]\n"
+                        "$001F    3 subtract\n"
+                        "         |  -> [0.0]\n"
+                        "$0020    | return\n");
                 }
             }
         }

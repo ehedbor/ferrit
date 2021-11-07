@@ -9,20 +9,15 @@ namespace ferrit {
         m_traceLog{&traceLog} {
     }
 
-    bool VirtualMachine::interpret(const Chunk &chunk) noexcept {
+    void VirtualMachine::init(const Chunk &chunk) {
         m_chunk = chunk;
         m_ip = m_chunk.bytecode().begin();
         m_stack.clear();
-
-        try {
-            run();
-            return true;
-        } catch (std::runtime_error const&) {
-            return false;
-        }
     }
 
-    void VirtualMachine::run() {
+    void VirtualMachine::interpret(const Chunk &chunk) {
+        init(chunk);
+
         while (true) {
             if (m_traceLog) {
                 int offset = static_cast<int>(m_ip - m_chunk.bytecode().begin());

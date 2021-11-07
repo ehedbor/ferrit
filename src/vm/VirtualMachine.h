@@ -18,6 +18,10 @@ namespace ferrit {
          */
         VirtualMachine() noexcept = default;
 
+    private:
+        void init(const Chunk &chunk);
+
+    public:
         /**
          * Constructs a new virtual machine with trace logging.
          *
@@ -28,19 +32,12 @@ namespace ferrit {
         /**
          * Interprets the given chunk.
          *
-         * @param chunk the chunk
-         * @return true if the execution completed successfully, false otherwise
+         * @param chunk the chunk to interpret
+         * @throw if the VM attempts to perform an illegal operation
          */
-        bool interpret(const Chunk &chunk) noexcept;
+        void interpret(const Chunk &chunk);
 
     private:
-        /**
-         * Main VM loop.
-         *
-         * @throws std::runtime_error if the VM attempts to do an illegal operation
-         */
-        void run();
-
         /**
          * Pushes a value to the stack.
          *

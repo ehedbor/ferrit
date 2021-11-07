@@ -1,11 +1,11 @@
-#include <format>
-#include <sstream>
-#include <limits>
+#include "vm/Chunk.h"
+#include "vm/Disassembler.h"
 
 #include <catch2/catch.hpp>
 
-#include "vm/Chunk.h"
-#include "vm/Disassembler.h"
+#include <format>
+#include <limits>
+#include <sstream>
 
 namespace ferrit::tests {
     SCENARIO("Constant instructions", "[chunk]") {
@@ -76,7 +76,7 @@ namespace ferrit::tests {
                     REQUIRE(chunk.constantPool()[ptOneIndex] == pointOne);
                     REQUIRE(chunk.constantPool()[ptTwoIndex] == pointTwo);
 
-                    REQUIRE(chunk.bytecode().size() == 5);
+                    REQUIRE(chunk.bytecode().size() == 6);
                     REQUIRE(chunk.bytecode()[0] == static_cast<std::uint8_t>(OpCode::Constant));
                     REQUIRE(chunk.bytecode()[1] == ptOneIndex);
                     REQUIRE(chunk.bytecode()[2] == static_cast<std::uint8_t>(OpCode::Constant));
@@ -153,7 +153,7 @@ namespace ferrit::tests {
                 diss.disassembleInstruction(chunk, static_cast<std::uint8_t>(chunk.bytecode().size() - 1));
 
                 THEN("unknown opcode will be displayed") {
-                    REQUIRE(stream.str() == std::format("$0012  420 Unknown opcode '{}'\n", badOpcode));
+                    REQUIRE(stream.str() == std::format("$0012  420 Unknown opcode {}\n", badOpcode));
                 }
             }
 

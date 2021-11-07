@@ -1,13 +1,12 @@
 #pragma once
 
+#include "Token.h"
+
 #include <concepts>
 #include <string>
 #include <stdexcept>
-#include <typeindex>
-#include <typeinfo>
 #include <vector>
 
-#include "Token.h"
 
 namespace ferrit {
 
@@ -61,7 +60,6 @@ namespace ferrit {
  * Generates a static function to return a user-friendly name for this error.
  */
 #define PRETTY_NAME_IMPL(name)                                                 \
-    /** test */                                                                     \
     [[nodiscard]] static constexpr const char *prettyName() noexcept {         \
         return name;                                                           \
     } static_assert(true)

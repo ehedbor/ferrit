@@ -1,12 +1,12 @@
-#include <filesystem>
-#include <iostream>
-
-#include <cxxopts.hpp>
-#include <utility>
-
 #include "AstPrinter.h"
 #include "Lexer.h"
 #include "Parser.h"
+
+#include <cxxopts.hpp>
+
+#include <filesystem>
+#include <iostream>
+#include <utility>
 
 namespace fs = std::filesystem;
 

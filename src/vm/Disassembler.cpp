@@ -55,6 +55,10 @@ namespace ferrit {
 
     int Disassembler::constantInstruction(const std::string &name, const Chunk &chunk, int offset) {
         std::uint8_t constantIdx = chunk.bytecode()[offset + 1];
+        if (constantIdx >= chunk.constantPool().size()) {
+            throw std::logic_error("constant index too big");
+        }
+
         Value constant = chunk.constantPool()[constantIdx];
         m_output << std::format("{:10} {:3}    // Constant {}\n", name, constantIdx, constant);
         return offset + 2;

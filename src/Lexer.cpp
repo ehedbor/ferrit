@@ -1,5 +1,7 @@
 #include "Lexer.h"
+
 #include <unordered_map>
+
 
 namespace ferrit {
     Lexer::Lexer(std::shared_ptr<ErrorReporter> errorReporter) noexcept :

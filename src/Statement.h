@@ -1,13 +1,14 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <optional>
-
 #include "AstElements.h"
 #include "Expression.h"
 #include "Token.h"
 #include "Visitor.h"
+
+#include <memory>
+#include <optional>
+#include <vector>
+
 
 namespace ferrit {
     class Statement;

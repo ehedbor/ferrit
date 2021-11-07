@@ -1,5 +1,7 @@
 #include "ErrorReporter.h"
+
 #include <termcolor/termcolor.hpp>
+
 
 namespace ferrit {
     ErrorReporter::ErrorReporter(std::ostream &output, bool plainOutput) :

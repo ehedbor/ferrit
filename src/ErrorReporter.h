@@ -1,8 +1,10 @@
 #pragma once
 
+#include "Error.h"
+
 #include <memory>
 #include <ostream>
-#include "Error.h"
+
 
 namespace ferrit {
     /**

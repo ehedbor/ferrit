@@ -1,14 +1,15 @@
 #pragma once
 
-#include <memory>
-#include <optional>
-#include <vector>
-
 #include "Error.h"
 #include "ErrorReporter.h"
 #include "Expression.h"
 #include "Statement.h"
 #include "Token.h"
+
+#include <memory>
+#include <optional>
+#include <vector>
+
 
 namespace ferrit {
     /**

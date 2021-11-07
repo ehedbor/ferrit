@@ -1,5 +1,6 @@
 #include "Token.h"
 
+
 namespace ferrit {
     std::ostream &operator<<(std::ostream &output, TokenType tokenType) {
         try {

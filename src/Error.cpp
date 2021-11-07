@@ -1,7 +1,8 @@
 #include "Error.h"
+
 #include <format>
-#include <unordered_map>
 #include <typeinfo>
+#include <unordered_map>
 
 namespace ferrit {
     Error::Error(Token cause, const std::string &what) noexcept :

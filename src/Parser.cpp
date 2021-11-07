@@ -1,6 +1,7 @@
 #include "Parser.h"
-#include <iostream>
 #include "AstPrinter.h"
+
+#include <iostream>
 
 namespace ferrit {
     Parser::Parser(std::shared_ptr<ErrorReporter> errorReporter) noexcept :

@@ -102,8 +102,8 @@ Conversions between integers/floats must be made explicit, as conversion between
 inherently lossy. You can use a conversion function to do this.
 
 ```
-// Illegal: integer literals can only be assigned to integer types,
-// and floating-point literals can only be assigned to float types
+// Illegal: integer literals can only be assigned to Int,
+// and floating-point literals can only be assigned to Real
 val myInt: Int = 32.0 
 val myReal: Real = 259 
 
@@ -282,7 +282,7 @@ for (n in 0...10) {
 
 Labels allow you to break and continue across nested loops:
 ```
-val chunk: Array<Byte> = getChunk()
+val chunk: Array<Int> = getChunk()
 val DIAMOND_ORE = 56b
 for (x in 0..16) @outer:{
     for (z in 0..16) {

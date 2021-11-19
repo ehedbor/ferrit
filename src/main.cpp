@@ -1,13 +1,10 @@
 #include "Interpreter.h"
+#include "vm/BytecodeInterpreter.h"
 
 #include <cxxopts.hpp>
 
-#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <utility>
-
-namespace fs = std::filesystem;
 
 
 cxxopts::Options makeOptions() {
@@ -85,17 +82,18 @@ int main(int argc, char *argv[]) {
             return 0;
         }
 
-        ferrit::Interpreter interpreter{{
-            .printAst = flags["print-ast"].as<bool>(),
-            .silent = flags["silent"].as<bool>(),
-            .plain = flags["plain"].as<bool>(),
-            .traceVm = flags["trace-vm"].as<bool>()
-        }};
+        auto interpreter = std::make_unique<ferrit::BytecodeInterpreter>(
+            ferrit::InterpretOptions{
+                .printAst = flags["print-ast"].as<bool>(),
+                .silent = flags["silent"].as<bool>(),
+                .plain = flags["plain"].as<bool>(),
+                .traceVm = flags["trace-vm"].as<bool>()
+            });
 
         if (flags.count("file")) {
-            return runFile(interpreter, flags["file"].as<std::string>());
+            return runFile(*interpreter, flags["file"].as<std::string>());
         } else {
-            return runRepl(interpreter);
+            return runRepl(*interpreter);
         }
     } catch (const std::exception &e) {
         std::cerr << "internal compiler error: " << e.what() << std::endl;

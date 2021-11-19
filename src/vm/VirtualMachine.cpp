@@ -5,8 +5,12 @@
 #include <format>
 
 namespace ferrit {
-    VirtualMachine::VirtualMachine(std::ostream &traceLog) noexcept :
-        m_traceLog{&traceLog} {
+    VirtualMachine::VirtualMachine(NativeHandler natives) noexcept :
+        m_natives{natives} {
+    }
+
+    VirtualMachine::VirtualMachine(NativeHandler natives, std::ostream *traceLog) noexcept :
+        m_natives{natives}, m_traceLog{traceLog} {
     }
 
     void VirtualMachine::init(const Chunk &chunk) {
@@ -60,6 +64,9 @@ namespace ferrit {
                 push(Value{-pop().asReal()});
                 break;
             case OpCode::Return:
+                if (!m_stack.empty()) {
+                    m_natives.println(std::format("{}", pop()));
+                }
                 return;
             default:
                 throw std::runtime_error(std::format("Unknown opcode '{}'", instruction));

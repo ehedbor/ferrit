@@ -1,10 +1,13 @@
 #pragma once
 
 #include <iostream>
+#include <optional>
 #include <string>
+
 #include "Lexer.h"
 #include "Parser.h"
 #include "AstPrinter.h"
+
 
 namespace ferrit {
     /**
@@ -30,7 +33,7 @@ namespace ferrit {
     /**
      * The main Ferrit interpreter.
      */
-    class Interpreter final {
+    class Interpreter {
     public:
         /**
          * Constructs a new interpreter.
@@ -56,24 +59,30 @@ namespace ferrit {
          */
         Interpreter(InterpretOptions options, std::ostream &output, std::ostream &errors, std::istream &input) noexcept;
 
+        virtual ~Interpreter() noexcept;
+
         /**
          * Execute the given segment of code.
          *
          * @param code the code to execute
          * @return if there were any errors in the interpret process
          */
-        InterpretResult run(const std::string &code);
+        virtual InterpretResult run(const std::string &code) = 0;
+
+    protected:
+        std::optional<std::vector<StatementPtr>> parse(const std::string &code);
+
+    protected:
+        InterpretOptions m_options{};
+        std::ostream *m_output{&std::cout};
+        std::ostream *m_errors{&std::cerr};
+        std::istream *m_input{&std::cin};
+        std::shared_ptr<ErrorReporter> m_errorReporter{
+            std::make_shared<ErrorReporter>(*m_errors, m_options.plain)};
 
     private:
-        InterpretOptions m_options{};
-
-        std::ostream &m_output{std::cout};
-        std::ostream &m_errors{std::cerr};
-        std::istream &m_input{std::cin};
-
-        std::shared_ptr<ErrorReporter> m_errorReporter{std::make_shared<ErrorReporter>(m_errors, m_options.plain)};
         Lexer m_lexer{m_options.silent ? nullptr : m_errorReporter};
         Parser m_parser{m_options.silent ? nullptr : m_errorReporter};
-        AstPrinter m_astPrinter{m_output};
+        AstPrinter m_astPrinter{*m_output};
     };
 }

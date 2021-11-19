@@ -31,7 +31,7 @@ namespace ferrit {
          void logWarning(const Error &warning) const;
 
     private:
-        std::ostream &m_output;
+        std::ostream *m_output;
         bool m_plainOutput;
     };
 }

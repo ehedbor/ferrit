@@ -1,23 +1,22 @@
 #pragma once
 
-#include "Expression.h"
-#include "Statement.h"
+#include "../ErrorReporter.h"
+#include "../Expression.h"
+#include "../Statement.h"
+#include "Chunk.h"
 
-#include <concepts>
-#include <iosfwd>
+#include <memory>
+#include <optional>
 
 
 namespace ferrit {
-    /**
-     * Prints a text-based representation of a Ferrit program to an output stream.
-     */
-    class AstPrinter : public StatementVisitor, public ExpressionVisitor {
+    class BytecodeCompiler : private StatementVisitor, private ExpressionVisitor {
     public:
-        explicit AstPrinter(std::ostream &out) noexcept;
+        explicit BytecodeCompiler(std::shared_ptr<const ErrorReporter> errorReporter);
 
-        void print(const std::vector<StatementPtr> &program);
+        std::optional<Chunk> compile(const std::vector<StatementPtr> &ast);
 
-    public:
+    private:
         VisitResult visitFunctionDecl(const FunctionDeclaration &funDecl) override;
         VisitResult visitBlockStmt(const BlockStatement &blockStmt) override;
         VisitResult visitExpressionStmt(const ExpressionStatement &exprStmt) override;
@@ -30,22 +29,14 @@ namespace ferrit {
         VisitResult visitNumberExpr(const NumberExpression &numExpr) override;
 
     private:
-        void printLine(const std::string &line);
+        void emit(OpCode opCode, int line);
+        void emit(OpCode opCode, std::uint8_t arg, int line);
 
-        template <typename F> requires std::invocable<F>
-        inline void indent(F &&block);
+        void emitConstant(Value value, int line);
+        std::uint8_t makeConstant(Value value);
 
     private:
-        static constexpr int INDENTATION_LEVEL = 2;
-
-        std::ostream *m_out;
-        unsigned int m_depth{0};
+        std::shared_ptr<const ErrorReporter> m_errorReporter;
+        Chunk m_chunk{};
     };
-
-    template <typename F> requires std::invocable<F>
-    void AstPrinter::indent(F &&block) {
-        m_depth++;
-        std::invoke(block);
-        m_depth--;
-    }
 }

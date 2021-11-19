@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "Chunk.h"
+#include "NativeHandler.h"
 
 namespace ferrit {
     /**
@@ -15,20 +16,23 @@ namespace ferrit {
     public:
         /**
          * Constructs a new virtual machine with no trace logging.
+         *
+         * @param natives native function api
          */
-        VirtualMachine() noexcept = default;
+        explicit VirtualMachine(NativeHandler natives) noexcept;
+
+        /**
+         * Constructs a new virtual machine with trace logging.
+         *
+         * @param natives native function api
+         * @param traceLog optional ostream to print debug information to.
+         */
+        VirtualMachine(NativeHandler natives, std::ostream *traceLog) noexcept;
 
     private:
         void init(const Chunk &chunk);
 
     public:
-        /**
-         * Constructs a new virtual machine with trace logging.
-         *
-         * @param traceLog ostream to print debug information to.
-         */
-        explicit VirtualMachine(std::ostream &traceLog) noexcept;
-
         /**
          * Interprets the given chunk.
          *
@@ -70,6 +74,7 @@ namespace ferrit {
         Value readConstant();
 
     private:
+        NativeHandler m_natives;
         std::ostream *m_traceLog{nullptr};
         Chunk m_chunk{};
         std::vector<std::uint8_t>::const_iterator m_ip{};

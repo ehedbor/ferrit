@@ -1,4 +1,5 @@
 #include "Interpreter.h"
+#include "vm/BytecodeInterpreter.h"
 
 #include <catch2/catch.hpp>
 
@@ -12,7 +13,8 @@ namespace ferrit::tests {
         std::ostringstream output;
         std::ostringstream errors;
         std::istringstream input;
-        Interpreter interpreter{{.plain = true}, output, errors, input};
+        auto interpreter = std::make_unique<BytecodeInterpreter>(
+            InterpretOptions{.plain = true}, output, errors, input);
 
         GIVEN("Some Ferrit source code files") {
             std::vector<std::string> files{
@@ -26,7 +28,7 @@ namespace ferrit::tests {
                         std::istreambuf_iterator<char>(fileStream),
                         std::istreambuf_iterator<char>()};
 
-                    InterpretResult result = interpreter.run(code);
+                    InterpretResult result = interpreter->run(code);
 
                     THEN("there will be no errors") {
                         REQUIRE(result == InterpretResult::Ok);

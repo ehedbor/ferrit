@@ -4,7 +4,7 @@
 
 
 namespace ferrit {
-    AstPrinter::AstPrinter(std::ostream &out) noexcept : m_out(out) {
+    AstPrinter::AstPrinter(std::ostream &out) noexcept : m_out(&out) {
     }
 
     void AstPrinter::print(const std::vector<StatementPtr> &program) {
@@ -133,6 +133,6 @@ namespace ferrit {
     }
 
     void AstPrinter::printLine(const std::string &line) {
-        m_out << std::format("{:{}} {}\n", ' ', m_depth * INDENTATION_LEVEL, line);
+        *m_out << std::format("{:{}} {}\n", ' ', m_depth * INDENTATION_LEVEL, line);
     }
 }

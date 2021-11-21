@@ -148,6 +148,8 @@ namespace ferrit {
     }
 
     StatementPtr Parser::parseBlock() {
+        const Token &leftBrace = previous();
+
         std::vector<StatementPtr> body;
         while (!check(TokenType::RightBrace) && !isAtEnd()) {
             auto statement = parseStatement();
@@ -158,7 +160,7 @@ namespace ferrit {
         }
         consume(TokenType::RightBrace, "expected '}' after block");
 
-        return std::make_unique<BlockStatement>(std::move(body));
+        return std::make_unique<BlockStatement>(leftBrace, std::move(body));
     }
 
     ExpressionPtr Parser::parseExpression() {
@@ -385,7 +387,7 @@ namespace ferrit {
     }
 
     ParseError Parser::makeError(const std::string &expected) const {
-        ParseError::ExpectedElement error{current(), expected};
+        ParseError::ExpectedElementNotPresent error{current(), expected};
         if (m_errorReporter) {
             m_errorReporter->logError(error);
         }

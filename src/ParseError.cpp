@@ -1,10 +1,6 @@
 #include "ParseError.h"
 
 namespace ferrit {
-    ParseError::ParseError(Token cause, const std::string &what) noexcept :
-        Error(std::move(cause), what) {
-    }
-
     ParseError::UnexpectedChar::UnexpectedChar(
         Token cause, char ch) noexcept :
         ParseError(std::move(cause),
@@ -47,7 +43,7 @@ namespace ferrit {
             std::format("syntax error: unknown suffix '{1}' for {0}", element, suffix)) {
     }
 
-    ParseError::ExpectedElement::ExpectedElement(
+    ParseError::ExpectedElementNotPresent::ExpectedElementNotPresent(
         Token cause, const std::string &expected) noexcept :
         ParseError(std::move(cause),
             std::format("syntax error: {}", expected)) {

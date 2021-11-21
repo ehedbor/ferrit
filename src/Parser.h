@@ -103,7 +103,7 @@ namespace ferrit {
          * @param expected token type to check for
          * @param errMsg error message if the expected token type is not present
          * @return the token, if it matches the expected type
-         * @throws ParseException if the current token does not match the expected type
+         * @throws ParseError if the current token does not match the expected type
          */
         const Token &consume(TokenType expected, const std::string &errMsg);
 

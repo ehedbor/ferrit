@@ -4,6 +4,7 @@
 #include "../Expression.h"
 #include "../Statement.h"
 #include "Chunk.h"
+#include "CompileError.h"
 
 #include <memory>
 #include <optional>
@@ -17,6 +18,8 @@ namespace ferrit {
         std::optional<Chunk> compile(const std::vector<StatementPtr> &ast);
 
     private:
+        Chunk tryCompile(const std::vector<StatementPtr> &ast);
+
         VisitResult visitFunctionDecl(const FunctionDeclaration &funDecl) override;
         VisitResult visitBlockStmt(const BlockStatement &blockStmt) override;
         VisitResult visitExpressionStmt(const ExpressionStatement &exprStmt) override;
@@ -35,8 +38,23 @@ namespace ferrit {
         void emitConstant(Value value, int line);
         std::uint8_t makeConstant(Value value);
 
+        template <typename Err, typename... Args>
+        requires std::derived_from<Err, Error> && std::constructible_from<Err, Token, Args...>
+        Err makeError(const Token &cause, Args&&... args) const;
+
     private:
         std::shared_ptr<const ErrorReporter> m_errorReporter;
         Chunk m_chunk{};
     };
+
+    template <typename Err, typename... Args>
+    requires std::derived_from<Err, Error> && std::constructible_from<Err, Token, Args...>
+    Err BytecodeCompiler::makeError(const Token &cause, Args&&... args) const {
+        Err error{cause, std::forward<Args>(args)...};
+        if (m_errorReporter) {
+            m_errorReporter->logError(error);
+        }
+        return error;
+    }
 }
+

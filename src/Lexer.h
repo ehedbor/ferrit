@@ -44,7 +44,7 @@ namespace ferrit {
          * Scans the next token.
          *
          * @return the token
-         * @throws LexException if an error occurs
+         * @throws ParseError if an error occurs
          */
         Token lexNext();
 
@@ -52,7 +52,7 @@ namespace ferrit {
          * Skips ASCII whitespace characters up until the next newline.
          *
          * @return A newline token if one is found
-         * @throws LexException if a comment is ill-formed
+         * @throws ParseError if a comment is ill-formed
          */
         std::optional<Token> skipWhitespace();
 
@@ -64,7 +64,7 @@ namespace ferrit {
         /**
          * Ignores a block comment.
          *
-         * @throws LexException if the block comment is not terminated
+         * @throws ParseError if the block comment is not terminated
          */
         void ignoreBlockComment();
 
@@ -72,7 +72,7 @@ namespace ferrit {
          * Scans and returns a string literal.
          *
          * @return a token representing a string literal
-         * @throws LexException if the string is ill-formed
+         * @throws ParseError if the string is ill-formed
          */
         Token lexString();
 
@@ -80,7 +80,7 @@ namespace ferrit {
          * Scans and returns a char literal.
          *
          * @return a token representing a char literal
-         * @throws LexException if the char is ill-formed
+         * @throws ParseError if the char is ill-formed
          */
         Token lexChar();
 
@@ -89,7 +89,7 @@ namespace ferrit {
          * appear in a string-like literal (such as a \c char or \c string).
          *
          * @param literalType the type of literal (i.e. <tt>"string literal"</tt>)
-         * @throws LexException if the literal is ill-formed
+         * @throws ParseError if the literal is ill-formed
          */
         void advanceStringChar(const std::string &literalType);
 
@@ -97,7 +97,7 @@ namespace ferrit {
          * Scans an integer or float literal.
          *
          * @return the literal
-         * @throws LexException if the literal is ill-formed
+         * @throws ParseError if the literal is ill-formed
          */
         Token lexNumber();
 
@@ -124,7 +124,7 @@ namespace ferrit {
         [[nodiscard]] Token makeToken(TokenType type) const noexcept;
 
         /**
-         * Constructs a \c LexException from the current substring, logging the error
+         * Constructs an \c Error from the current substring, logging the error
          * if permitted by the compile options.
          *
          * Note that the exception is not thrown. It is the caller's decision to throw.

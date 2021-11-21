@@ -2,35 +2,49 @@
 
 
 namespace ferrit {
-    // TODO: use Errors for compiler errors and exceptions for compiler bugs
-
     BytecodeCompiler::BytecodeCompiler(std::shared_ptr<const ErrorReporter> errorReporter) :
         m_errorReporter{std::move(errorReporter)} {
     }
 
     std::optional<Chunk> BytecodeCompiler::compile(const std::vector<StatementPtr> &ast) {
+        try {
+            return tryCompile(ast);
+        } catch (const Error &) {
+            return {};
+        }
+    }
+
+    Chunk BytecodeCompiler::tryCompile(const std::vector<StatementPtr> &ast) {
         m_chunk = Chunk{};
 
         // TODO: support statements
+        if (ast.empty()) {
+            Token dummy{TokenType::EndOfFile, "", {1, 1}};
+            throw makeError<CompileError::NotImplemented>(dummy, "empty programs");
+        } else if (ast.size() > 1) {
+            throw makeError<CompileError::NotImplemented>(ast[1]->errorToken(), "multiple lines");
+        }
 
         const Statement &stmt = *ast.front();
-        if (!dynamic_cast<const ExpressionStatement *>(&stmt)) {
-            throw std::invalid_argument("can only compile expressions");
+        if (const auto *expr = dynamic_cast<const ExpressionStatement *>(&stmt)) {
+            expr->accept(*this);
+            emit(OpCode::Return, expr->errorToken().location.line);
+            return m_chunk;
+        } else {
+            throw makeError<CompileError::NotImplemented>(stmt.errorToken(), "statements");
         }
-        stmt.accept(*this);
-
-        // TODO: get last line somehow
-        emit(OpCode::Return, -1);
-
-        return m_chunk;
     }
 
-    VisitResult BytecodeCompiler::visitFunctionDecl([[maybe_unused]] const FunctionDeclaration &funDecl) {
-        throw std::logic_error("functions not implemented");
+    VisitResult BytecodeCompiler::visitFunctionDecl(
+        [[maybe_unused]] const FunctionDeclaration &funDecl) {
+        throw makeError<CompileError::NotImplemented>(
+            funDecl.errorToken(), "functions");
     }
 
-    VisitResult BytecodeCompiler::visitBlockStmt([[maybe_unused]] const BlockStatement &blockStmt) {
-        throw std::logic_error("block statements not implemented");
+    VisitResult BytecodeCompiler::visitBlockStmt(
+        [[maybe_unused]] const BlockStatement &blockStmt) {
+        throw makeError<CompileError::NotImplemented>(
+            blockStmt.errorToken(), "block statements");
     }
 
     VisitResult BytecodeCompiler::visitExpressionStmt(const ExpressionStatement &exprStmt) {
@@ -56,22 +70,31 @@ namespace ferrit {
             emit(OpCode::Divide, line);
             break;
         case TokenType::Tilde:
-            throw std::logic_error("concatenation operator not implemented");
+            throw makeError<CompileError::NotImplemented>(
+                binExpr.errorToken(), "concatenation operator");
         case TokenType::Percent:
-            throw std::logic_error("modulo operator not implemented");
+            throw makeError<CompileError::NotImplemented>(
+                binExpr.errorToken(), "modulo operator operator");
         case TokenType::AndAnd:
-            throw std::logic_error("logical and operator not implemented");
+            throw makeError<CompileError::NotImplemented>(
+                binExpr.errorToken(), "logical and operator");
         case TokenType::OrOr:
-            throw std::logic_error("logical or operator not implemented");
+            throw makeError<CompileError::NotImplemented>(
+                binExpr.errorToken(), "logical or operator");
         default:
-            throw std::logic_error(std::format("unknown operator '{}'", binExpr.op().type));
+            throw CompileException(
+                std::format("unknown operator '{}' ({})",
+                    binExpr.op().lexeme,
+                    binExpr.op().type));
         }
 
         return {};
     }
 
-    VisitResult BytecodeCompiler::visitComparisonExpr([[maybe_unused]] const ComparisonExpression &cmpExpr) {
-        throw std::logic_error("comparisons not implemented");
+    VisitResult BytecodeCompiler::visitComparisonExpr(
+        [[maybe_unused]] const ComparisonExpression &cmpExpr) {
+        throw makeError<CompileError::NotImplemented>(
+            cmpExpr.errorToken(), "comparisons");
     }
 
     VisitResult BytecodeCompiler::visitUnaryExpr(const UnaryExpression &unaryExpr) {
@@ -86,25 +109,36 @@ namespace ferrit {
             emit(OpCode::Negate, unaryExpr.op().location.line);
             break;
         case TokenType::Tilde:
-            throw std::logic_error("concatenation operator not implemented");
+            throw makeError<CompileError::NotImplemented>(
+                unaryExpr.errorToken(), "concatenation operator");
         case TokenType::Bang:
-            throw std::logic_error("boolean negation operator not implemented");
+            throw makeError<CompileError::NotImplemented>(
+                unaryExpr.errorToken(), "logical not operator");
         case TokenType::PlusPlus:
-            throw std::logic_error("increment operator not implemented");
+            throw makeError<CompileError::NotImplemented>(
+                unaryExpr.errorToken(), "increment operators");
         case TokenType::MinusMinus:
-            throw std::logic_error("decrement operator not implemented");
+            throw makeError<CompileError::NotImplemented>(
+                unaryExpr.errorToken(), "decrement operators");
         default:
-            throw std::logic_error(std::format("unknown unary operator '{}'", opType));
+            throw CompileException{
+                std::format("unknown unary operator '{}' ({})",
+                    unaryExpr.op().lexeme,
+                    unaryExpr.op().type)};
         }
         return {};
     }
 
-    VisitResult BytecodeCompiler::visitCallExpr([[maybe_unused]] const CallExpression &callExpr) {
-        throw std::logic_error("function calls not implemented");
+    VisitResult BytecodeCompiler::visitCallExpr(
+        [[maybe_unused]] const CallExpression &callExpr) {
+        throw makeError<CompileError::NotImplemented>(
+            callExpr.errorToken(), "function calls");
     }
 
-    VisitResult BytecodeCompiler::visitVariableExpr([[maybe_unused]] const VariableExpression &varExpr) {
-        throw std::logic_error("variables not implemented");
+    VisitResult BytecodeCompiler::visitVariableExpr(
+        [[maybe_unused]] const VariableExpression &varExpr) {
+        throw makeError<CompileError::NotImplemented>(
+            varExpr.errorToken(), "variable expressions");
     }
 
     VisitResult BytecodeCompiler::visitNumberExpr(const NumberExpression &numExpr) {
@@ -122,13 +156,13 @@ namespace ferrit {
             std::size_t numConverted;
             realValue = std::stod(lexeme, &numConverted);
             if (numConverted != lexeme.size()) {
-                throw std::logic_error("could not parse real literal: unexpected suffix");
+                throw CompileException("could not parse real literal: unexpected suffix");
             }
         } catch (const std::out_of_range&) {
-            // TODO: this should be a compile error, not a program error
-            throw std::logic_error("could not parse real literal: out of range");
+            throw makeError<CompileError::LiteralOutOfRange>(
+                numExpr.errorToken(), "real literal");
         } catch (const std::invalid_argument&) {
-            throw std::logic_error("could not parse real literal");
+            throw CompileException("could not parse real literal: invalid argument");
         }
 
         Value value{realValue};
@@ -152,7 +186,7 @@ namespace ferrit {
     std::uint8_t BytecodeCompiler::makeConstant(Value value) {
         std::uint8_t constant = m_chunk.addConstant(value);
         if (m_chunk.constantPool().size() > std::numeric_limits<std::uint8_t>::max()) {
-            throw std::logic_error("Too many constants in one chunk.");
+            throw CompileException("Too many constants in one chunk.");
         }
         return constant;
     }

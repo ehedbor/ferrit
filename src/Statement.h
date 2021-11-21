@@ -43,6 +43,11 @@ namespace ferrit {
 
         bool operator==(const Statement &other) const noexcept;
 
+        /**
+         * Returns a suitable token for error reporting.
+         */
+        [[nodiscard]] virtual const Token &errorToken() const noexcept = 0;
+
     protected:
         [[nodiscard]] virtual bool equals(const Statement &other) const noexcept = 0;
     };
@@ -66,6 +71,7 @@ namespace ferrit {
         [[nodiscard]] const std::vector<Parameter> &params() const noexcept;
         [[nodiscard]] const DeclaredType &returnType() const noexcept;
         [[nodiscard]] const Statement *body() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(StatementVisitor, FunctionDecl);
 
@@ -86,9 +92,11 @@ namespace ferrit {
      */
     class BlockStatement final : public Statement {
     public:
-        explicit BlockStatement(std::vector<StatementPtr> body) noexcept;
+        BlockStatement(Token brace, std::vector<StatementPtr> body) noexcept;
 
+        [[nodiscard]] const Token &brace() const noexcept;
         [[nodiscard]] const std::vector<StatementPtr> &body() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(StatementVisitor, BlockStmt);
 
@@ -96,6 +104,7 @@ namespace ferrit {
         [[nodiscard]] bool equals(const Statement &other) const noexcept override;
 
     private:
+        Token m_brace;
         std::vector<StatementPtr> m_body;
     };
 
@@ -107,6 +116,7 @@ namespace ferrit {
         explicit ExpressionStatement(ExpressionPtr expr) noexcept;
 
         [[nodiscard]] const Expression &expr() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(StatementVisitor, ExpressionStmt);
 

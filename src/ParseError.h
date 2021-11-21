@@ -6,6 +6,10 @@
 #include <string>
 
 namespace ferrit {
+    /**
+     * Represents a failure to parse the user's input as a syntactically-valid
+     * program. This class should not be used to report bugs in the compiler.
+     */
     class ParseError : public Error {
     public:
         class UnexpectedChar;
@@ -15,24 +19,18 @@ namespace ferrit {
         class UnexpectedNewline;
         class IllegalEscapeSequence;
         class UnknownLiteralSuffix;
-        class ExpectedElement;
+        class ExpectedElementNotPresent;
 
     protected:
-        /**
-         * Construct a new ParseError.
-         *
-         * @see Error::Error
-         */
-        ParseError(Token cause, const std::string &what) noexcept;
+        using Error::Error;
     };
 
     /**
-  * Represents a syntax error in which an unexpected character was present.
-  */
+     * Represents a syntax error in which an unexpected character was present.
+     */
     class ParseError::UnexpectedChar final : public ParseError {
     public:
         UnexpectedChar(Token cause, char ch) noexcept;
-
         FERRIT_ERROR_PRETTY_NAME("unexpected-char");
     };
 
@@ -93,11 +91,11 @@ namespace ferrit {
 
     /**
      * Represents a parse error in which the expected element
-     * was not present.
+     * was not found.
      */
-    class ParseError::ExpectedElement final : public ParseError {
+    class ParseError::ExpectedElementNotPresent final : public ParseError {
     public:
-        ExpectedElement(Token cause, const std::string &expected) noexcept;
+        ExpectedElementNotPresent(Token cause, const std::string &expected) noexcept;
         FERRIT_ERROR_PRETTY_NAME("parse-error");
     };
 

@@ -45,6 +45,11 @@ namespace ferrit {
 
         [[nodiscard]] bool operator==(const Expression &other) const noexcept;
 
+        /**
+         * Returns a suitable token for error reporting.
+         */
+        [[nodiscard]] virtual const Token &errorToken() const noexcept = 0;
+
     protected:
         [[nodiscard]] virtual bool equals(const Expression &other) const noexcept = 0;
     };
@@ -59,6 +64,7 @@ namespace ferrit {
         [[nodiscard]] const Token &op() const noexcept;
         [[nodiscard]] const Expression &left() const noexcept;
         [[nodiscard]] const Expression &right() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(ExpressionVisitor, BinaryExpr);
 
@@ -81,6 +87,7 @@ namespace ferrit {
         [[nodiscard]] const Token &op() const noexcept;
         [[nodiscard]] const Expression &left() const noexcept;
         [[nodiscard]] const Expression &right() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(ExpressionVisitor, ComparisonExpr);
 
@@ -103,6 +110,7 @@ namespace ferrit {
         [[nodiscard]] const Token &op() const noexcept;
         [[nodiscard]] const Expression &operand() const noexcept;
         [[nodiscard]] bool isPrefix() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(ExpressionVisitor, UnaryExpr);
 
@@ -125,6 +133,7 @@ namespace ferrit {
         [[nodiscard]] const Token &paren() const noexcept;
         [[nodiscard]] const Expression &callee() const noexcept;
         [[nodiscard]] const std::vector<ExpressionPtr> &arguments() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(ExpressionVisitor, CallExpr);
 
@@ -145,6 +154,7 @@ namespace ferrit {
         explicit VariableExpression(Token name) noexcept;
 
         [[nodiscard]] const Token &name() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(ExpressionVisitor, VariableExpr);
 
@@ -156,10 +166,7 @@ namespace ferrit {
     };
 
     /**
-     * Represents a literal number (either integer or floating point).
-     * Literals numbers are considered to be an unsized supertype of their
-     * respective number types that get coerced into a sized type when used in
-     * an expression.
+     * Represents a literal number (either integer or real).
      */
     class NumberExpression final : public Expression {
     public:
@@ -167,6 +174,7 @@ namespace ferrit {
 
         [[nodiscard]] const Token &value() const noexcept;
         [[nodiscard]] bool isIntLiteral() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
 
         MAKE_VISITABLE(ExpressionVisitor, NumberExpr);
 

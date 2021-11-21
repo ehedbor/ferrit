@@ -28,6 +28,10 @@ namespace ferrit {
         return *m_right;
     }
 
+    const Token &BinaryExpression::errorToken() const noexcept {
+        return op();
+    }
+
     bool BinaryExpression::equals(const Expression &other) const noexcept {
         const auto& binOther = static_cast<const BinaryExpression &>(other); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
         return op() == binOther.op() &&
@@ -49,6 +53,10 @@ namespace ferrit {
 
     const Expression &ComparisonExpression::right() const noexcept {
         return *m_right;
+    }
+
+    const Token &ComparisonExpression::errorToken() const noexcept {
+        return op();
     }
 
     bool ComparisonExpression::equals(const Expression &other) const noexcept {
@@ -74,6 +82,10 @@ namespace ferrit {
         return m_isPrefix;
     }
 
+    const Token &UnaryExpression::errorToken() const noexcept {
+        return op();
+    }
+
     bool UnaryExpression::equals(const Expression &other) const noexcept {
         const auto &unaryOther = static_cast<const UnaryExpression &>(other); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
         return op() == unaryOther.op() &&
@@ -95,6 +107,10 @@ namespace ferrit {
 
     const std::vector<ExpressionPtr> &CallExpression::arguments() const noexcept {
         return m_arguments;
+    }
+
+    const Token &CallExpression::errorToken() const noexcept {
+        return paren();
     }
 
     bool CallExpression::equals(const Expression &other) const noexcept {
@@ -119,6 +135,10 @@ namespace ferrit {
         return m_name;
     }
 
+    const Token &VariableExpression::errorToken() const noexcept {
+        return name();
+    }
+
     bool VariableExpression::equals(const Expression &other) const noexcept {
         const auto &varOther = static_cast<const VariableExpression &>(other); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
         return name() == varOther.name();
@@ -134,6 +154,10 @@ namespace ferrit {
 
     bool NumberExpression::isIntLiteral() const noexcept {
         return m_isIntLiteral;
+    }
+
+    const Token &NumberExpression::errorToken() const noexcept {
+        return value();
     }
 
     bool NumberExpression::equals(const Expression &other) const noexcept {

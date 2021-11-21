@@ -53,6 +53,10 @@ namespace ferrit {
         return m_body ? &*m_body : nullptr;
     }
 
+    const Token &FunctionDeclaration::errorToken() const noexcept {
+        return keyword();
+    }
+
     bool FunctionDeclaration::equals(const Statement &other) const noexcept {
         const auto &otherFun = static_cast<const FunctionDeclaration &>(other); // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
         return name() == otherFun.name() &&
@@ -63,12 +67,20 @@ namespace ferrit {
             *body() == *otherFun.body();
     }
 
-    BlockStatement::BlockStatement(std::vector<StatementPtr> body) noexcept :
-        m_body(std::move(body)) {
+    BlockStatement::BlockStatement(Token brace, std::vector<StatementPtr> body) noexcept :
+        m_brace(std::move(brace)), m_body(std::move(body)) {
+    }
+
+    const Token &BlockStatement::brace() const noexcept {
+        return m_brace;
     }
 
     const std::vector<StatementPtr> &BlockStatement::body() const noexcept {
         return m_body;
+    }
+
+    const Token &BlockStatement::errorToken() const noexcept {
+        return brace();
     }
 
     bool BlockStatement::equals(const Statement &other) const noexcept {
@@ -82,6 +94,10 @@ namespace ferrit {
 
     const Expression &ExpressionStatement::expr() const noexcept {
         return *m_expr;
+    }
+
+    const Token &ExpressionStatement::errorToken() const noexcept {
+        return expr().errorToken();
     }
 
     bool ExpressionStatement::equals(const Statement &other) const noexcept {

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Error.h"
 #include "ErrorReporter.h"
 #include "Expression.h"
+#include "ParseError.h"
 #include "Statement.h"
 #include "Token.h"
 
@@ -154,7 +154,7 @@ namespace ferrit {
          * @param expected error message
          * @return the exception
          */
-        [[nodiscard]] Error::ParseError makeError(const std::string &expected) const;
+        [[nodiscard]] ParseError makeError(const std::string &expected) const;
 
     private:
         std::shared_ptr<const ErrorReporter> m_errorReporter{nullptr};

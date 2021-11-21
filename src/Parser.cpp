@@ -25,7 +25,7 @@ namespace ferrit {
                 StatementPtr nextDecl = parseDeclaration();
                 program.push_back(std::move(nextDecl));
                 skipTerminators(true);
-            } catch (const Error::ParseError &) {
+            } catch (const Error &) {
                 hadError = true;
                 synchronize();
             }
@@ -384,8 +384,8 @@ namespace ferrit {
         return current().type == TokenType::EndOfFile;
     }
 
-    Error::ParseError Parser::makeError(const std::string &expected) const {
-        Error::ParseError error{current(), expected};
+    ParseError Parser::makeError(const std::string &expected) const {
+        ParseError::ExpectedElement error{current(), expected};
         if (m_errorReporter) {
             m_errorReporter->logError(error);
         }

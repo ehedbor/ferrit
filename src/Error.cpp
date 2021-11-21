@@ -28,49 +28,4 @@ namespace ferrit {
             token.lexeme);
     }
 
-    Error::UnexpectedChar::UnexpectedChar(Token cause, char ch) noexcept :
-        Error(std::move(cause), std::format("syntax error: unexpected character '{}'", ch)) {
-    }
-
-    Error::UnterminatedElement::UnterminatedElement(Token cause, const std::string &element) noexcept :
-        Error(std::move(cause), std::format("syntax error: unterminated {}", element)) {
-    }
-
-    Error::EmptyElement::EmptyElement(Token cause, const std::string &element) noexcept :
-        Error(std::move(cause), std::format("syntax error: empty {}", element)) {
-    }
-
-    Error::CharLiteralTooBig::CharLiteralTooBig(Token cause) noexcept :
-        Error(std::move(cause), "syntax error: too many characters in char literal") {
-    }
-
-    Error::UnexpectedNewline::UnexpectedNewline(
-        Token cause,
-        const std::string &element) noexcept :
-        Error(std::move(cause), 
-            std::format("syntax error: unexpected newline in {}", element)) {
-    }
-
-    Error::IllegalEscapeSequence::IllegalEscapeSequence(
-        Token cause,
-        char sequence,
-        const std::string &element) noexcept :
-        Error(std::move(cause), 
-            std::format("syntax error: illegal escape sequence '\\{}' in {}", sequence, element)) {
-    }
-
-    Error::UnknownLiteralSuffix::UnknownLiteralSuffix(
-        Token cause,
-        const std::string &element,
-        const std::string &suffix) noexcept :
-        Error(std::move(cause), 
-            std::format("syntax error: unknown suffix '{1}' for {0}", element, suffix)) {
-    }
-
-    Error::ParseError::ParseError(
-        Token cause,
-        const std::string &expected) noexcept :
-        Error(std::move(cause), 
-            std::format("syntax error: {}", expected)) {
-    }
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Error.h"
 #include "ErrorReporter.h"
+#include "ParseError.h"
 #include "Token.h"
 
 #include <memory>

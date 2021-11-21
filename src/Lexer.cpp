@@ -106,7 +106,7 @@ namespace ferrit {
                 }
                 return makeToken(TokenType::AndAnd);
             }
-            throw makeError<Error::UnexpectedChar>('&');
+            throw makeError<ParseError::UnexpectedChar>('&');
         case '|':
             if (match('|')) {
                 if (match('=')) {
@@ -114,7 +114,7 @@ namespace ferrit {
                 }
                 return makeToken(TokenType::OrOr);
             }
-            throw makeError<Error::UnexpectedChar>('|');
+            throw makeError<ParseError::UnexpectedChar>('|');
         case '!':
             if (match('!')) {
                 return makeToken(TokenType::BangBang);
@@ -143,7 +143,7 @@ namespace ferrit {
             if (match('=')) return makeToken(TokenType::LessEqual);
             return makeToken(TokenType::Less);
         default:
-            throw makeError<Error::UnexpectedChar>(*ch);
+            throw makeError<ParseError::UnexpectedChar>(*ch);
         }
     }
 
@@ -208,7 +208,7 @@ namespace ferrit {
         while (true) {
             auto next = advance();
             if (!next) {
-                throw makeError<Error::UnterminatedElement>("block comment");
+                throw makeError<ParseError::UnterminatedElement>("block comment");
             } else if (*next == '*' && match('/')) {
                 return;
             } else if (*next == '\n') {
@@ -229,46 +229,46 @@ namespace ferrit {
         if (match('"')) {
             return makeToken(TokenType::StringLiteral);
         } else {
-            throw makeError<Error::UnterminatedElement>("string literal");
+            throw makeError<ParseError::UnterminatedElement>("string literal");
         }
     }
 
     Token Lexer::lexChar() {
         if (peek() && *peek() == '\'') {
-            throw makeError<Error::EmptyElement>("char literal");
+            throw makeError<ParseError::EmptyElement>("char literal");
         }
         advanceStringChar("char literal");
 
         if (match('\'')) {
             return makeToken(TokenType::CharLiteral);
         } else if (!peek()) {
-            throw makeError<Error::UnterminatedElement>("string literal");
+            throw makeError<ParseError::UnterminatedElement>("string literal");
         } else {
-            throw makeError<Error::CharLiteralTooBig>();
+            throw makeError<ParseError::CharLiteralTooBig>();
         }
     }
 
     void Lexer::advanceStringChar(const std::string &literalType) {
         auto nextChar = peek();
         if (!nextChar) {
-            throw makeError<Error::UnterminatedElement>(literalType);
+            throw makeError<ParseError::UnterminatedElement>(literalType);
         }
 
         switch (*nextChar) {
         case '\n':
-            throw makeError<Error::UnexpectedNewline>(literalType);
+            throw makeError<ParseError::UnexpectedNewline>(literalType);
         case '\\': {
             // consume the backslash, then the escape sequence.
             advance();
             auto escapeSeq = peek();
             if (!escapeSeq) {
-                throw makeError<Error::UnterminatedElement>(literalType);
+                throw makeError<ParseError::UnterminatedElement>(literalType);
             } else if (*escapeSeq == '0' || *escapeSeq == 't' || *escapeSeq == 'n' || *escapeSeq == 'r' ||
                 *escapeSeq == '\'' || *escapeSeq == '"' || *escapeSeq == '\\') {
                 advance();
                 return;
             } else {
-                throw makeError<Error::IllegalEscapeSequence>(*escapeSeq, literalType);
+                throw makeError<ParseError::IllegalEscapeSequence>(*escapeSeq, literalType);
             }
         }
         default:
@@ -307,7 +307,7 @@ namespace ferrit {
             auto literalType = (numberType == TokenType::IntegerLiteral)
                 ? "integer literal" : "float literal";
 
-            throw makeError<Error::UnknownLiteralSuffix>(literalType, lexeme);
+            throw makeError<ParseError::UnknownLiteralSuffix>(literalType, lexeme);
         }
 
         return makeToken(numberType);

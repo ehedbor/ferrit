@@ -38,6 +38,8 @@ namespace ferrit {
             return simpleInstruction("multiply", offset);
         case OpCode::Divide:
             return simpleInstruction("divide", offset);
+        case OpCode::Modulus:
+            return simpleInstruction("modulus", offset);
         case OpCode::Negate:
             return simpleInstruction("negate", offset);
         case OpCode::Return:

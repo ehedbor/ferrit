@@ -1,6 +1,7 @@
 #include "VirtualMachine.h"
 #include "Disassembler.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <format>
 
@@ -22,54 +23,19 @@ namespace ferrit {
     void VirtualMachine::interpret(const Chunk &chunk) {
         init(chunk);
 
-        while (true) {
+        bool run = true;
+        while (run) {
             if (m_traceLog) {
                 int offset = static_cast<int>(m_ip - m_chunk.bytecode().begin());
                 Disassembler debug{*m_traceLog};
                 debug.disassembleInstruction(m_chunk, offset);
             }
 
-            auto instruction = readByte();
-            switch (static_cast<OpCode>(instruction)) {
-            case OpCode::Constant: {
-                Value constant = readConstant();
-                push(constant);
-                break;
-            }
-            case OpCode::Add: {
-                Value left = pop();
-                Value right = pop();
-                push(Value{left.asReal() + right.asReal()});
-                break;
-            }
-            case OpCode::Subtract: {
-                Value left = pop();
-                Value right = pop();
-                push(Value{left.asReal() - right.asReal()});
-                break;
-            }
-            case OpCode::Multiply: {
-                Value left = pop();
-                Value right = pop();
-                push(Value{left.asReal() * right.asReal()});
-                break;
-            }
-            case OpCode::Divide: {
-                Value left = pop();
-                Value right = pop();
-                push(Value{left.asReal() / right.asReal()});
-                break;
-            }
-            case OpCode::Negate:
-                push(Value{-pop().asReal()});
-                break;
-            case OpCode::Return:
-                if (!m_stack.empty()) {
-                    m_natives.println(std::format("{}", pop()));
-                }
-                return;
-            default:
-                throw std::runtime_error(std::format("Unknown opcode '{}'", instruction));
+            auto instruction = static_cast<OpCode>(readByte());
+            try {
+                run = interpretInstruction(instruction);
+            } catch (const PanicError &) {
+                run = false;
             }
 
             if (m_traceLog) {
@@ -84,6 +50,63 @@ namespace ferrit {
                 *m_traceLog << ']' << std::endl;
             }
         }
+    }
+
+    bool VirtualMachine::interpretInstruction(OpCode instruction) {
+        switch (static_cast<OpCode>(instruction)) {
+        case OpCode::Constant: {
+            Value constant = readConstant();
+            push(constant);
+            break;
+        }
+        case OpCode::Add: {
+            Value right = pop();
+            Value left = pop();
+            push(Value{left.asReal() + right.asReal()});
+            break;
+        }
+        case OpCode::Subtract: {
+            Value right = pop();
+            Value left = pop();
+            push(Value{left.asReal() - right.asReal()});
+            break;
+        }
+        case OpCode::Multiply: {
+            Value right = pop();
+            Value left = pop();
+            push(Value{left.asReal() * right.asReal()});
+            break;
+        }
+        case OpCode::Divide: {
+            Value right = pop();
+            Value left = pop();
+            if (right.asReal() == 0.0) {
+                m_natives.panic(ctx(), "error: attempted divide by zero");
+            }
+            push(Value{left.asReal() / right.asReal()});
+            break;
+        }
+        case OpCode::Modulus: {
+            Value right = pop();
+            Value left = pop();
+            if (right.asReal() == 0.0) {
+                m_natives.panic(ctx(), "error: attempted divide by zero");
+            }
+            push(Value{std::fmod(left.asReal(), right.asReal())});
+            break;
+        }
+        case OpCode::Negate:
+            push(Value{-pop().asReal()});
+            break;
+        case OpCode::Return:
+            if (!m_stack.empty()) {
+                m_natives.println(ctx(), std::format("{}", pop()));
+            }
+            return false;
+        default:
+            throw std::runtime_error(std::format("Unknown opcode '{}'", static_cast<int>(instruction)));
+        }
+        return true;
     }
 
     void VirtualMachine::push(Value value) {
@@ -114,5 +137,14 @@ namespace ferrit {
             throw std::runtime_error(std::format("attempted to read invalid constant index '{}'", constantIdx));
         }
         return m_chunk.constantPool().at(constantIdx);
+    }
+
+    ExecutionContext VirtualMachine::ctx() const {
+        // subtract 1 because we have already consumed the current instruction at this point
+        auto offset = std::distance(m_chunk.bytecode().begin(), m_ip) - 1;
+        int line = m_chunk.getLineForOffset(static_cast<int>(offset));
+        return ExecutionContext{
+            .line = line
+        };
     }
 }

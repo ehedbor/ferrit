@@ -73,8 +73,8 @@ namespace ferrit {
             throw makeError<CompileError::NotImplemented>(
                 binExpr.errorToken(), "concatenation operator");
         case TokenType::Percent:
-            throw makeError<CompileError::NotImplemented>(
-                binExpr.errorToken(), "modulo operator operator");
+            emit(OpCode::Modulus, line);
+            break;
         case TokenType::AndAnd:
             throw makeError<CompileError::NotImplemented>(
                 binExpr.errorToken(), "logical and operator");

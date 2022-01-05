@@ -1,17 +1,29 @@
 #pragma once
 
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 
 namespace ferrit {
-    class NativeHandler {
+    struct ExecutionContext final {
+        int line{};
+    };
+
+    class PanicError final : public std::runtime_error {
+    public:
+        using std::runtime_error::runtime_error;
+    };
+
+    class NativeHandler final {
     public:
         NativeHandler(std::ostream &output, std::ostream &errors, std::istream &input) noexcept;
 
-        void println(const std::string &msg);
-        void eprintln(const std::string &msg);
-        std::string readln();
+        void panic(const ExecutionContext &ctx, const std::string &msg);
+
+        void println(const ExecutionContext &ctx, const std::string &msg);
+        void eprintln(const ExecutionContext &ctx, const std::string &msg);
+        std::string readln(const ExecutionContext &ctx);
 
     private:
         std::ostream *m_output{};

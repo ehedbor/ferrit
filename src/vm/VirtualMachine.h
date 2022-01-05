@@ -42,6 +42,8 @@ namespace ferrit {
         void interpret(const Chunk &chunk);
 
     private:
+        bool interpretInstruction(OpCode instruction);
+
         /**
          * Pushes a value to the stack.
          *
@@ -72,6 +74,11 @@ namespace ferrit {
          * @throws std::runtime_error if no such constant exists
          */
         Value readConstant();
+
+        /**
+         * Returns the current execution context
+         */
+        ExecutionContext ctx() const;
 
     private:
         NativeHandler m_natives;

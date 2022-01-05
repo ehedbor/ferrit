@@ -6,17 +6,30 @@ namespace ferrit {
         m_output{&output}, m_errors{&errors}, m_input{&input} {
     }
 
-    void NativeHandler::println(const std::string &msg) {
-        *m_output << msg << std::endl;
+    void NativeHandler::panic(const ExecutionContext &ctx, const std::string &msg) {
+        eprintln(ctx, msg);
+        throw PanicError(msg);
     }
 
-    void NativeHandler::eprintln(const std::string &msg) {
+    void NativeHandler::println(const ExecutionContext &ctx, const std::string &msg) {
         *m_errors << msg << std::endl;
+        if (!(*m_errors)) {
+            panic(ctx, "could not write to standard output");
+        }
     }
 
-    std::string NativeHandler::readln() {
+    void NativeHandler::eprintln(const ExecutionContext &ctx, const std::string &msg) {
+        *m_errors << msg << std::endl;
+        if (!(*m_errors)) {
+            panic(ctx, "could not write to standard error");
+        }
+    }
+
+    std::string NativeHandler::readln(const ExecutionContext &ctx) {
         std::string line;
-        std::getline(*m_input, line);
+        if (!std::getline(*m_input, line)) {
+            panic(ctx, "could not read from standard input");
+        }
         return line;
     }
 }

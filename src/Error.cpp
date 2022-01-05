@@ -16,7 +16,7 @@ namespace ferrit {
     std::string Error::longMessage() const {
         std::string result{what()};
         result += "\n";
-        result += std::format("    at {}\n", formatToken(cause()));
+        result += std::format("    at {}", formatToken(cause()));
         return result;
     }
 

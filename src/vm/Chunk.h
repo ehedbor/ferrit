@@ -5,18 +5,20 @@
 
 #include "Value.h"
 
+
 namespace ferrit {
     /**
      * Represents a possible virtual machine operation.
      */
     enum class OpCode {
-        Constant,               ///< Load a constant from the constant pool to the stack.
-        Add,                    ///< Instruction to add top 2 values.
-        Subtract,               ///< Instruction to subtract top 2 values.
-        Multiply,               ///< Instruction to multiply top 2 values.
-        Divide,                 ///< Instruction to divide top 2 values.
-        Negate,                 ///< Instruction to negate its input value.
-        Return,                 ///< Instruction to return from a function
+        Constant,               ///< get constant at index first
+        Add,                    ///< add first to second
+        Subtract,               ///< subtract second from first
+        Multiply,               ///< multiply first and second
+        Divide,                 ///< divide first by second
+        Modulus,                ///< calculate first modulo second
+        Negate,                 ///< negate first
+        Return,                 ///< return from function
     };
 
     /**

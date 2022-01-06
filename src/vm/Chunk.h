@@ -37,6 +37,8 @@ namespace ferrit {
      */
     class Chunk final {
     public:
+        explicit Chunk() = default;
+
         /**
          * Write the given instruction to the chunk.
          *

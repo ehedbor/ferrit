@@ -18,7 +18,7 @@ namespace ferrit {
          * @param output the ostream to output to.
          * @param plainOutput true to not use colors.
          */
-        ErrorReporter(std::ostream &output, bool plainOutput);
+        explicit ErrorReporter(std::ostream &output, bool plainOutput);
 
         /**
          * Reports an error to the ostream.

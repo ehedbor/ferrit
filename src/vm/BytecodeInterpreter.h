@@ -6,11 +6,11 @@
 
 
 namespace ferrit {
-    class BytecodeInterpreter : public Interpreter {
+    class BytecodeInterpreter final : public Interpreter {
     public:
-        BytecodeInterpreter() noexcept;
-        BytecodeInterpreter(InterpretOptions options) noexcept; // NOLINT(google-explicit-constructor)
-        BytecodeInterpreter(InterpretOptions options,
+        explicit BytecodeInterpreter() noexcept;
+        explicit BytecodeInterpreter(InterpretOptions options) noexcept; // NOLINT(google-explicit-constructor)
+        explicit BytecodeInterpreter(InterpretOptions options,
             std::ostream &output, std::ostream &errors, std::istream &input) noexcept;
 
     public:

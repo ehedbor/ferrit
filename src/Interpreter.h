@@ -38,7 +38,7 @@ namespace ferrit {
         /**
          * Constructs a new interpreter.
          */
-        Interpreter() noexcept = default;
+        explicit Interpreter() noexcept = default;
 
         /**
          * Constructs a new interpreter with the given options,
@@ -46,7 +46,7 @@ namespace ferrit {
          *
          * @param options compile options
          */
-        Interpreter(InterpretOptions options) noexcept; // NOLINT(google-explicit-constructor)
+        explicit Interpreter(InterpretOptions options) noexcept;
 
         /**
          * Constructs a new interpreter with the given options,
@@ -57,7 +57,8 @@ namespace ferrit {
          * @param errors the ostream used for standard errors
          * @param input the istream used for standard input
          */
-        Interpreter(InterpretOptions options, std::ostream &output, std::ostream &errors, std::istream &input) noexcept;
+        explicit Interpreter(InterpretOptions options,
+            std::ostream &output, std::ostream &errors, std::istream &input) noexcept;
 
         virtual ~Interpreter() noexcept;
 

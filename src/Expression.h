@@ -61,7 +61,7 @@ namespace ferrit {
     */
     class BinaryExpression final : public Expression {
     public:
-        BinaryExpression(Token op, ExpressionPtr left, ExpressionPtr right) noexcept;
+        explicit BinaryExpression(Token op, ExpressionPtr left, ExpressionPtr right) noexcept;
 
         [[nodiscard]] const Token &op() const noexcept;
         [[nodiscard]] const Expression &left() const noexcept;
@@ -84,7 +84,7 @@ namespace ferrit {
      */
     class ComparisonExpression final : public Expression {
     public:
-        ComparisonExpression(Token op, ExpressionPtr left, ExpressionPtr right) noexcept;
+        explicit ComparisonExpression(Token op, ExpressionPtr left, ExpressionPtr right) noexcept;
 
         [[nodiscard]] const Token &op() const noexcept;
         [[nodiscard]] const Expression &left() const noexcept;
@@ -107,7 +107,7 @@ namespace ferrit {
      */
     class UnaryExpression final : public Expression {
     public:
-        UnaryExpression(Token op, ExpressionPtr operand, bool isPrefix) noexcept;
+        explicit UnaryExpression(Token op, ExpressionPtr operand, bool isPrefix) noexcept;
 
         [[nodiscard]] const Token &op() const noexcept;
         [[nodiscard]] const Expression &operand() const noexcept;
@@ -130,7 +130,7 @@ namespace ferrit {
      */
     class CallExpression final : public Expression {
     public:
-        CallExpression(Token paren, ExpressionPtr callee, std::vector<ExpressionPtr> arguments) noexcept;
+        explicit CallExpression(Token paren, ExpressionPtr callee, std::vector<ExpressionPtr> arguments) noexcept;
 
         [[nodiscard]] const Token &paren() const noexcept;
         [[nodiscard]] const Expression &callee() const noexcept;
@@ -172,7 +172,7 @@ namespace ferrit {
      */
     class NumberExpression final : public Expression {
     public:
-        NumberExpression(Token value, bool isIntLiteral) noexcept;
+        explicit NumberExpression(Token value, bool isIntLiteral) noexcept;
 
         [[nodiscard]] const Token &value() const noexcept;
         [[nodiscard]] bool isIntLiteral() const noexcept;

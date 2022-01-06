@@ -17,7 +17,7 @@ namespace ferrit {
 
     class NativeHandler final {
     public:
-        NativeHandler(std::ostream &output, std::ostream &errors, std::istream &input) noexcept;
+        explicit NativeHandler(std::ostream &output, std::ostream &errors, std::istream &input) noexcept;
 
         void panic(const ExecutionContext &ctx, const std::string &msg);
 

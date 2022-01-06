@@ -17,7 +17,7 @@ namespace ferrit {
      */
     class Parser final {
     public:
-        Parser() noexcept = default;
+        explicit Parser() noexcept = default;
 
         /**
          * Constructs a \c Parser with the given error reporter.

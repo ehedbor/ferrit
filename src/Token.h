@@ -203,12 +203,12 @@ namespace ferrit {
         /**
          * Construct an invalid token.
          */
-        Token() noexcept = default;
+        explicit Token() noexcept = default;
 
         /**
          * Construct a token with the given options.
          */
-        Token(TokenType tokenType, std::string lexeme, SourceLocation location) noexcept;
+        explicit Token(TokenType tokenType, std::string lexeme, SourceLocation location) noexcept;
 
         bool operator==(const Token &other) const noexcept = default;
 

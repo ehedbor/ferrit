@@ -49,7 +49,7 @@ namespace ferrit {
          * @param parameters the function's parameters
          * @param returnType the function's return type
          */
-        FunctionType(
+        explicit FunctionType(
             Token errorToken,
             std::vector<DeclaredType> parameters,
             std::unique_ptr<DeclaredType> returnType) noexcept;
@@ -104,7 +104,7 @@ namespace ferrit {
          * @param parameters the type of parameters passed to the function
          * @param returnType the function's return type
          */
-        DeclaredType(
+        explicit DeclaredType(
             Token errorToken,
             std::vector<DeclaredType> parameters,
             DeclaredType returnType) noexcept;

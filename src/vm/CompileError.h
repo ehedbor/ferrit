@@ -13,7 +13,7 @@ namespace ferrit {
      * is encountered, it is due to a bug in the parser, not the user's code,
      * and should result in a fatal error.
      */
-    class CompileException : public std::logic_error {
+    class CompileException final : public std::logic_error {
     public:
         using std::logic_error::logic_error;
     };
@@ -34,24 +34,24 @@ namespace ferrit {
     /**
      * Indicates that a given feature is not implemented.
      */
-    class CompileError::NotImplemented : public CompileError {
+    class CompileError::NotImplemented final : public CompileError {
     public:
-        NotImplemented(Token cause, const std::string &feature);
+        explicit NotImplemented(Token cause, const std::string &feature);
         FERRIT_ERROR_PRETTY_NAME("not-implemented");
     };
     
     /**
      * Indicates that the given literal is not representable. 
      */
-    class CompileError::LiteralOutOfRange : public CompileError {
+    class CompileError::LiteralOutOfRange final : public CompileError {
     public:
-        LiteralOutOfRange(Token cause, const std::string &literalType);
+        explicit LiteralOutOfRange(Token cause, const std::string &literalType);
         FERRIT_ERROR_PRETTY_NAME("literal-out-of-range");
     };
 
-    class CompileError::IncompatibleTypes : public CompileError {
+    class CompileError::IncompatibleTypes final : public CompileError {
     public:
-        IncompatibleTypes(Token cause, const std::string &operation, const std::vector<std::string>& types);
+        explicit IncompatibleTypes(Token cause, const std::string &operation, const std::vector<std::string>& types);
         FERRIT_ERROR_PRETTY_NAME("incompatible-types");
 
     private:

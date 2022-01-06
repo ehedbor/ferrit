@@ -30,7 +30,7 @@ namespace ferrit {
      */
     class ParseError::UnexpectedChar final : public ParseError {
     public:
-        UnexpectedChar(Token cause, char ch) noexcept;
+        explicit UnexpectedChar(Token cause, char ch) noexcept;
         FERRIT_ERROR_PRETTY_NAME("unexpected-char");
     };
 
@@ -39,7 +39,7 @@ namespace ferrit {
      */
     class ParseError::UnterminatedElement final : public ParseError {
     public:
-        UnterminatedElement(Token cause, const std::string &element) noexcept;
+        explicit UnterminatedElement(Token cause, const std::string &element) noexcept;
         FERRIT_ERROR_PRETTY_NAME("unterminated-element");
     };
 
@@ -48,7 +48,7 @@ namespace ferrit {
      */
     class ParseError::EmptyElement final : public ParseError {
     public:
-        EmptyElement(Token cause, const std::string &element) noexcept;
+        explicit EmptyElement(Token cause, const std::string &element) noexcept;
         FERRIT_ERROR_PRETTY_NAME("empty-element");
     };
 
@@ -67,7 +67,7 @@ namespace ferrit {
      */
     class ParseError::UnexpectedNewline final : public ParseError {
     public:
-        UnexpectedNewline(Token cause, const std::string &element) noexcept;
+        explicit UnexpectedNewline(Token cause, const std::string &element) noexcept;
         FERRIT_ERROR_PRETTY_NAME("unexpected-newline");
     };
 
@@ -76,7 +76,7 @@ namespace ferrit {
      */
     class ParseError::IllegalEscapeSequence final : public ParseError {
     public:
-        IllegalEscapeSequence(Token cause, char sequence, const std::string &element) noexcept;
+        explicit IllegalEscapeSequence(Token cause, char sequence, const std::string &element) noexcept;
         FERRIT_ERROR_PRETTY_NAME("illegal-escape-sequence");
     };
 
@@ -85,7 +85,7 @@ namespace ferrit {
      */
     class ParseError::UnknownLiteralSuffix final : public ParseError {
     public:
-        UnknownLiteralSuffix(Token cause, const std::string &element, const std::string &suffix) noexcept;
+        explicit UnknownLiteralSuffix(Token cause, const std::string &element, const std::string &suffix) noexcept;
         FERRIT_ERROR_PRETTY_NAME("unknown-literal-suffix");
     };
 
@@ -95,7 +95,7 @@ namespace ferrit {
      */
     class ParseError::ExpectedElementNotPresent final : public ParseError {
     public:
-        ExpectedElementNotPresent(Token cause, const std::string &expected) noexcept;
+        explicit ExpectedElementNotPresent(Token cause, const std::string &expected) noexcept;
         FERRIT_ERROR_PRETTY_NAME("parse-error");
     };
 

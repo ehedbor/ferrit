@@ -24,7 +24,7 @@ namespace ferrit {
          * @param cause the location of the error
          * @param what a formatted message containing information about the error
          */
-        Error(Token cause, const std::string &what) noexcept;
+        explicit Error(Token cause, const std::string &what) noexcept;
 
     public:
         /**

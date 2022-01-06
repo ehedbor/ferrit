@@ -16,7 +16,7 @@ namespace ferrit {
      */
     class Lexer final {
     public:
-        Lexer() noexcept = default;
+        explicit Lexer() noexcept = default;
 
         /**
          * Constructs a lexer with the given error reporter.

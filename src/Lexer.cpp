@@ -385,7 +385,7 @@ namespace ferrit {
         int count = m_current - m_start;
         int startColumn = m_location.column - count;
         std::string lexeme = m_code.substr(m_start, count);
-        return {type, std::move(lexeme), {m_location.line, startColumn}};
+        return Token{type, std::move(lexeme), {m_location.line, startColumn}};
     }
 
     std::optional<char> Lexer::peek() const noexcept {

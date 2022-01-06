@@ -27,7 +27,7 @@ namespace ferrit {
          * @param natives native function api
          * @param traceLog optional ostream to print debug information to.
          */
-        VirtualMachine(NativeHandler natives, std::ostream *traceLog) noexcept;
+        explicit VirtualMachine(NativeHandler natives, std::ostream *traceLog) noexcept;
 
     private:
         void init(const Chunk &chunk);

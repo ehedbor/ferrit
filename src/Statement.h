@@ -57,7 +57,7 @@ namespace ferrit {
      */
     class FunctionDeclaration final : public Statement {
     public:
-        FunctionDeclaration(
+        explicit FunctionDeclaration(
             std::vector<Token> modifiers,
             Token keyword,
             Token name,
@@ -92,7 +92,7 @@ namespace ferrit {
      */
     class BlockStatement final : public Statement {
     public:
-        BlockStatement(Token brace, std::vector<StatementPtr> body) noexcept;
+        explicit BlockStatement(Token brace, std::vector<StatementPtr> body) noexcept;
 
         [[nodiscard]] const Token &brace() const noexcept;
         [[nodiscard]] const std::vector<StatementPtr> &body() const noexcept;

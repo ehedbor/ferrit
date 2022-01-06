@@ -11,7 +11,7 @@
 
 
 namespace ferrit {
-    class BytecodeCompiler : private StatementVisitor, private ExpressionVisitor {
+    class BytecodeCompiler final : private StatementVisitor, private ExpressionVisitor {
     public:
         explicit BytecodeCompiler(std::shared_ptr<const ErrorReporter> errorReporter);
 

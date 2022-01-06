@@ -59,50 +59,89 @@ namespace ferrit {
             push(constant);
             break;
         }
-        case OpCode::Add: {
-            Value right = pop();
-            Value left = pop();
-            push(Value{left.asReal() + right.asReal()});
+        case OpCode::IAdd: {
+            std::int64_t right = pop().asInteger();
+            std::int64_t left = pop().asInteger();
+            push(Value{left + right});
             break;
         }
-        case OpCode::Subtract: {
-            Value right = pop();
-            Value left = pop();
-            push(Value{left.asReal() - right.asReal()});
+        case OpCode::ISubtract: {
+            std::int64_t right = pop().asInteger();
+            std::int64_t left = pop().asInteger();
+            push(Value{left - right});
             break;
         }
-        case OpCode::Multiply: {
-            Value right = pop();
-            Value left = pop();
-            push(Value{left.asReal() * right.asReal()});
+        case OpCode::IMultiply: {
+            std::int64_t right = pop().asInteger();
+            std::int64_t left = pop().asInteger();
+            push(Value{left * right});
             break;
         }
-        case OpCode::Divide: {
-            Value right = pop();
-            Value left = pop();
-            if (right.asReal() == 0.0) {
+        case OpCode::IDivide: {
+            std::int64_t right = pop().asInteger();
+            std::int64_t left = pop().asInteger();
+            if (right == 0) {
                 m_natives.panic(ctx(), "error: attempted divide by zero");
             }
-            push(Value{left.asReal() / right.asReal()});
+            push(Value{left / right});
             break;
         }
-        case OpCode::Modulus: {
-            Value right = pop();
-            Value left = pop();
-            if (right.asReal() == 0.0) {
+        case OpCode::IModulus: {
+            std::int64_t right = pop().asInteger();
+            std::int64_t left = pop().asInteger();
+            if (right == 0) {
                 m_natives.panic(ctx(), "error: attempted divide by zero");
             }
+            push(Value{left % right});
+            break;
+        }
+        case OpCode::INegate: {
+            std::int64_t argument = pop().asInteger();
+            push(Value{-argument});
+            break;
+        }
+        case OpCode::FAdd: {
+            double right = pop().asReal();
+            double left = pop().asReal();
+            push(Value{left + right});
+            break;
+        }
+        case OpCode::FSubtract: {
+            double right = pop().asReal();
+            double left = pop().asReal();
+            push(Value{left - right});
+            break;
+        }
+        case OpCode::FMultiply: {
+            double right = pop().asReal();
+            double left = pop().asReal();
+            push(Value{left * right});
+            break;
+        }
+        case OpCode::FDivide: {
+            double right = pop().asReal();
+            double left = pop().asReal();
+            // note division by zero is allowed for reals
+            push(Value{left / right});
+            break;
+        }
+        case OpCode::FModulus: {
+            Value right = pop();
+            Value left = pop();
             push(Value{std::fmod(left.asReal(), right.asReal())});
             break;
         }
-        case OpCode::Negate:
-            push(Value{-pop().asReal()});
+        case OpCode::FNegate: {
+            double argument = pop().asReal();
+            push(Value{-argument});
             break;
-        case OpCode::Return:
+        }
+        case OpCode::Return: {
             if (!m_stack.empty()) {
                 m_natives.println(ctx(), std::format("{}", pop()));
             }
             return false;
+        }
         default:
             throw std::runtime_error(std::format("Unknown opcode '{}'", static_cast<int>(instruction)));
         }

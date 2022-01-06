@@ -2,6 +2,7 @@
 
 #include "../Error.h"
 
+#include <vector>
 
 namespace ferrit {
     /**
@@ -24,6 +25,7 @@ namespace ferrit {
     public:
         class NotImplemented;
         class LiteralOutOfRange;
+        class IncompatibleTypes;
 
     protected:
         using Error::Error;
@@ -45,5 +47,14 @@ namespace ferrit {
     public:
         LiteralOutOfRange(Token cause, const std::string &literalType);
         FERRIT_ERROR_PRETTY_NAME("literal-out-of-range");
+    };
+
+    class CompileError::IncompatibleTypes : public CompileError {
+    public:
+        IncompatibleTypes(Token cause, const std::string &operation, const std::vector<std::string>& types);
+        FERRIT_ERROR_PRETTY_NAME("incompatible-types");
+
+    private:
+        static std::string formatTypes(const std::vector<std::string>& types) noexcept;
     };
 }

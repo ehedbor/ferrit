@@ -29,21 +29,33 @@ namespace ferrit {
         std::uint8_t instruction = chunk.bytecode()[offset];
         switch (static_cast<OpCode>(instruction)) {
         case OpCode::Constant:
-            return constantInstruction("loadconst", chunk, offset);
-        case OpCode::Add:
-            return simpleInstruction("add", offset);
-        case OpCode::Subtract:
-            return simpleInstruction("subtract", offset);
-        case OpCode::Multiply:
-            return simpleInstruction("multiply", offset);
-        case OpCode::Divide:
-            return simpleInstruction("divide", offset);
-        case OpCode::Modulus:
-            return simpleInstruction("modulus", offset);
-        case OpCode::Negate:
-            return simpleInstruction("negate", offset);
+            return constantInstruction("const", chunk, offset);
+        case OpCode::IAdd:
+            return simpleInstruction("iadd", offset);
+        case OpCode::ISubtract:
+            return simpleInstruction("isub", offset);
+        case OpCode::IMultiply:
+            return simpleInstruction("imul", offset);
+        case OpCode::IDivide:
+            return simpleInstruction("idiv", offset);
+        case OpCode::IModulus:
+            return simpleInstruction("imod", offset);
+        case OpCode::INegate:
+            return simpleInstruction("ineg", offset);
+        case OpCode::FAdd:
+            return simpleInstruction("fadd", offset);
+        case OpCode::FSubtract:
+            return simpleInstruction("fsub", offset);
+        case OpCode::FMultiply:
+            return simpleInstruction("fmul", offset);
+        case OpCode::FDivide:
+            return simpleInstruction("fdiv", offset);
+        case OpCode::FModulus:
+            return simpleInstruction("fmod", offset);
+        case OpCode::FNegate:
+            return simpleInstruction("fneg", offset);
         case OpCode::Return:
-            return simpleInstruction("return", offset);
+            return simpleInstruction("ret", offset);
         default:
             m_output << std::format("Unknown opcode {}\n", instruction);
             return offset + 1;

@@ -1,5 +1,6 @@
 #include "BytecodeCompiler.h"
 
+#include <sstream>
 
 namespace ferrit {
     BytecodeCompiler::BytecodeCompiler(std::shared_ptr<const ErrorReporter> errorReporter) :
@@ -35,14 +36,12 @@ namespace ferrit {
         }
     }
 
-    VisitResult BytecodeCompiler::visitFunctionDecl(
-        [[maybe_unused]] const FunctionDeclaration &funDecl) {
+    VisitResult BytecodeCompiler::visitFunctionDecl(const FunctionDeclaration &funDecl) {
         throw makeError<CompileError::NotImplemented>(
             funDecl.errorToken(), "functions");
     }
 
-    VisitResult BytecodeCompiler::visitBlockStmt(
-        [[maybe_unused]] const BlockStatement &blockStmt) {
+    VisitResult BytecodeCompiler::visitBlockStmt(const BlockStatement &blockStmt) {
         throw makeError<CompileError::NotImplemented>(
             blockStmt.errorToken(), "block statements");
     }
@@ -52,29 +51,64 @@ namespace ferrit {
     }
 
     VisitResult BytecodeCompiler::visitBinaryExpr(const BinaryExpression &binExpr) {
-        binExpr.left().accept(*this);
-        binExpr.right().accept(*this);
+        auto leftType = std::any_cast<RuntimeType>(binExpr.left().accept(*this));
+        auto rightType = std::any_cast<RuntimeType>(binExpr.right().accept(*this));
 
         int line = binExpr.op().location.line;
         switch (binExpr.op().type) {
         case TokenType::Plus:
-            emit(OpCode::Add, line);
-            break;
+            if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
+                emit(OpCode::IAdd, line);
+            } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
+                emit(OpCode::FAdd, line);
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    binExpr.errorToken(), "'+'", std::vector{leftType.name(), rightType.name()});
+            }
+            return leftType;
         case TokenType::Minus:
-            emit(OpCode::Subtract, line);
-            break;
+            if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
+                emit(OpCode::ISubtract, line);
+            } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
+                emit(OpCode::FSubtract, line);
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    binExpr.errorToken(), "'-'", std::vector{leftType.name(), rightType.name()});
+            }
+            return leftType;
         case TokenType::Asterisk:
-            emit(OpCode::Multiply, line);
-            break;
+            if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
+                emit(OpCode::IMultiply, line);
+            } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
+                emit(OpCode::FMultiply, line);
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    binExpr.errorToken(), "'*'", std::vector{leftType.name(), rightType.name()});
+            }
+            return leftType;
         case TokenType::Slash:
-            emit(OpCode::Divide, line);
-            break;
+            if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
+                emit(OpCode::IDivide, line);
+            } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
+                emit(OpCode::FDivide, line);
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    binExpr.errorToken(), "'/'", std::vector{leftType.name(), rightType.name()});
+            }
+            return leftType;
         case TokenType::Tilde:
             throw makeError<CompileError::NotImplemented>(
                 binExpr.errorToken(), "concatenation operator");
         case TokenType::Percent:
-            emit(OpCode::Modulus, line);
-            break;
+            if (leftType == RuntimeType::IntType) {
+                emit(OpCode::IAdd, line);
+            } else if (leftType == RuntimeType::RealType) {
+                emit(OpCode::FAdd, line);
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    binExpr.errorToken(), "'%'", std::vector{leftType.name(), rightType.name()});
+            }
+            return leftType;
         case TokenType::AndAnd:
             throw makeError<CompileError::NotImplemented>(
                 binExpr.errorToken(), "logical and operator");
@@ -87,27 +121,36 @@ namespace ferrit {
                     binExpr.op().lexeme,
                     binExpr.op().type));
         }
-
-        return {};
     }
 
-    VisitResult BytecodeCompiler::visitComparisonExpr(
-        [[maybe_unused]] const ComparisonExpression &cmpExpr) {
+    VisitResult BytecodeCompiler::visitComparisonExpr(const ComparisonExpression &cmpExpr) {
         throw makeError<CompileError::NotImplemented>(
             cmpExpr.errorToken(), "comparisons");
     }
 
     VisitResult BytecodeCompiler::visitUnaryExpr(const UnaryExpression &unaryExpr) {
-        unaryExpr.operand().accept(*this);
+        auto type = std::any_cast<RuntimeType>(unaryExpr.operand().accept(*this));
 
         TokenType opType = unaryExpr.op().type;
         switch (opType) {
         case TokenType::Plus:
-            // unary plus does literally nothing, so emit no bytecode.
-            break;
+            if (type == RuntimeType::IntType || type == RuntimeType::RealType) {
+                // unary plus does literally nothing, so emit no bytecode.
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    unaryExpr.errorToken(), "'+'", std::vector{type.name()});
+            }
+            return type;
         case TokenType::Minus:
-            emit(OpCode::Negate, unaryExpr.op().location.line);
-            break;
+            if (type == RuntimeType::IntType) {
+                emit(OpCode::INegate, unaryExpr.op().location.line);
+            } else if (type == RuntimeType::RealType) {
+                emit(OpCode::FNegate, unaryExpr.op().location.line);
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    unaryExpr.errorToken(), "'-'", std::vector{type.name()});
+            }
+            return type;
         case TokenType::Tilde:
             throw makeError<CompileError::NotImplemented>(
                 unaryExpr.errorToken(), "concatenation operator");
@@ -126,49 +169,22 @@ namespace ferrit {
                     unaryExpr.op().lexeme,
                     unaryExpr.op().type)};
         }
-        return {};
     }
 
-    VisitResult BytecodeCompiler::visitCallExpr(
-        [[maybe_unused]] const CallExpression &callExpr) {
+    VisitResult BytecodeCompiler::visitCallExpr(const CallExpression &callExpr) {
         throw makeError<CompileError::NotImplemented>(
             callExpr.errorToken(), "function calls");
     }
 
-    VisitResult BytecodeCompiler::visitVariableExpr(
-        [[maybe_unused]] const VariableExpression &varExpr) {
+    VisitResult BytecodeCompiler::visitVariableExpr(const VariableExpression &varExpr) {
         throw makeError<CompileError::NotImplemented>(
             varExpr.errorToken(), "variable expressions");
     }
 
     VisitResult BytecodeCompiler::visitNumberExpr(const NumberExpression &numExpr) {
-        if (numExpr.isIntLiteral()) {
-            // TODO: handle integer literals separately
-            //throw std::logic_error("Integers not yet supported");
-        }
-
-        std::string lexeme = numExpr.value().lexeme;
-        lexeme.erase(std::remove(lexeme.begin(), lexeme.end(), '_'), lexeme.end());
-
-        // TODO: make function to parse integers
-        double realValue;
-        try {
-            std::size_t numConverted;
-            realValue = std::stod(lexeme, &numConverted);
-            if (numConverted != lexeme.size()) {
-                throw CompileException("could not parse real literal: unexpected suffix");
-            }
-        } catch (const std::out_of_range&) {
-            throw makeError<CompileError::LiteralOutOfRange>(
-                numExpr.errorToken(), "real literal");
-        } catch (const std::invalid_argument&) {
-            throw CompileException("could not parse real literal: invalid argument");
-        }
-
-        Value value{realValue};
+        Value value = parseNumericLiteral(numExpr);
         emitConstant(value, numExpr.value().location.line);
-
-        return {};
+        return value.runtimeType();
     }
 
     void BytecodeCompiler::emit(OpCode opCode, int line) {
@@ -179,15 +195,40 @@ namespace ferrit {
         m_chunk.writeInstruction(opCode, arg, line);
     }
 
-    void BytecodeCompiler::emitConstant(Value value, int line) {
+    void BytecodeCompiler::emitConstant(const Value &value, int line) {
         emit(OpCode::Constant, makeConstant(value), line);
     }
 
-    std::uint8_t BytecodeCompiler::makeConstant(Value value) {
+    std::uint8_t BytecodeCompiler::makeConstant(const Value &value) {
         std::uint8_t constant = m_chunk.addConstant(value);
         if (m_chunk.constantPool().size() > std::numeric_limits<std::uint8_t>::max()) {
             throw CompileException("Too many constants in one chunk.");
         }
         return constant;
+    }
+
+    Value BytecodeCompiler::parseNumericLiteral(const NumberExpression &numExpr) {
+        std::string lexeme{numExpr.value().lexeme};
+        std::erase(lexeme, '_');
+
+        std::istringstream stream{lexeme};
+        if (numExpr.isIntLiteral()) {
+            std::int64_t result;
+            if (stream >> result && stream.eof()) {
+                return Value{result};
+            }
+        } else {
+            double result;
+            if (stream >> result && stream.eof()) {
+                return Value{result};
+            }
+        }
+
+        std::string literalType = numExpr.isIntLiteral() ? "integer" : "real";
+        if (!stream.eof()) {
+            throw CompileException(std::format("could not parse {} literal: unexpected suffix", literalType));
+        } else {
+            throw CompileException(std::format("could not parse {} literal", literalType));
+        }
     }
 }

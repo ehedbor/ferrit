@@ -194,7 +194,7 @@ namespace ferrit {
 
         // parse comment until end of line
 
-        while (getCurrentNewlineType() <= 0) {
+        while (peek().has_value() && getCurrentNewlineType() <= 0) {
             advance();
         }
     }

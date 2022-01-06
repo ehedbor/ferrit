@@ -11,14 +11,20 @@ namespace ferrit {
      * Represents a possible virtual machine operation.
      */
     enum class OpCode {
-        Constant,               ///< get constant at index first
-        Add,                    ///< add first to second
-        Subtract,               ///< subtract second from first
-        Multiply,               ///< multiply first and second
-        Divide,                 ///< divide first by second
-        Modulus,                ///< calculate first modulo second
-        Negate,                 ///< negate first
-        Return,                 ///< return from function
+        Constant,
+        IAdd,
+        ISubtract,
+        IMultiply,
+        IDivide,
+        IModulus,
+        INegate,
+        FAdd,
+        FSubtract,
+        FMultiply,
+        FDivide,
+        FModulus,
+        FNegate,
+        Return,
     };
 
     /**

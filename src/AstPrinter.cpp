@@ -132,6 +132,11 @@ namespace ferrit {
         return {};
     }
 
+    VisitResult AstPrinter::visitBoolExpr(const BooleanExpression &boolExpr) {
+        printLine(std::format("BooleanExpression: {}", boolExpr.value().type == TokenType::True));
+        return {};
+    }
+
     void AstPrinter::printLine(const std::string &line) {
         *m_out << std::format("{:{}} {}\n", ' ', m_depth * INDENTATION_LEVEL, line);
     }

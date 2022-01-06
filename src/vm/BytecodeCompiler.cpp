@@ -59,62 +59,77 @@ namespace ferrit {
         case TokenType::Plus:
             if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
                 emit(OpCode::IAdd, line);
+                return RuntimeType::IntType;
             } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
                 emit(OpCode::FAdd, line);
+                return RuntimeType::RealType;
             } else {
                 throw makeError<CompileError::IncompatibleTypes>(
                     binExpr.errorToken(), "'+'", std::vector{leftType.name(), rightType.name()});
             }
-            return leftType;
         case TokenType::Minus:
             if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
                 emit(OpCode::ISubtract, line);
+                return RuntimeType::IntType;
             } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
                 emit(OpCode::FSubtract, line);
+                return RuntimeType::RealType;
             } else {
                 throw makeError<CompileError::IncompatibleTypes>(
                     binExpr.errorToken(), "'-'", std::vector{leftType.name(), rightType.name()});
             }
-            return leftType;
         case TokenType::Asterisk:
             if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
                 emit(OpCode::IMultiply, line);
+                return RuntimeType::IntType;
             } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
                 emit(OpCode::FMultiply, line);
+                return RuntimeType::RealType;
             } else {
                 throw makeError<CompileError::IncompatibleTypes>(
                     binExpr.errorToken(), "'*'", std::vector{leftType.name(), rightType.name()});
             }
-            return leftType;
         case TokenType::Slash:
             if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
                 emit(OpCode::IDivide, line);
+                return RuntimeType::IntType;
             } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
                 emit(OpCode::FDivide, line);
+                return RuntimeType::RealType;
             } else {
                 throw makeError<CompileError::IncompatibleTypes>(
                     binExpr.errorToken(), "'/'", std::vector{leftType.name(), rightType.name()});
             }
-            return leftType;
         case TokenType::Tilde:
             throw makeError<CompileError::NotImplemented>(
                 binExpr.errorToken(), "concatenation operator");
         case TokenType::Percent:
-            if (leftType == RuntimeType::IntType) {
+            if (leftType == RuntimeType::IntType && rightType == RuntimeType::IntType) {
                 emit(OpCode::IAdd, line);
-            } else if (leftType == RuntimeType::RealType) {
+                return RuntimeType::IntType;
+            } else if (leftType == RuntimeType::RealType && rightType == RuntimeType::RealType) {
                 emit(OpCode::FAdd, line);
+                return RuntimeType::RealType;
             } else {
                 throw makeError<CompileError::IncompatibleTypes>(
                     binExpr.errorToken(), "'%'", std::vector{leftType.name(), rightType.name()});
             }
-            return leftType;
         case TokenType::AndAnd:
-            throw makeError<CompileError::NotImplemented>(
-                binExpr.errorToken(), "logical and operator");
+            if (leftType == RuntimeType::BoolType && rightType == RuntimeType::BoolType) {
+                emit(OpCode::BAnd, line);
+                return RuntimeType::BoolType;
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    binExpr.errorToken(), "'&&'", std::vector{leftType.name(), rightType.name()});
+            }
         case TokenType::OrOr:
-            throw makeError<CompileError::NotImplemented>(
-                binExpr.errorToken(), "logical or operator");
+            if (leftType == RuntimeType::BoolType && rightType == RuntimeType::BoolType) {
+                emit(OpCode::BOr, line);
+                return RuntimeType::BoolType;
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    binExpr.errorToken(), "'&&'", std::vector{leftType.name(), rightType.name()});
+            }
         default:
             throw CompileException(
                 std::format("unknown operator '{}' ({})",
@@ -124,8 +139,39 @@ namespace ferrit {
     }
 
     VisitResult BytecodeCompiler::visitComparisonExpr(const ComparisonExpression &cmpExpr) {
-        throw makeError<CompileError::NotImplemented>(
-            cmpExpr.errorToken(), "comparisons");
+        auto leftType = std::any_cast<RuntimeType>(cmpExpr.left().accept(*this));
+        auto rightType = std::any_cast<RuntimeType>(cmpExpr.right().accept(*this));
+
+        int line = cmpExpr.op().location.line;
+        switch (cmpExpr.op().type) {
+        case TokenType::EqualEqual:
+            if (leftType == RuntimeType::BoolType && rightType == RuntimeType::BoolType) {
+                emit(OpCode::BEqual, line);
+                return RuntimeType::BoolType;
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    cmpExpr.errorToken(), "'=='", std::vector{leftType.name(), rightType.name()});
+            }
+        case TokenType::BangEqual:
+            if (leftType == RuntimeType::BoolType && rightType == RuntimeType::BoolType) {
+                emit(OpCode::BNotEqual, line);
+                return RuntimeType::BoolType;
+            } else {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    cmpExpr.errorToken(), "'!='", std::vector{leftType.name(), rightType.name()});
+            }
+        case TokenType::GreaterEqual:
+        case TokenType::Greater:
+        case TokenType::LessEqual:
+        case TokenType::Less:
+            throw makeError<CompileError::NotImplemented>(
+                cmpExpr.errorToken(), "comparisons");
+        default:
+            throw CompileException(
+                std::format("unknown operator '{}' ({})",
+                    cmpExpr.op().lexeme,
+                    cmpExpr.op().type));
+        }
     }
 
     VisitResult BytecodeCompiler::visitUnaryExpr(const UnaryExpression &unaryExpr) {
@@ -155,8 +201,13 @@ namespace ferrit {
             throw makeError<CompileError::NotImplemented>(
                 unaryExpr.errorToken(), "concatenation operator");
         case TokenType::Bang:
-            throw makeError<CompileError::NotImplemented>(
-                unaryExpr.errorToken(), "logical not operator");
+            if (type != RuntimeType::BoolType) {
+                throw makeError<CompileError::IncompatibleTypes>(
+                    unaryExpr.errorToken(), "'!'", std::vector{type.name()});
+            } else {
+                emit(OpCode::BNot, unaryExpr.op().location.line);
+                return type;
+            }
         case TokenType::PlusPlus:
             throw makeError<CompileError::NotImplemented>(
                 unaryExpr.errorToken(), "increment operators");
@@ -184,6 +235,21 @@ namespace ferrit {
     VisitResult BytecodeCompiler::visitNumberExpr(const NumberExpression &numExpr) {
         Value value = parseNumericLiteral(numExpr);
         emitConstant(value, numExpr.value().location.line);
+        return value.runtimeType();
+    }
+
+    VisitResult BytecodeCompiler::visitBoolExpr(const BooleanExpression &boolExpr) {
+        bool booleanValue;
+        if (boolExpr.value().type == TokenType::True) {
+            booleanValue = true;
+        } else if (boolExpr.value().type == TokenType::False) {
+            booleanValue = false;
+        } else {
+            throw CompileException("Unknown boolean literal kind.");
+        }
+
+        Value value{booleanValue};
+        emitConstant(value, boolExpr.value().location.line);
         return value.runtimeType();
     }
 

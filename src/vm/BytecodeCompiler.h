@@ -30,6 +30,7 @@ namespace ferrit {
         VisitResult visitCallExpr(const CallExpression &callExpr) override;
         VisitResult visitVariableExpr(const VariableExpression &varExpr) override;
         VisitResult visitNumberExpr(const NumberExpression &numExpr) override;
+        VisitResult visitBoolExpr(const BooleanExpression &boolExpr) override;
 
     private:
         void emit(OpCode opCode, int line);

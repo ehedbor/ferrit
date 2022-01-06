@@ -24,6 +24,11 @@ namespace ferrit {
         FDivide,
         FModulus,
         FNegate,
+        BAnd,
+        BOr,
+        BNot,
+        BEqual,
+        BNotEqual,
         Return,
     };
 

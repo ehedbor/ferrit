@@ -165,4 +165,20 @@ namespace ferrit {
         return value() == numOther.value() && isIntLiteral() == numOther.isIntLiteral();
     }
 
+    BooleanExpression::BooleanExpression(Token value) noexcept :
+        m_value(std::move(value)) {
+    }
+
+    const Token &BooleanExpression::value() const noexcept {
+        return m_value;
+    }
+
+    const Token &BooleanExpression::errorToken() const noexcept {
+        return value();
+    }
+
+    bool BooleanExpression::equals(const Expression &other) const noexcept {
+        const auto &boolOther = static_cast<const BooleanExpression &>(other); //NOLINT
+        return value() == boolOther.value();
+    }
 }

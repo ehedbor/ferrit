@@ -14,6 +14,7 @@ namespace ferrit {
     class CallExpression;
     class VariableExpression;
     class NumberExpression;
+    class BooleanExpression;
 
     using ExpressionPtr = std::unique_ptr<Expression>;
 
@@ -32,6 +33,7 @@ namespace ferrit {
         virtual VisitResult visitCallExpr(const CallExpression &callExpr) = 0;
         virtual VisitResult visitVariableExpr(const VariableExpression &varExpr) = 0;
         virtual VisitResult visitNumberExpr(const NumberExpression &numExpr) = 0;
+        virtual VisitResult visitBoolExpr(const BooleanExpression &boolExpr) = 0;
     };
 
     /**
@@ -184,5 +186,24 @@ namespace ferrit {
     private:
         Token m_value;
         bool m_isIntLiteral;
+    };
+
+    /**
+     * Represents a literal boolean (true or false).
+     */
+    class BooleanExpression final : public Expression {
+    public:
+        explicit BooleanExpression(Token value) noexcept;
+
+        [[nodiscard]] const Token &value() const noexcept;
+        [[nodiscard]] const Token &errorToken() const noexcept override;
+
+        MAKE_VISITABLE(ExpressionVisitor, BoolExpr);
+
+    protected:
+        [[nodiscard]] bool equals(const Expression &other) const noexcept override;
+
+    private:
+        Token m_value;
     };
 }

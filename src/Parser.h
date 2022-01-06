@@ -71,6 +71,7 @@ namespace ferrit {
         [[nodiscard]] ExpressionPtr parseParenthesizedExpr();
         [[nodiscard]] ExpressionPtr parseVariable();
         [[nodiscard]] ExpressionPtr parseNumber();
+        [[nodiscard]] ExpressionPtr parseBoolean();
 
         /**
          * Attempts to recover from an error by skipping tokens until finding

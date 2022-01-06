@@ -54,6 +54,16 @@ namespace ferrit {
             return simpleInstruction("fmod", offset);
         case OpCode::FNegate:
             return simpleInstruction("fneg", offset);
+        case OpCode::BAnd:
+            return simpleInstruction("band", offset);
+        case OpCode::BOr:
+            return simpleInstruction("bor", offset);
+        case OpCode::BNot:
+            return simpleInstruction("bneg", offset);
+        case OpCode::BEqual:
+            return simpleInstruction("beq", offset);
+        case OpCode::BNotEqual:
+            return simpleInstruction("bne", offset);
         case OpCode::Return:
             return simpleInstruction("ret", offset);
         default:

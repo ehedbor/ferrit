@@ -126,14 +126,43 @@ namespace ferrit {
             break;
         }
         case OpCode::FModulus: {
-            Value right = pop();
-            Value left = pop();
-            push(Value{std::fmod(left.asReal(), right.asReal())});
+            double right = pop().asReal();
+            double left = pop().asReal();
+            push(Value{std::fmod(left, right)});
             break;
         }
         case OpCode::FNegate: {
             double argument = pop().asReal();
             push(Value{-argument});
+            break;
+        }
+        case OpCode::BAnd: {
+            bool right = pop().asBoolean();
+            bool left = pop().asBoolean();
+            push(Value{left && right});
+            break;
+        }
+        case OpCode::BOr: {
+            bool right = pop().asBoolean();
+            bool left = pop().asBoolean();
+            push(Value{left || right});
+            break;
+        }
+        case OpCode::BNot: {
+            bool argument = pop().asBoolean();
+            push(Value{!argument});
+            break;
+        }
+        case OpCode::BEqual: {
+            bool right = pop().asBoolean();
+            bool left = pop().asBoolean();
+            push(Value{left == right});
+            break;
+        }
+        case OpCode::BNotEqual: {
+            bool right = pop().asBoolean();
+            bool left = pop().asBoolean();
+            push(Value{left != right});
             break;
         }
         case OpCode::Return: {

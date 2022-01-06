@@ -164,8 +164,7 @@ namespace ferrit {
     }
 
     ExpressionPtr Parser::parseExpression() {
-        //return parseDisjunction();
-        return parseAdditive();
+        return parseDisjunction();
     }
 
     ExpressionPtr Parser::parseDisjunction() {
@@ -285,6 +284,8 @@ namespace ferrit {
             return parseVariable();
         } else if (match(TokenType::FloatLiteral) || match(TokenType::IntegerLiteral)) {
             return parseNumber();
+        } else if (match(TokenType::True) || match(TokenType::False)) {
+            return parseBoolean();
         } else {
             throw makeError("expected primary expression");
         }
@@ -304,6 +305,11 @@ namespace ferrit {
         Token number = previous();
         bool isInteger = (number.type == TokenType::IntegerLiteral);
         return std::make_unique<NumberExpression>(std::move(number), isInteger);
+    }
+
+    ExpressionPtr Parser::parseBoolean() {
+        const Token &boolean = previous();
+        return std::make_unique<BooleanExpression>(boolean);
     }
 
     void Parser::synchronize() noexcept {

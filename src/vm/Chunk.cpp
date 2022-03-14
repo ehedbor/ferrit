@@ -15,13 +15,46 @@ namespace ferrit {
         addLineInfo(line);
     }
 
+    void Chunk::writeInstruction(OpCode opCode, std::uint16_t arg, int line) {
+        writeRaw(static_cast<std::uint8_t>(opCode));
+        addLineInfo(line);
+
+        auto highByte = static_cast<std::uint8_t>((arg >> 8) & 0xFF);
+        writeRaw(highByte);
+        addLineInfo(line);
+
+        auto lowByte = static_cast<std::uint8_t>(arg & 0xFF);
+        writeRaw(lowByte);
+        addLineInfo(line);
+    }
+
+    void Chunk::patchByte(int offset, std::uint8_t arg) {
+        if (offset > m_bytecode.size())
+        m_bytecode[offset] = arg;
+    }
+
+    void Chunk::patchShort(int offset, std::uint16_t arg) {
+        m_bytecode[offset] = (arg >> 8) & 0xFF;
+        m_bytecode[offset + 1] = arg & 0xFF;
+    }
+
+    std::uint8_t Chunk::byteAt(int offset) const {
+        return m_bytecode[offset];
+    }
+
+    std::uint16_t Chunk::shortAt(int offset) const {
+        auto hiByte = m_bytecode[offset];
+        auto loByte = m_bytecode[offset + 1];
+        return (hiByte << 8) | loByte;
+    }
+
+    int Chunk::size() const noexcept {
+        return static_cast<int>(m_bytecode.size());
+    }
+
     std::uint8_t Chunk::addConstant(Value value) {
         m_constantPool.push_back(value);
         return static_cast<std::uint8_t>(m_constantPool.size() - 1);
-    }
-
-    const std::vector<std::uint8_t> &Chunk::bytecode() const noexcept {
-        return m_bytecode;
     }
 
     const std::vector<Value> &Chunk::constantPool() const noexcept {

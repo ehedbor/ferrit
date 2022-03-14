@@ -68,6 +68,14 @@ namespace ferrit {
         std::uint8_t readByte();
 
         /**
+         * Reads the next (big-endian) short from the bytecode, incrementing the instruction pointer as necessary.
+         *
+         * @return the short
+         * @throws std::runtime_error if the end of the bytecode has been reached
+         */
+        std::uint16_t readShort();
+
+        /**
          * Reads the constant specified by the instruction pointer and increments the pointer.
          *
          * @return the constant
@@ -78,13 +86,13 @@ namespace ferrit {
         /**
          * Returns the current execution context
          */
-        ExecutionContext ctx() const;
+        [[nodiscard]] ExecutionContext ctx() const;
 
     private:
         NativeHandler m_natives;
         std::ostream *m_traceLog{nullptr};
         Chunk m_chunk{};
-        std::vector<std::uint8_t>::const_iterator m_ip{};
+        int m_ip{0};
         std::vector<Value> m_stack{};
     };
 }

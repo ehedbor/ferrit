@@ -44,6 +44,23 @@ namespace ferrit {
         return {};
     }
 
+    VisitResult AstPrinter::visitConditionalStmt(const ConditionalStatement &conditionalStmt) {
+        printLine("ConditionalStatement:");
+        indent([&] {
+            printLine("-If Body:");
+            indent([&] {
+                conditionalStmt.ifBody().accept(*this);
+            });
+            if (conditionalStmt.elseBody()) {
+                printLine("-Else Body:");
+                indent([&] {
+                    conditionalStmt.elseBody()->accept(*this);
+                });
+            }
+        });
+        return {};
+    }
+
     VisitResult AstPrinter::visitBlockStmt(const BlockStatement &blockStmt) {
         printLine("BlockStatement:");
         indent([&] {

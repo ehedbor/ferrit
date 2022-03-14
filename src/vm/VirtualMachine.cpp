@@ -16,7 +16,7 @@ namespace ferrit {
 
     void VirtualMachine::init(const Chunk &chunk) {
         m_chunk = chunk;
-        m_ip = m_chunk.bytecode().begin();
+        m_ip = 0;
         m_stack.clear();
     }
 
@@ -26,9 +26,8 @@ namespace ferrit {
         bool run = true;
         while (run) {
             if (m_traceLog) {
-                int offset = static_cast<int>(m_ip - m_chunk.bytecode().begin());
                 Disassembler debug{*m_traceLog};
-                debug.disassembleInstruction(m_chunk, offset);
+                debug.disassembleInstruction(m_chunk, m_ip);
             }
 
             auto instruction = static_cast<OpCode>(readByte());
@@ -54,11 +53,14 @@ namespace ferrit {
 
     bool VirtualMachine::interpretInstruction(OpCode instruction) {
         switch (static_cast<OpCode>(instruction)) {
-        case OpCode::Constant: {
-            Value constant = readConstant();
-            push(constant);
+        case OpCode::NoOp:
             break;
-        }
+        case OpCode::Constant:
+            push(readConstant());
+            break;
+        case OpCode::Pop:
+            pop();
+            break;
         case OpCode::IAdd: {
             std::int64_t right = pop().asInteger();
             std::int64_t left = pop().asInteger();
@@ -171,6 +173,19 @@ namespace ferrit {
             }
             return false;
         }
+        case OpCode::Jump: {
+            std::uint16_t offset = readShort();
+            m_ip += offset;
+            break;
+        }
+        case OpCode::JumpIfFalse: {
+            std::uint16_t offset = readShort();
+            auto condition = pop().asBoolean();
+            if (!condition) {
+                m_ip += offset;
+            }
+            break;
+        }
         default:
             throw std::runtime_error(std::format("Unknown opcode '{}'", static_cast<int>(instruction)));
         }
@@ -192,11 +207,19 @@ namespace ferrit {
     }
 
     std::uint8_t VirtualMachine::readByte() {
-        if (m_ip == m_chunk.bytecode().end()) {
+        m_ip++;
+        if (m_ip > m_chunk.size()) {
             throw std::runtime_error("attempted to read past end of bytecode");
         }
+        return m_chunk.byteAt(m_ip - 1);
+    }
 
-        return *m_ip++;
+    uint16_t VirtualMachine::readShort() {
+        m_ip += 2;
+        if (m_ip > m_chunk.size()) {
+            throw std::runtime_error("attempted to read past end of bytecode");
+        }
+        return m_chunk.shortAt(m_ip - 2);
     }
 
     Value VirtualMachine::readConstant() {
@@ -209,8 +232,8 @@ namespace ferrit {
 
     ExecutionContext VirtualMachine::ctx() const {
         // subtract 1 because we have already consumed the current instruction at this point
-        auto offset = std::distance(m_chunk.bytecode().begin(), m_ip) - 1;
-        int line = m_chunk.getLineForOffset(static_cast<int>(offset));
+        auto offset = m_ip - 1;
+        int line = m_chunk.getLineForOffset(offset);
         return ExecutionContext{
             .line = line
         };

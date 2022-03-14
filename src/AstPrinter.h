@@ -19,6 +19,7 @@ namespace ferrit {
 
     public:
         VisitResult visitFunctionDecl(const FunctionDeclaration &funDecl) override;
+        VisitResult visitConditionalStmt(const ConditionalStatement &conditionalStmt) override;
         VisitResult visitBlockStmt(const BlockStatement &blockStmt) override;
         VisitResult visitExpressionStmt(const ExpressionStatement &exprStmt) override;
 

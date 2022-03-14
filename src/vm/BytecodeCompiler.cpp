@@ -18,22 +18,13 @@ namespace ferrit {
     Chunk BytecodeCompiler::tryCompile(const std::vector<StatementPtr> &ast) {
         m_chunk = Chunk{};
 
-        // TODO: support statements
-        if (ast.empty()) {
-            Token dummy{TokenType::EndOfFile, "", {1, 1}};
-            throw makeError<CompileError::NotImplemented>(dummy, "empty programs");
-        } else if (ast.size() > 1) {
-            throw makeError<CompileError::NotImplemented>(ast[1]->errorToken(), "multiple lines");
+        for (const auto &stmt : ast) {
+            stmt->accept(*this);
         }
 
-        const Statement &stmt = *ast.front();
-        if (const auto *expr = dynamic_cast<const ExpressionStatement *>(&stmt)) {
-            expr->accept(*this);
-            emit(OpCode::Return, expr->errorToken().location.line);
-            return m_chunk;
-        } else {
-            throw makeError<CompileError::NotImplemented>(stmt.errorToken(), "statements");
-        }
+        const Statement &lastStmt = *ast.back();
+        emit(OpCode::Return, lastStmt.errorToken().location.line);
+        return m_chunk;
     }
 
     VisitResult BytecodeCompiler::visitFunctionDecl(const FunctionDeclaration &funDecl) {
@@ -41,13 +32,40 @@ namespace ferrit {
             funDecl.errorToken(), "functions");
     }
 
+    VisitResult BytecodeCompiler::visitConditionalStmt(const ConditionalStatement &conditionalStmt) {
+        auto conditionType = std::any_cast<RuntimeType>(conditionalStmt.condition().accept(*this));
+        if (conditionType != RuntimeType::BoolType) {
+            throw makeError<CompileError::IncompatibleTypes>(
+                conditionalStmt.condition().errorToken(), "if statement", std::vector{conditionType.name()});
+        }
+        int conditionPos = emitJump(true, conditionalStmt.ifKeyword().location.line);
+
+        conditionalStmt.ifBody().accept(*this);
+        int elsePos = -1;
+        if (conditionalStmt.elseBody()) {
+            elsePos = emitJump(false, conditionalStmt.elseKeyword()->location.line);
+        }
+
+        patchJump(conditionPos);
+        if (conditionalStmt.elseBody()) {
+            conditionalStmt.elseBody()->accept(*this);
+            patchJump(elsePos);
+        }
+
+        return RuntimeType::NothingType;
+    }
+
     VisitResult BytecodeCompiler::visitBlockStmt(const BlockStatement &blockStmt) {
-        throw makeError<CompileError::NotImplemented>(
-            blockStmt.errorToken(), "block statements");
+        for (const auto &stmt: blockStmt.body()) {
+            stmt->accept(*this);
+        }
+        return RuntimeType::NothingType;
     }
 
     VisitResult BytecodeCompiler::visitExpressionStmt(const ExpressionStatement &exprStmt) {
-        return exprStmt.expr().accept(*this);
+        exprStmt.expr().accept(*this);
+        emit(OpCode::Pop, exprStmt.errorToken().location.line);
+        return RuntimeType::NothingType;
     }
 
     VisitResult BytecodeCompiler::visitBinaryExpr(const BinaryExpression &binExpr) {
@@ -259,6 +277,25 @@ namespace ferrit {
 
     void BytecodeCompiler::emit(OpCode opCode, std::uint8_t arg, int line) {
         m_chunk.writeInstruction(opCode, arg, line);
+    }
+
+    int BytecodeCompiler::emitJump(bool isConditionalJump, int line) {
+        OpCode opCode = isConditionalJump ? OpCode::JumpIfFalse : OpCode::Jump;
+        m_chunk.writeInstruction(opCode, static_cast<std::uint16_t>(0xDEAD), line);
+
+        return m_chunk.size() - 2;
+    }
+
+    void BytecodeCompiler::patchJump(int jumpOpOffset) {
+        // subtract 2 to account for the instruction's parameter
+        int offset = m_chunk.size() - jumpOpOffset - 2;
+        if (offset < 0) {
+            throw CompileException("Negative offset in jump instruction.");
+        } else if (offset > std::numeric_limits<std::uint16_t>::max()) {
+            throw CompileException(std::format("Jump of {} bytes too big.", offset));
+        }
+
+        m_chunk.patchShort(jumpOpOffset, static_cast<std::uint16_t>(offset));
     }
 
     void BytecodeCompiler::emitConstant(const Value &value, int line) {

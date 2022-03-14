@@ -8,6 +8,7 @@ const std::string &RuntimeType::name() const noexcept {
     return m_name;
 }
 
+const RuntimeType RuntimeType::NothingType{"ferrit.Nothing"};
 const RuntimeType RuntimeType::NullType{"ferrit.Null"};
 const RuntimeType RuntimeType::BoolType{"ferrit.Bool"};
 const RuntimeType RuntimeType::IntType{"ferrit.Int"};

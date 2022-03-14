@@ -21,6 +21,7 @@ namespace ferrit {
         Chunk tryCompile(const std::vector<StatementPtr> &ast);
 
         VisitResult visitFunctionDecl(const FunctionDeclaration &funDecl) override;
+        VisitResult visitConditionalStmt(const ConditionalStatement &conditionalStmt) override;
         VisitResult visitBlockStmt(const BlockStatement &blockStmt) override;
         VisitResult visitExpressionStmt(const ExpressionStatement &exprStmt) override;
 
@@ -35,6 +36,9 @@ namespace ferrit {
     private:
         void emit(OpCode opCode, int line);
         void emit(OpCode opCode, std::uint8_t arg, int line);
+
+        [[nodiscard]] int emitJump(bool isConditionalJump, int line);
+        void patchJump(int jumpOpOffset);
 
         void emitConstant(const Value &value, int line);
         std::uint8_t makeConstant(const Value &value);

@@ -143,8 +143,12 @@ namespace ferrit {
     }
 
     StatementPtr Parser::parseStatement() {
-        auto expr = parseExpression();
-        return std::make_unique<ExpressionStatement>(std::move(expr));
+        if (match(TokenType::If)) {
+            return parseConditional();
+        } else {
+            auto expr = parseExpression();
+            return std::make_unique<ExpressionStatement>(std::move(expr));
+        }
     }
 
     StatementPtr Parser::parseBlock() {
@@ -161,6 +165,36 @@ namespace ferrit {
         consume(TokenType::RightBrace, "expected '}' after block");
 
         return std::make_unique<BlockStatement>(leftBrace, std::move(body));
+    }
+
+    StatementPtr Parser::parseConditional() {
+        const auto &ifToken = previous();
+
+        consume(TokenType::LeftParen, "expected '(' after 'if'");
+        auto condition = parseExpression();
+        consume(TokenType::RightParen, "expected ')' after if condition");
+
+        StatementPtr ifBody;
+        if (match(TokenType::LeftBrace)) {
+            ifBody = parseBlock();
+        } else {
+            ifBody = parseStatement();
+        }
+
+        std::optional<Token> elseKeyword{};
+        StatementPtr elseBody{nullptr};
+        if (match(TokenType::Else)) {
+            elseKeyword = previous();
+            if (match(TokenType::LeftBrace)) {
+                elseBody = parseBlock();
+            } else {
+                elseBody = parseStatement();
+            }
+        }
+
+        return std::make_unique<ConditionalStatement>(
+            ifToken, std::move(condition), std::move(ifBody),
+            std::move(elseKeyword), std::move(elseBody));
     }
 
     ExpressionPtr Parser::parseExpression() {

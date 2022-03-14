@@ -64,7 +64,49 @@ namespace ferrit {
             returnType() == otherFun.returnType() &&
             keyword() == otherFun.keyword() &&
             modifiers() == otherFun.modifiers() &&
-            *body() == *otherFun.body();
+            ((body() == nullptr && otherFun.body() == nullptr) ||
+                (*body() == *otherFun.body()));
+    }
+
+    ConditionalStatement::ConditionalStatement(
+        Token ifKeyword, ExpressionPtr condition, StatementPtr ifBody,
+        std::optional<Token> elseKeyword, std::optional<StatementPtr> elseBody) :
+        m_keyword{std::move(ifKeyword)}, m_condition{std::move(condition)}, m_ifBody{std::move(ifBody)},
+        m_elseKeyword{std::move(elseKeyword)},m_elseBody{elseBody.has_value() ? std::move(elseBody.value()) : nullptr} {
+    }
+
+    const Token &ConditionalStatement::ifKeyword() const noexcept {
+        return m_keyword;
+    }
+
+    const Expression &ConditionalStatement::condition() const noexcept {
+        return *m_condition;
+    }
+
+    const Statement &ConditionalStatement::ifBody() const noexcept {
+        return *m_ifBody;
+    }
+
+    const std::optional<Token> &ConditionalStatement::elseKeyword() const noexcept {
+        return m_elseKeyword;
+    }
+
+    const Statement *ConditionalStatement::elseBody() const noexcept {
+        return m_elseBody.get();
+    }
+
+    const Token &ConditionalStatement::errorToken() const noexcept {
+        return ifKeyword();
+    }
+
+    bool ConditionalStatement::equals(const Statement &other) const noexcept {
+        const auto &otherCond = static_cast<const ConditionalStatement &>(other);  // NOLINT(cppcoreguidelines-pro-type-static-cast-downcast)
+        return ifKeyword() == otherCond.ifKeyword() &&
+            condition() == otherCond.condition() &&
+            ifBody() == otherCond.ifBody() &&
+            elseKeyword() == otherCond.elseKeyword() &&
+            ((elseBody() == nullptr && otherCond.elseBody() == nullptr) ||
+                (*elseBody() == *otherCond.elseBody()));
     }
 
     BlockStatement::BlockStatement(Token brace, std::vector<StatementPtr> body) noexcept :

@@ -11,6 +11,7 @@ public:
     [[nodiscard]] const std::string &name() const noexcept;
 
 public:
+    static const RuntimeType NothingType;
     static const RuntimeType NullType;
     static const RuntimeType BoolType;
     static const RuntimeType IntType;

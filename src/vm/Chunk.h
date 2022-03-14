@@ -11,7 +11,9 @@ namespace ferrit {
      * Represents a possible virtual machine operation.
      */
     enum class OpCode {
+        NoOp,
         Constant,
+        Pop,
         IAdd,
         ISubtract,
         IMultiply,
@@ -30,6 +32,8 @@ namespace ferrit {
         BEqual,
         BNotEqual,
         Return,
+        Jump,
+        JumpIfFalse,
     };
 
     /**
@@ -57,10 +61,45 @@ namespace ferrit {
         void writeInstruction(OpCode opCode, std::uint8_t arg, int line);
 
         /**
+         * Write the given instruction and its argument to the chunk.
+         *
+         * @param opCode the instruction's opcode
+         * @param arg the argument
+         * @param line the line that the instruction was generated on
+         */
+        void writeInstruction(OpCode opCode, std::uint16_t arg, int line);
+
+        /**
          * This function is deleted to prevent unintentional coercion of a
          * byte argument to a line number.
          */
         void writeInstruction(OpCode, std::uint8_t) = delete;
+
+        /**
+         * Overwrites the byte at the specified index.
+         */
+        void patchByte(int offset, std::uint8_t arg);
+
+        /**
+         * Overwrites the short at the specified index.
+         */
+        void patchShort(int offset, std::uint16_t arg);
+
+        /**
+         * Returns the byte at the specified offset.
+         */
+        [[nodiscard]] std::uint8_t byteAt(int offset) const;
+
+
+        /**
+         * Returns the short at the specified offset.
+         */
+        [[nodiscard]] std::uint16_t shortAt(int offset) const;
+
+        /**
+         * Returns the number of bytes in this chunk's bytecode.
+         */
+        [[nodiscard]] int size() const noexcept;
 
         /**
          * Adds the given value to the constant pool.
@@ -69,8 +108,6 @@ namespace ferrit {
          * @return index of the newly added constant
          */
         std::uint8_t addConstant(Value value);
-
-        [[nodiscard]] const std::vector<std::uint8_t> &bytecode() const noexcept;
 
         [[nodiscard]] const std::vector<Value> &constantPool() const noexcept;
 

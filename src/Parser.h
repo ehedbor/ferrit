@@ -52,6 +52,7 @@ namespace ferrit {
 
         // Other statements
         [[nodiscard]] StatementPtr parseStatement();
+        [[nodiscard]] StatementPtr parseConditional();
         [[nodiscard]] StatementPtr parseBlock();
 
         // Operators

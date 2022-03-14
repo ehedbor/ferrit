@@ -1,4 +1,5 @@
 #include "BytecodeInterpreter.h"
+#include "Disassembler.h"
 
 namespace ferrit {
     BytecodeInterpreter::BytecodeInterpreter() noexcept :
@@ -23,6 +24,13 @@ namespace ferrit {
         auto chunk = m_compiler.compile(ast.value());
         if (!chunk.has_value()) {
             return InterpretResult::CompileError;
+        }
+
+        //TODO: add a compiler flag for disassembly only
+        if (m_options.traceVm) {
+            Disassembler debug{*m_output};
+            debug.disassembleChunk(*chunk, "<main>");
+            *m_output << "\n";
         }
 
         // Even though this function throws exceptions,

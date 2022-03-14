@@ -55,6 +55,16 @@ namespace ferrit {
          */
         int constantInstruction(const std::string &name, const Chunk &chunk, int offset);
 
+        /**
+         * Write a jump instruction.
+         *
+         * @param name the name to display for the instruction
+         * @param chunk the instruction's chunk
+         * @param offset the instruction's offset in the chunk
+         * @return the next offset
+         */
+        int jumpInstruction(const std::string &name, const Chunk &chunk, int offset);
+
     private:
         std::ostream &m_output;
     };

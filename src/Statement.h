@@ -13,6 +13,7 @@
 namespace ferrit {
     class Statement;
     class FunctionDeclaration;
+    class ConditionalStatement;
     class BlockStatement;
     class ExpressionStatement;
 
@@ -28,6 +29,7 @@ namespace ferrit {
         virtual ~StatementVisitor() noexcept = default;
 
         virtual VisitResult visitFunctionDecl(const FunctionDeclaration &funDecl) = 0;
+        virtual VisitResult visitConditionalStmt(const ConditionalStatement &conditionalStmt) = 0;
         virtual VisitResult visitBlockStmt(const BlockStatement &blockStmt) = 0;
         virtual VisitResult visitExpressionStmt(const ExpressionStatement &exprStmt) = 0;
     };
@@ -85,6 +87,37 @@ namespace ferrit {
         std::vector<Parameter> m_params;
         DeclaredType m_returnType;
         StatementPtr m_body;
+    };
+
+    /**
+     * Represents an if/else statement.
+     */
+    class ConditionalStatement final : public Statement {
+    public:
+        explicit ConditionalStatement(
+            Token ifKeyword, ExpressionPtr condition, StatementPtr ifBody,
+            std::optional<Token> elseKeyword = {}, std::optional<StatementPtr> elseBody = {});
+
+        [[nodiscard]] const Token &ifKeyword() const noexcept;
+        [[nodiscard]] const Expression &condition() const noexcept;
+        [[nodiscard]] const Statement &ifBody() const noexcept;
+
+        [[nodiscard]] const std::optional<Token> &elseKeyword() const noexcept;
+        [[nodiscard]] const Statement *elseBody() const noexcept;
+
+        [[nodiscard]] const Token &errorToken() const noexcept override;
+
+        MAKE_VISITABLE(StatementVisitor, ConditionalStmt);
+
+    protected:
+        [[nodiscard]] bool equals(const Statement &other) const noexcept override;
+
+    private:
+        Token m_keyword;
+        std::optional<Token> m_elseKeyword;
+        ExpressionPtr m_condition;
+        StatementPtr m_ifBody;
+        StatementPtr m_elseBody;
     };
 
     /**

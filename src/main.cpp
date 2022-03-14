@@ -36,11 +36,11 @@ int runRepl(ferrit::Interpreter &interpreter) {
             return 0;
         }
 
-        std::string code{line};
+        std::string code = line + "\n";
         while (!line.empty()) {
             std::cout << "... " << std::flush;
             std::getline(std::cin, line);
-            code.append(line);
+            code += line + "\n";
         }
 
         interpreter.run(code);

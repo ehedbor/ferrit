@@ -12,7 +12,7 @@ namespace ferrit {
     }
 
     void NativeHandler::println(const ExecutionContext &ctx, const std::string &msg) {
-        *m_errors << msg << std::endl;
+        *m_output << msg << std::endl;
         if (!(*m_errors)) {
             panic(ctx, "could not write to standard output");
         }
